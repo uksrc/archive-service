@@ -3,18 +3,13 @@ plugins {
     id("io.quarkus")
 }
 
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
-
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
 dependencies {
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
-    implementation("org.uksrc.archive.dm:archiveDM:0.1.0-SNAPSHOT:quarkus")
+    implementation("org.opencadc:CAOM:2.5.0-SNAPSHOT:quarkus")
     implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
     implementation("io.quarkus:quarkus-resteasy-reactive-jaxb")
     implementation("io.quarkus:quarkus-hibernate-orm")
