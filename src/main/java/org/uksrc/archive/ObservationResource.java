@@ -8,12 +8,14 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.*;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.ivoa.dm.caom2.caom2.Observation;
 import org.ivoa.dm.caom2.caom2.SimpleObservation;
 
-import java.util.List;
+import java.lang.annotation.Annotation;
+import java.net.URI;
+import java.util.*;
 
 
 //@Produces(MediaType.APPLICATION_JSON)
@@ -53,12 +55,16 @@ public class ObservationResource {
         return query.getResultList();
     }
 
-
-//    @POST
-//    @Operation(summary = "test1")
-//    public String addSomeValue(String observation) {
-//       // em.persist(observation);
-//        return observation;
-//    }
-
+    @DELETE
+    @Path("/delete/{observationId}")
+    @Operation(summary = "Delete an existing observation")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Transactional
+    public Response deleteObservation(@PathParam("observationId") String id) {
+        Observation observation = em.find(Observation.class, id);
+        if (observation != null) {
+            em.remove(observation);
+        }
+        return Response.ok("Observation deleted successfully").build();
+    }
 }
