@@ -44,14 +44,15 @@ public class ObservationResource {
     }
 
     @POST
-    @Path("/update")
+    @Path("/update/{observationId}")
     @Operation(summary = "Update an existing Observation, based on id")
     @Consumes(MediaType.APPLICATION_XML)
     @Transactional
-    public Response updateObservation(SimpleObservation observation) {
+    public Response updateObservation(@PathParam("observationId") String id, SimpleObservation observation) {
         //Only update IF found
-        Observation existing = em.find(Observation.class, observation.getId());
+        Observation existing = em.find(Observation.class, id);
         if (existing != null) {
+            observation.setId(id);
             em.merge(observation);
             return Response.ok(observation).build();
         }
