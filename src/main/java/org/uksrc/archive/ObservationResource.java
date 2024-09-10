@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.hibernate.exception.ConstraintViolationException;
 import org.ivoa.dm.caom2.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.caom2.Observation;
 import org.ivoa.dm.caom2.caom2.SimpleObservation;
@@ -28,9 +29,20 @@ public class ObservationResource {
     @Operation(summary = "Create a new Observation")
     @Consumes(MediaType.APPLICATION_XML)
     @Transactional
-    public Observation addObservation(SimpleObservation observation) {
-        em.persist(observation);
-        return observation;
+    public Response addObservation(SimpleObservation observation) throws WebApplicationException {
+        try {
+            em.persist(observation);
+            em.flush();                 //Forced transaction to catch duplicate keys errors more gracefully.
+        } catch (Exception e) {
+            //throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+        }
+        //return observation;
+        return Response.status(Response.Status.CREATED)
+                .entity(observation)
+                .build();
     }
 
     @PUT
@@ -38,8 +50,12 @@ public class ObservationResource {
     @Operation(summary = "Create a new Derived Observation")
     @Consumes(MediaType.APPLICATION_XML)
     @Transactional
-    public Observation addObservation(DerivedObservation observation) {
-        em.persist(observation);
+    public Observation addObservation(DerivedObservation observation) throws WebApplicationException {
+        try {
+            em.persist(observation);
+        } catch (Exception e) {
+            throw new WebApplicationException(e.getLocalizedMessage(), Response.Status.BAD_REQUEST);
+        }
         return observation;
     }
 
@@ -48,14 +64,19 @@ public class ObservationResource {
     @Operation(summary = "Update an existing Observation, based on id")
     @Consumes(MediaType.APPLICATION_XML)
     @Transactional
-    public Response updateObservation(@PathParam("observationId") String id, SimpleObservation observation) {
-        //Only update IF found
-        Observation existing = em.find(Observation.class, id);
-        if (existing != null) {
-            observation.setId(id);
-            em.merge(observation);
-            return Response.ok(observation).build();
+    public Response updateObservation(@PathParam("observationId") String id, SimpleObservation observation) throws WebApplicationException {
+        try {
+            //Only update IF found
+            Observation existing = em.find(Observation.class, id);
+            if (existing != null && observation != null) {
+                observation.setId(id);
+                em.merge(observation);
+                return Response.ok(observation).build();
+            }
+        } catch (Exception e) {
+            throw new WebApplicationException(e.getLocalizedMessage(), Response.Status.BAD_REQUEST);
         }
+
         return Response.status(Response.Status.NOT_FOUND)
                 .entity("Observation not found")
                 .build();
@@ -85,12 +106,17 @@ public class ObservationResource {
     @Path("/delete/{observationId}")
     @Operation(summary = "Delete an existing observation")
     @Transactional
-    public Response deleteObservation(@PathParam("observationId") String id) {
-        Observation observation = em.find(Observation.class, id);
-        if (observation != null) {
-            em.remove(observation);
-            return Response.status(Response.Status.NO_CONTENT).build();
+    public Response deleteObservation(@PathParam("observationId") String id) throws WebApplicationException {
+        try {
+            Observation observation = em.find(Observation.class, id);
+            if (observation != null) {
+                em.remove(observation);
+                return Response.status(Response.Status.NO_CONTENT).build();
+            }
+        } catch (Exception e) {
+            throw new WebApplicationException(e.getLocalizedMessage(), Response.Status.BAD_REQUEST);
         }
+
         return Response.status(Response.Status.NOT_FOUND)
                 .entity("Observation with ID " + id + " not found")
                 .build();
