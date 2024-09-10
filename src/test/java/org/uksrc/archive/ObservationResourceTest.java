@@ -1,13 +1,18 @@
 package org.uksrc.archive;
 
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test class for the Observation class
@@ -20,8 +25,26 @@ import static org.hamcrest.Matchers.containsString;
 @QuarkusTest
 public class ObservationResourceTest {
 
+    static final String xmlObservation = "<observation>" +
+                    "<id>%s</id>" +
+                    "<collection>emerlin</collection>" +
+                    "<intent>science</intent>" +
+                    "<uri>auri</uri>" +
+                    "</observation>";
+
+    @Inject
+    EntityManager em;
+
+    @BeforeEach
+    @Transactional
+    public void clearDatabase() {
+        // Clear the table
+        em.createQuery("DELETE FROM Observation").executeUpdate();
+    }
+
     @Test
     public void testGettingObservations() {
+        //NOTE: map to CAOM object once mapper issue is resolved.
       /*  List<Observation> observations = when()
                 .get("/observations/")
                 .then()
@@ -35,25 +58,17 @@ public class ObservationResourceTest {
                 .statusCode(200)
                 .extract()
                 .asString();
-
-        System.out.println(response);
-        //assertTrue(observations.isEmpty());
+        assertEquals(response, "[]");   //List empty
     }
 
     @Test
     public void testAddingObservation() {
-        String xmlObservation =
-                "<observation>" +
-                        "<id>123</id>" +
-                        "<collection>emerlin</collection>" +
-                        "<intent>science</intent>" +
-                        "<uri>auri</uri>" +
-                        "</observation>";
+        String uniqueObservation = String.format(xmlObservation, "123");
 
         //As the /add operation returns the added observation, check the body of the response for valid values
         given()
                 .header("Content-Type", "application/xml")
-                .body(xmlObservation)
+                .body(uniqueObservation)
                 .when()
                 .put("/observations/add")
                 .then()
@@ -64,19 +79,12 @@ public class ObservationResourceTest {
 
     @Test
     public void testAddingDuplicateObservation() {
-        //Missing uri property
-        String xmlObservation =
-                "<observation>" +
-                        "<id>256</id>" +
-                        "<collection>emerlin</collection>" +
-                        "<intent>science</intent>" +
-                        "<uri>someuri</uri>" +
-                        "</observation>";
+        String duplicateObservation = String.format(xmlObservation, "256");
 
         // Add 1st instance
         given()
                 .header("Content-Type", "application/xml")
-                .body(xmlObservation)
+                .body(duplicateObservation)
                 .when()
                 .put("/observations/add")
                 .then()
@@ -86,7 +94,7 @@ public class ObservationResourceTest {
         // An Observation with the same ID as an added resource should not be allowed.
         given()
                 .header("Content-Type", "application/xml")
-                .body(xmlObservation)
+                .body(duplicateObservation)
                 .when()
                 .put("/observations/add")
                 .then()
