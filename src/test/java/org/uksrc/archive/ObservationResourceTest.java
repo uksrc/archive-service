@@ -1,6 +1,7 @@
 package org.uksrc.archive;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.common.mapper.TypeRef;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -12,14 +13,13 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test class for the Observation class
  * Requirements:
  *  Postgres DB with the CAOM (2.5) models added (as tables). Should be in place automatically via the Quarkus mechanisms.
  * Note(s):
- *  TODO: CustomObjectMapper needs to be added as it's throwning a VodmlTypeResolver error at runtime if mapping responses from the REST APIs to the VODML objects.
+ *  TODO: CustomObjectMapper needs to be added as it's throwing a VodmlTypeResolver error at runtime if mapping responses from the REST APIs to the VODML objects.
  *  TODO: For some reason WebApplicationException is not returning messages for some errors (400 sent buy no message, modify an example Observation but remove one of the required properties such as <intent>.
  */
 @QuarkusTest
@@ -44,21 +44,16 @@ public class ObservationResourceTest {
 
     @Test
     public void testGettingObservations() {
-        //NOTE: map to CAOM object once mapper issue is resolved.
-      /*  List<Observation> observations = when()
+        // Wrapper required for de-serialisation of List<Observation>
+        ObservationListWrapper wrapper = when()
                 .get("/observations/")
                 .then()
-                .statusCode(200)
+                .statusCode(Response.Status.OK.getStatusCode())
                 .extract()
                 .as(new TypeRef<>() {
-                });*/
-        String response = when()
-                .get("/observations/")
-                .then()
-                .statusCode(200)
-                .extract()
-                .asString();
-        assertEquals(response, "[]");   //List empty
+                });
+
+        assert(wrapper.getObservations().isEmpty());
     }
 
     @Test
