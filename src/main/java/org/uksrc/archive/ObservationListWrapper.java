@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * A wrapper class for a List<> of Observations.
  * Allows JAXB to return a List of Observations using XML via the REST APIs and
- * allows the naming of headers/tags/fields.
+ * allows the custom naming of headers/tags/fields.
  */
 @XmlRootElement(name = "Observations")  // Root element for the list
 @XmlAccessorType(XmlAccessType.FIELD)

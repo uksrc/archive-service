@@ -13,6 +13,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.ivoa.dm.caom2.caom2.DerivedObservation;
@@ -152,28 +153,92 @@ public class ObservationResource {
 
     @GET
     @Path("/")
-    @Operation(summary = "Retrieve all observations")
+    @Operation(summary = "Retrieve all observations", description = "Returns ALL the Observations currently stored.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of observations retrieved successfully",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = ObservationListWrapper.class)
+            )
+    )
+    @APIResponse(
+            responseCode = "400",
+            description = "Internal error whilst retrieving Observations."
+    )
     @Produces(MediaType.APPLICATION_XML)
-    public ObservationListWrapper getAllObservations() {
-        TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o", Observation.class);
-      //  query.setMaxResults(10); //TODO pagination
-        List<Observation> observations = query.getResultList();
-        return new ObservationListWrapper(observations);
+    public Response getAllObservations() {
+        ObservationListWrapper wrapper;
+        try {
+            TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o", Observation.class);
+            //  query.setMaxResults(10); //TODO pagination
+            List<Observation> observations = query.getResultList();
+            wrapper = new ObservationListWrapper(observations);
+        } catch (Exception e){
+            return errorResponse(e);
+        }
+        return Response.ok(wrapper).build();
     }
 
     @GET
     @Path("/{collection}")
-    @Operation(summary = "Retrieve observations from a collection")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Observation> getObservations(@PathParam("collection") String collection) {
-        TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o WHERE o.collection = :collection", Observation.class);
-        query.setParameter("collection", collection);
-        return query.getResultList();
+    @Operation(summary = "Retrieve observations from a collection", description = "Returns a list of observations that are members of the supplied collection")
+    @Parameters({
+            @Parameter(
+                    name = "collection",
+                    description = "The collection name to retrieve observations for",
+                    required = true,
+                    example = "emerlin"
+            )
+    })
+    @APIResponse(
+            responseCode = "200",
+            description = "List of observations retrieved successfully",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = ObservationListWrapper.class)
+            )
+    )
+    @APIResponse(
+            responseCode = "400",
+            description = "Internal error whilst retrieving Observations."
+    )
+    @Produces(MediaType.APPLICATION_XML)
+    public Response getObservations(@PathParam("collection") String collection) {
+        ObservationListWrapper wrapper;
+        try {
+            TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o WHERE o.collection = :collection", Observation.class);
+            query.setParameter("collection", collection);
+            List<Observation> observations = query.getResultList();
+            wrapper = new ObservationListWrapper(observations);
+
+        } catch (Exception e) {
+            return errorResponse(e);
+        }
+        return Response.ok(wrapper).build();
     }
 
     @DELETE
     @Path("/delete/{observationId}")
     @Operation(summary = "Delete an existing observation")
+    @Parameters({
+            @Parameter(
+                    name = "observationId",
+                    description = "The id of the observation to delete.",
+                    required = true,
+                    example = "123"
+            )
+    })
+    @APIResponse(
+            responseCode = "204",
+            description = "Observation deleted."
+    )
+    @APIResponse(
+            responseCode = "404",
+            description = "Observation not found"
+    )
+    @APIResponse(
+            responseCode = "400",
+            description = "Internal error whilst deleting the observation."
+    )
     @Transactional
     public Response deleteObservation(@PathParam("observationId") String id) {
         try {
@@ -191,6 +256,11 @@ public class ObservationResource {
                 .build();
     }
 
+    /**
+     * Generate an error response
+     * @param e Whatever exception has been thrown
+     * @return A 400 response containing the exception error.
+     */
     private Response errorResponse (Exception e){
         return Response.status(Response.Status.BAD_REQUEST)
                 .entity(e.getMessage())
