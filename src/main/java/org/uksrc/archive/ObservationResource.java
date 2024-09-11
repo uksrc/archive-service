@@ -153,11 +153,12 @@ public class ObservationResource {
     @GET
     @Path("/")
     @Operation(summary = "Retrieve all observations")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Observation> getAllObservations() {
+    @Produces(MediaType.APPLICATION_XML)
+    public ObservationListWrapper getAllObservations() {
         TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o", Observation.class);
       //  query.setMaxResults(10); //TODO pagination
-        return query.getResultList();
+        List<Observation> observations = query.getResultList();
+        return new ObservationListWrapper(observations);
     }
 
     @GET
