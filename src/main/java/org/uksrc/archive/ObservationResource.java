@@ -201,6 +201,44 @@ public class ObservationResource {
         return Response.ok(wrapper).build();
     }
 
+    @GET
+    @Path("/observation/{observationId}")
+    @Operation(summary = "Retrieve observations from a collection", description = "Returns a list of observations that are members of the supplied collection")
+    @Parameters({
+            @Parameter(
+                    name = "observationId",
+                    description = "The id of the observation",
+                    required = true,
+                    example = "emerlin"
+            )
+    })
+    @APIResponse(
+            responseCode = "200",
+            description = "Observation retrieved successfully",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = Observation.class)
+            )
+    )
+    @APIResponse(
+            responseCode = "400",
+            description = "Internal error whilst retrieving Observations."
+    )
+    @Produces(MediaType.APPLICATION_XML)
+    public Response getObservation(@PathParam("observationId") String observationId) {
+        try {
+            Observation observation = em.find(Observation.class, observationId);
+            if (observation != null) {
+                return Response.status(Response.Status.OK)
+                        .entity(observation).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("Observation with ID " + observationId + " not found").build();
+            }
+        } catch (Exception e) {
+            return errorResponse(e);
+        }
+    }
+
     @DELETE
     @Path("/delete/{observationId}")
     @Operation(summary = "Delete an existing observation")
@@ -231,18 +269,18 @@ public class ObservationResource {
             if (observation != null) {
                 em.remove(observation);
                 return Response.status(Response.Status.NO_CONTENT).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("Observation with ID " + id + " not found")
+                        .build();
             }
         } catch (Exception e) {
             return errorResponse(e);
         }
-
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity("Observation with ID " + id + " not found")
-                .build();
     }
 
     /**
-     * Adds a observation to the database
+     * Adds an observation to the database
      * @param observation Either a SimpleObservation or a DerivedObservation
      * @return Response containing status code and added observation (if successful)
      */
