@@ -8,6 +8,8 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
@@ -25,12 +27,20 @@ import static org.hamcrest.Matchers.containsString;
 @QuarkusTest
 public class ObservationResourceTest {
 
-    static final String xmlObservation = "<observation>" +
+    private static final String XML_OBSERVATION = "<observation>" +
                     "<id>%s</id>" +
                     "<collection>emerlin</collection>" +
                     "<intent>science</intent>" +
                     "<uri>auri</uri>" +
                     "</observation>";
+
+    private static final String XML_DERIVED_OBSERVATION = "<Observation>" +
+            "<id>%s</id>" +
+            "<collection>emerlin</collection>" +
+            "<intent>science</intent>" +
+            "<uri>auri</uri>" +
+            "<members>someone</members>" +
+            "</Observation>";
 
     @Inject
     EntityManager em;
@@ -56,9 +66,10 @@ public class ObservationResourceTest {
         assert(wrapper.getObservations().isEmpty());
     }
 
-    @Test
-    public void testAddingObservation() {
-        String uniqueObservation = String.format(xmlObservation, "123");
+    @ParameterizedTest
+    @ValueSource(strings = {XML_OBSERVATION, XML_DERIVED_OBSERVATION})
+    public void testAddingObservation(String observation) {
+        String uniqueObservation = String.format(observation, "123");
 
         //As the /add operation returns the added observation, check the body of the response for valid values
         given()
@@ -74,7 +85,7 @@ public class ObservationResourceTest {
 
     @Test
     public void testAddingDuplicateObservation() {
-        String duplicateObservation = String.format(xmlObservation, "256");
+        String duplicateObservation = String.format(XML_DERIVED_OBSERVATION, "256");
 
         // Add 1st instance
         given()

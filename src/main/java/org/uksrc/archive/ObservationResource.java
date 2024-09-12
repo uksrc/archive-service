@@ -16,9 +16,11 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.hibernate.PropertyValueException;
 import org.ivoa.dm.caom2.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.caom2.Observation;
 import org.ivoa.dm.caom2.caom2.SimpleObservation;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.*;
 
@@ -53,16 +55,7 @@ public class ObservationResource {
     @Produces(MediaType.APPLICATION_XML)
     @Transactional
     public Response addObservation(SimpleObservation observation) {
-        try {
-            em.persist(observation);
-            em.flush();                 //Forced transaction to catch duplicate keys errors more gracefully.
-        } catch (Exception e) {
-            return errorResponse(e);
-        }
-        //return observation;
-        return Response.status(Response.Status.CREATED)
-                .entity(observation)
-                .build();
+        return submitObservation(observation);
     }
 
     @PUT
@@ -89,15 +82,7 @@ public class ObservationResource {
     @Produces(MediaType.APPLICATION_XML)
     @Transactional
     public Response addObservation(DerivedObservation observation) {
-        try {
-            em.persist(observation);
-            em.flush();
-        } catch (Exception e) {
-            return errorResponse(e);
-        }
-        return Response.status(Response.Status.CREATED)
-                .entity(observation)
-                .build();
+        return submitObservation(observation);
     }
 
     @POST
@@ -257,13 +242,35 @@ public class ObservationResource {
     }
 
     /**
+     * Adds a observation to the database
+     * @param observation Either a SimpleObservation or a DerivedObservation
+     * @return Response containing status code and added observation (if successful)
+     */
+    private Response submitObservation(Observation observation) {
+        try {
+            em.persist(observation);
+            em.flush();
+        } catch (Exception e) {
+            return errorResponse(e);
+        }
+        return Response.status(Response.Status.CREATED)
+                .entity(observation)
+                .build();
+    }
+
+    /**
      * Generate an error response
      * @param e Whatever exception has been thrown
      * @return A 400 response containing the exception error.
      */
-    private Response errorResponse (Exception e){
+    private Response errorResponse (@NotNull Exception e){
+        String additional = "";
+        if (e instanceof PropertyValueException){
+            //Inform caller of exact property that's missing/invalid
+            additional = ((PropertyValueException)e).getPropertyName();
+        }
         return Response.status(Response.Status.BAD_REQUEST)
-                .entity(e.getMessage())
+                .entity(e.getMessage() + " " + additional)
                 .build();
     }
 }
