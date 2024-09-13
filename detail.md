@@ -3,6 +3,29 @@
 Details of the functionality of the archive-service endpoints.
 
 ------------------------------------------------------------------------------------------
+Example resources suitable for **minimal** testing.
+#### Example Simple Observation
+```
+<observation>
+    <id>123456</id>
+    <collection>e-merlin</collection>
+    <intent>science</intent>
+    <uri>auri</uri>
+</observation>
+```
+#### Example Derived Observation
+```
+<Observation>
+    <id>999</id>
+    <collection>e-merlin</collection>
+    <intent>science</intent>
+    <uri>auri</uri>
+    <members>anyURI</members>
+</Observation>
+```
+------------------------------------------------------------------------------------------
+### REST API details  
+Endpoints available for interaction with the archive-service.
 
 #### Retrieving observations
 
@@ -174,4 +197,4 @@ Details of the functionality of the archive-service endpoints.
 >  curl -X 'DELETE' 'http://localhost:8080/observations/delete/123' -H 'accept: */*'
 > ```
 
-</details>
+</details>  
