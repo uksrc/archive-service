@@ -95,7 +95,7 @@ public class ObservationResource {
             example = "123"
     )
     @RequestBody(
-            description = "XML representation of the Derived Observation",
+            description = "XML representation of the Observation",
             required = true,
             content = @Content(
                     mediaType = MediaType.APPLICATION_XML,
@@ -132,6 +132,7 @@ public class ObservationResource {
         }
 
         return Response.status(Response.Status.NOT_FOUND)
+                .type(MediaType.TEXT_PLAIN)
                 .entity("Observation not found")
                 .build();
     }
@@ -165,14 +166,14 @@ public class ObservationResource {
     }
 
     @GET
-    @Path("/{collection}")
+    @Path("/collection/{collectionId}")
     @Operation(summary = "Retrieve observations from a collection", description = "Returns a list of observations that are members of the supplied collection")
     @Parameters({
             @Parameter(
                     name = "collection",
                     description = "The collection name to retrieve observations for",
                     required = true,
-                    example = "emerlin"
+                    example = "e-merlin"
             )
     })
     @APIResponse(
@@ -187,7 +188,7 @@ public class ObservationResource {
             description = "Internal error whilst retrieving Observations."
     )
     @Produces(MediaType.APPLICATION_XML)
-    public Response getObservations(@PathParam("collection") String collection) {
+    public Response getObservations(@PathParam("collectionId") String collection) {
         ObservationListWrapper wrapper;
         try {
             TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o WHERE o.collection = :collection", Observation.class);
@@ -202,14 +203,14 @@ public class ObservationResource {
     }
 
     @GET
-    @Path("/observation/{observationId}")
+    @Path("/{observationId}")
     @Operation(summary = "Retrieve observations from a collection", description = "Returns a list of observations that are members of the supplied collection")
     @Parameters({
             @Parameter(
                     name = "observationId",
                     description = "The id of the observation",
                     required = true,
-                    example = "emerlin"
+                    example = "123456"
             )
     })
     @APIResponse(
@@ -220,11 +221,15 @@ public class ObservationResource {
             )
     )
     @APIResponse(
+            responseCode = "404",
+            description = "Observation not found"
+    )
+    @APIResponse(
             responseCode = "400",
             description = "Internal error whilst retrieving Observations."
     )
     @Produces(MediaType.APPLICATION_XML)
-    public Response getObservation(@PathParam("observationId") String observationId) {
+    public Response getObservation(@PathParam("observationId") String observationId) {  //TODO handle empty string
         try {
             Observation observation = em.find(Observation.class, observationId);
             if (observation != null) {
@@ -232,6 +237,7 @@ public class ObservationResource {
                         .entity(observation).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
+                        .type(MediaType.TEXT_PLAIN)
                         .entity("Observation with ID " + observationId + " not found").build();
             }
         } catch (Exception e) {
@@ -271,6 +277,7 @@ public class ObservationResource {
                 return Response.status(Response.Status.NO_CONTENT).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
+                        .type(MediaType.TEXT_PLAIN)
                         .entity("Observation with ID " + id + " not found")
                         .build();
             }
@@ -308,6 +315,7 @@ public class ObservationResource {
             additional = ((PropertyValueException)e).getPropertyName();
         }
         return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.TEXT_PLAIN)
                 .entity(e.getMessage() + " " + additional)
                 .build();
     }
