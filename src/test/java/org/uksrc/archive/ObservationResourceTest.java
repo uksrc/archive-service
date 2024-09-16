@@ -197,7 +197,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(uniqueObservation)
                 .when()
-                .get("/observations/observation/" + ID)
+                .get("/observations/" + ID)
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
                 .body("simpleObservation.id", is(ID))   // XML expectation (remove 'simpleObservation.' for JSON)
@@ -232,7 +232,7 @@ public class ObservationResourceTest {
             given()
                     .header("Content-Type", "application/xml")
                     .when()
-                    .get("/observations/observation/" + ID)
+                    .get("/observations/" + ID)
                     .then()
                     .statusCode(Response.Status.OK.getStatusCode())
                     .body("simpleObservation.id", is(ID));

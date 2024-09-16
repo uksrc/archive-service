@@ -3,9 +3,9 @@
 Details of the functionality of the archive-service endpoints.
 
 ------------------------------------------------------------------------------------------
-Example resources suitable for **minimal** testing.
+Example resources suitable for **minimal** testing (Mandatory properties only).
 #### Example Simple Observation
-```
+```xml
 <observation>
     <id>123456</id>
     <collection>e-merlin</collection>
@@ -14,7 +14,7 @@ Example resources suitable for **minimal** testing.
 </observation>
 ```
 #### Example Derived Observation
-```
+```xml
 <Observation>
     <id>999</id>
     <collection>e-merlin</collection>
