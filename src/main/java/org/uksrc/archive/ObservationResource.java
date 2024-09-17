@@ -171,16 +171,12 @@ public class ObservationResource {
     @Produces(MediaType.APPLICATION_XML)
     public Response getAllObservations(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         if ((page != null && size == null) || (page == null && size != null)) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Both 'page' and 'size' must be provided together or neither.")
-                    .build();
+            return errorResponse("Both 'page' and 'size' must be provided together or neither.");
         }
 
         try {
             if (page != null && (page < 0 || size < 1)) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("Page must be 0 or greater and size must be greater than 0.")
-                        .build();
+                return errorResponse("Page must be 0 or greater and size must be greater than 0.");
             }
 
             // Create query and apply pagination if required
@@ -216,16 +212,12 @@ public class ObservationResource {
     @Produces(MediaType.APPLICATION_XML)
     public Response getObservations(@PathParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         if ((page != null && size == null) || (page == null && size != null)) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Both 'page' and 'size' must be provided together or neither.")
-                    .build();
+            return errorResponse("Both 'page' and 'size' must be provided together or neither.");
         }
 
         try {
             if (page != null && (page < 0 || size < 1)) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("Page must be 0 or greater and size must be greater than 0.")
-                        .build();
+                return errorResponse("Page must be 0 or greater and size must be greater than 0.");
             }
 
             TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o WHERE o.collection = :collection", Observation.class);
@@ -380,6 +372,18 @@ public class ObservationResource {
         return Response.status(Response.Status.BAD_REQUEST)
                 .type(MediaType.TEXT_PLAIN)
                 .entity(e.getMessage() + " " + additional)
+                .build();
+    }
+
+    /**
+     * Generate an error message
+     * @param message Message to return to the caller.
+     * @return A 400 response containing the supplied message
+     */
+    private Response errorResponse (@NotNull String message){
+        return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.TEXT_PLAIN)
+                .entity(message)
                 .build();
     }
 
