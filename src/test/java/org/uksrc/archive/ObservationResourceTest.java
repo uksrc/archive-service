@@ -288,8 +288,9 @@ public class ObservationResourceTest {
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
                 .extract()
-                .as(String.class);
+                .asString();
 
+        //Split the response on the tab separator
         String[] collectionIds = collections.split("\t");
         List<String> names = Arrays.asList(collectionIds);
 

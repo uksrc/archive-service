@@ -185,16 +185,7 @@ public class ObservationResource {
 
             // Create query and apply pagination if required
             TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o", Observation.class);
-            if (page != null) {
-                int firstResult = page * size;
-                query.setFirstResult(firstResult);
-                query.setMaxResults(size);
-            }
-
-            List<Observation> observations = query.getResultList();
-            ObservationListWrapper wrapper = new ObservationListWrapper(observations);
-
-            return Response.ok(wrapper).build();
+            return performQuery(page, size, query);
         } catch (Exception e) {
             return errorResponse(e);
         }
@@ -223,18 +214,26 @@ public class ObservationResource {
             description = "Internal error whilst retrieving Observations."
     )
     @Produces(MediaType.APPLICATION_XML)
-    public Response getObservations(@PathParam("collectionId") String collection) {
-        ObservationListWrapper wrapper;
+    public Response getObservations(@PathParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
+        if ((page != null && size == null) || (page == null && size != null)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Both 'page' and 'size' must be provided together or neither.")
+                    .build();
+        }
+
         try {
+            if (page != null && (page < 0 || size < 1)) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Page must be 0 or greater and size must be greater than 0.")
+                        .build();
+            }
+
             TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o WHERE o.collection = :collection", Observation.class);
             query.setParameter("collection", collection);
-            List<Observation> observations = query.getResultList();
-            wrapper = new ObservationListWrapper(observations);
-
+            return performQuery(page, size, query);
         } catch (Exception e) {
             return errorResponse(e);
         }
-        return Response.ok(wrapper).build();
     }
 
     @GET
@@ -264,7 +263,7 @@ public class ObservationResource {
             description = "Internal error whilst retrieving Observations."
     )
     @Produces(MediaType.APPLICATION_XML)
-    public Response getObservation(@PathParam("observationId") String observationId) {  //TODO handle empty string
+    public Response getObservation(@PathParam("observationId") String observationId) {
         try {
             Observation observation = em.find(Observation.class, observationId);
             if (observation != null) {
@@ -342,6 +341,7 @@ public class ObservationResource {
             List<String> uniqueCollections = query.getResultList();
 
             return Response.ok()
+                    .type(MediaType.TEXT_PLAIN)
                     .entity(convertListToTsv(uniqueCollections))
                     .build();
         } catch (Exception e) {
@@ -384,12 +384,35 @@ public class ObservationResource {
     }
 
     /**
+     * Performs the supplied query (with or without the pagination parameters)
+     * @param page zero-indexed page index
+     * @param size number of entries per page
+     * @param query query to perform
+     * @return Response containing HTTP response code and expected body if successful.
+     */
+    private Response performQuery(@QueryParam("page") Integer page, @QueryParam("size") Integer size, TypedQuery<Observation> query) {
+        try {
+            if (page != null && size != null) {
+                int firstResult = page * size;
+                query.setFirstResult(firstResult);
+                query.setMaxResults(size);
+            }
+
+            List<Observation> observations = query.getResultList();
+            ObservationListWrapper wrapper = new ObservationListWrapper(observations);
+
+            return Response.ok(wrapper).build();
+        } catch (Exception e) {
+            return errorResponse(e);
+        }
+    }
+
+    /**
      * Converts a List of strings to a TSV
      * @param list The list of elements to convert to a TSV string.
      * @return list of items "e-merlin  test    ALMA"
      */
     public String convertListToTsv(List<String> list) {
-        // Create a StringJoiner with tab separator
         StringJoiner joiner = new StringJoiner("\t");
 
         for (String item : list) {
