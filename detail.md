@@ -30,7 +30,15 @@ Endpoints available for interaction with the archive-service.
 #### Retrieving observations
 
 <details>
- <summary><code>GET</code> <code><b>/observations</b></code> <code>(Returns ALL of the observations)</code></summary>
+ <summary><code>GET</code> <code><b>/observations</b></code> <code>(Returns either all of the observations OR a paginated subset if optional page and size parameters supplied)</code></summary>
+
+##### Parameters
+
+> | name | type     | data type | description                                                                    |
+> |------|----------|-----------|--------------------------------------------------------------------------------|
+> | page | optional | integer   | The page index, zero-indexed                                                   |
+> | size | optional | integer   | The number of observations to return for each page, must be greater than zero. |
+
 
 ##### Responses
 
@@ -198,3 +206,26 @@ Endpoints available for interaction with the archive-service.
 > ```
 
 </details>  
+
+------------------------------------------------------------------------------------------
+
+#### Retrieving collections
+
+<details>
+ <summary><code>GET</code> <code><b>/observations/collections</b></code> <code>(Returns the names of all the collections as a TSV (Tab Separated List))</code></summary>
+
+##### Responses
+
+> | http code | content-type | response                                 |
+> |-----------|--------------|------------------------------------------|
+> | `200`     | `text/plain` | `Returned successfully`                  |
+> | `400`     | `text/plain` | `{"code":"400","message":"Bad Request"}` |
+
+
+##### Example cURL
+
+> ```
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/observations/collections'
+> ```
+
+</details>

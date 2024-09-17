@@ -10,6 +10,8 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -21,6 +23,7 @@ import org.ivoa.dm.caom2.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.caom2.Observation;
 import org.ivoa.dm.caom2.caom2.SimpleObservation;
 import jakarta.validation.constraints.NotNull;
+import org.uksrc.archive.utils.ObservationListWrapper;
 
 import java.util.*;
 
@@ -139,7 +142,21 @@ public class ObservationResource {
 
     @GET
     @Path("/")
-    @Operation(summary = "Retrieve all observations", description = "Returns ALL the Observations currently stored.")
+    @Operation(summary = "Retrieve list(s) of observations", description = "Returns either all the Observations currently stored or a subset using pagination IF page AND size are supplied.")
+    @Parameters({
+            @Parameter(
+                    name = "page",
+                    description = "The page number to retrieve, zero-indexed. If not provided, ALL results are returned.",
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(type = SchemaType.INTEGER, minimum = "0")
+            ),
+            @Parameter(
+                    name = "size",
+                    description = "The number of observations per page. If not provided, ALL results are returned.",
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(type = SchemaType.INTEGER, minimum = "1")
+            )
+    })
     @APIResponse(
             responseCode = "200",
             description = "List of observations retrieved successfully",
@@ -149,20 +166,38 @@ public class ObservationResource {
     )
     @APIResponse(
             responseCode = "400",
-            description = "Internal error whilst retrieving Observations."
+            description = "Internal error whilst retrieving Observations or parameter error (if supplied)."
     )
     @Produces(MediaType.APPLICATION_XML)
-    public Response getAllObservations() {
-        ObservationListWrapper wrapper;
+    public Response getAllObservations(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
+        if ((page != null && size == null) || (page == null && size != null)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Both 'page' and 'size' must be provided together or neither.")
+                    .build();
+        }
+
         try {
+            if (page != null && (page < 0 || size < 1)) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Page must be 0 or greater and size must be greater than 0.")
+                        .build();
+            }
+
+            // Create query and apply pagination if required
             TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o", Observation.class);
-            //  query.setMaxResults(10); //TODO pagination
+            if (page != null) {
+                int firstResult = page * size;
+                query.setFirstResult(firstResult);
+                query.setMaxResults(size);
+            }
+
             List<Observation> observations = query.getResultList();
-            wrapper = new ObservationListWrapper(observations);
-        } catch (Exception e){
+            ObservationListWrapper wrapper = new ObservationListWrapper(observations);
+
+            return Response.ok(wrapper).build();
+        } catch (Exception e) {
             return errorResponse(e);
         }
-        return Response.ok(wrapper).build();
     }
 
     @GET
@@ -286,6 +321,34 @@ public class ObservationResource {
         }
     }
 
+    @GET
+    @Path("/collections")
+    @Operation(summary = "Retrieve all collection IDs", description = "Returns a list of unique collectionIds as a TSV (Tab Separated List).")
+    @APIResponse(
+            responseCode = "200",
+            description = "CollectionIds retrieved successfully",
+            content = @Content(
+                    mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)
+            )
+    )
+    @APIResponse(
+            responseCode = "400",
+            description = "Internal error whilst retrieving collectionIds."
+    )
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getCollections(){
+        try {
+            TypedQuery<String> query = em.createQuery("SELECT DISTINCT o.collection FROM Observation o", String.class);
+            List<String> uniqueCollections = query.getResultList();
+
+            return Response.ok()
+                    .entity(convertListToTsv(uniqueCollections))
+                    .build();
+        } catch (Exception e) {
+            return errorResponse(e);
+        }
+    }
+
     /**
      * Adds an observation to the database
      * @param observation Either a SimpleObservation or a DerivedObservation
@@ -318,5 +381,20 @@ public class ObservationResource {
                 .type(MediaType.TEXT_PLAIN)
                 .entity(e.getMessage() + " " + additional)
                 .build();
+    }
+
+    /**
+     * Converts a List of strings to a TSV
+     * @param list The list of elements to convert to a TSV string.
+     * @return list of items "e-merlin  test    ALMA"
+     */
+    public String convertListToTsv(List<String> list) {
+        // Create a StringJoiner with tab separator
+        StringJoiner joiner = new StringJoiner("\t");
+
+        for (String item : list) {
+            joiner.add(item);
+        }
+        return joiner.toString();
     }
 }

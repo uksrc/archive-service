@@ -1,4 +1,4 @@
-package org.uksrc.archive;
+package org.uksrc.archive.utils;
 
 import org.ivoa.dm.caom2.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.caom2.Observation;
