@@ -6,11 +6,16 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
+import org.ivoa.dm.caom2.caom2.Observation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.uksrc.archive.utils.ObservationListWrapper;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
@@ -28,7 +33,7 @@ public class ObservationResourceTest {
     //Caution with the id value if re-using.
     private static final String XML_OBSERVATION = "<observation>" +
             "<id>%s</id>" +
-            "<collection>e-merlin</collection>" +
+            "<collection>%s</collection>" +
             "<intent>science</intent>" +
             "<uri>auri</uri>" +
             "</observation>";
@@ -40,6 +45,9 @@ public class ObservationResourceTest {
             "<uri>auri</uri>" +
             "<members>someone</members>" +
             "</Observation>";
+
+    private static final String COLLECTION1 = "e-merlin";
+    private static final String COLLECTION2 = "testCollection";
 
     @Inject
     EntityManager em;
@@ -69,8 +77,8 @@ public class ObservationResourceTest {
     @Test
     @DisplayName("Add two observation and check two are returned.")
     public void testGettingObservationsNonEmpty() {
-        try(Response res1 = addObservationToDatabase("1234");
-            Response res2 = addObservationToDatabase("6789")) {
+        try(Response res1 = addObservationToDatabase("1234", COLLECTION1);
+            Response res2 = addObservationToDatabase("6789", COLLECTION1)) {
             assert (res1.getStatus() == Response.Status.CREATED.getStatusCode() &&
                     res2.getStatus() == Response.Status.CREATED.getStatusCode());
 
@@ -90,7 +98,7 @@ public class ObservationResourceTest {
     @DisplayName("Add an observation and check that part of the response body matches.")
     @ValueSource(strings = {XML_OBSERVATION, XML_DERIVED_OBSERVATION})
     public void testAddingObservation(String observation) {
-        String uniqueObservation = String.format(observation, "123");
+        String uniqueObservation = String.format(observation, "123", COLLECTION1);
 
         //As the /add operation returns the added observation, check the body of the response for valid values
         given()
@@ -167,7 +175,7 @@ public class ObservationResourceTest {
     @DisplayName("Add an observation, update one of its values and update, check it's been updated correctly.")
     public void testUpdatingObservation() {
         final String ID = "123";
-        String uniqueObservation = String.format(XML_OBSERVATION, ID);
+        String uniqueObservation = String.format(XML_OBSERVATION, ID, COLLECTION1);
 
         // Add an observation
         given()
@@ -209,7 +217,7 @@ public class ObservationResourceTest {
     public void testUpdatingNonExistingObservation() {
         final String ID = "1234";
 
-        String obs1 = String.format(XML_OBSERVATION, ID);
+        String obs1 = String.format(XML_OBSERVATION, ID, COLLECTION1);
         String updatedObservation = obs1.replace("science", "calibration");
 
         given()
@@ -225,7 +233,7 @@ public class ObservationResourceTest {
     @DisplayName("Attempt to delete an observation.")
     public void testDeletingObservation() {
         final String ID = "256";
-        try(Response res = addObservationToDatabase(ID)) {
+        try(Response res = addObservationToDatabase(ID, COLLECTION1)) {
             assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
 
             // Check it exists
@@ -247,6 +255,74 @@ public class ObservationResourceTest {
     }
 
     @Test
+    @DisplayName("Test paging results, first page")
+    public void testPagingResults() {
+        for (int i = 0; i < 15; i++){
+            addObservationToDatabase(String.valueOf(i), COLLECTION1);
+        }
+
+        ObservationListWrapper wrapper = when()
+                .get("/observations?page=0&size=10")
+                .then()
+                .statusCode(Response.Status.OK.getStatusCode())
+                .extract()
+                .as(new TypeRef<>() {
+                });
+
+        assert(wrapper.getObservations().size() == 10);
+    }
+
+    @Test
+    @DisplayName("Test retrieving collection Ids")
+    public void testRetrievingCollectionIds() {
+        for (int i = 0; i < 5; i++){
+            addObservationToDatabase(String.valueOf(i), COLLECTION1);
+        }
+
+        for (int i = 5; i < 12; i++){
+            addObservationToDatabase(String.valueOf(i), COLLECTION2);
+        }
+
+        String collections = when()
+                .get("/observations/collections")
+                .then()
+                .statusCode(Response.Status.OK.getStatusCode())
+                .extract()
+                .as(String.class);
+
+        String[] collectionIds = collections.split("\t");
+        List<String> names = Arrays.asList(collectionIds);
+
+        assert(names.size() == 2);
+        assert(names.contains(COLLECTION1));
+        assert(names.contains(COLLECTION2));
+    }
+
+    @Test
+    @DisplayName("Test paging results, second page")
+    public void testPagingResults2() {
+        for (int i = 0; i < 15; i++){
+            addObservationToDatabase(String.valueOf(i), COLLECTION1);
+        }
+
+        ObservationListWrapper wrapper = when()
+                .get("/observations?page=1&size=10")
+                .then()
+                .statusCode(Response.Status.OK.getStatusCode())
+                .extract()
+                .as(new TypeRef<>() {
+                });
+
+        //As 15 were added, only five should be returned for the second page (0-indexed)
+        final int size = wrapper.getObservations().size();
+        assert(size == 5);
+
+        //Ensure that the returned 5 are actually the last five
+        Observation lastEntry = wrapper.getObservations().get(size - 1);
+        assert (lastEntry.getId().equals("14"));
+    }
+
+    @Test
     @DisplayName("Attempt to delete an observation that doesn't exist.")
     public void testDeletingNonExistingObservation() {
         given()
@@ -260,10 +336,11 @@ public class ObservationResourceTest {
     /**
      * Adds a SimpleObservation to the database with the supplied observationId
      * @param observationId unique identifier for the observation
+     * @param collectionId identifier for the collection to add this observation to.
      * @return Response of 400 for failure or 201 for created successfully.
      */
-    private Response addObservationToDatabase(String observationId) {
-        String uniqueObservation = String.format(XML_OBSERVATION, observationId);
+    private Response addObservationToDatabase(String observationId, String collectionId) {
+        String uniqueObservation = String.format(XML_OBSERVATION, observationId, collectionId);
 
         try {
             given()
