@@ -87,9 +87,11 @@ Endpoints available for interaction with the archive-service.
 
 ##### Parameters
 
-> | name         |  type     | data type | description                                      |
-> |--------------|-----------|-----------|--------------------------------------------------|
-> | collectionId |  required | String    | The unique identifier of a specific collection   |
+> | name         | type     | data type | description                                                                    |
+> |--------------|----------|-----------|--------------------------------------------------------------------------------|
+> | collectionId | required | String    | The unique identifier of a specific collection                                 |
+> | page         | optional | integer   | The page index, zero-indexed                                                   |
+> | size         | optional | integer   | The number of observations to return for each page, must be greater than zero. |
 
 
 ##### Responses
