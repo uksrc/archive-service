@@ -192,10 +192,23 @@ public class ObservationResource {
     @Operation(summary = "Retrieve observations from a collection", description = "Returns a list of observations that are members of the supplied collection")
     @Parameters({
             @Parameter(
-                    name = "collection",
+                    name = "collectionId",
                     description = "The collection name to retrieve observations for",
+                    in = ParameterIn.PATH,
                     required = true,
                     example = "e-merlin"
+            ),
+            @Parameter(
+                    name = "page",
+                    description = "The page number to retrieve, zero-indexed. If not provided, ALL results are returned.",
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(type = SchemaType.INTEGER, minimum = "0")
+            ),
+            @Parameter(
+                    name = "size",
+                    description = "The number of observations per page. If not provided, ALL results are returned.",
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(type = SchemaType.INTEGER, minimum = "1")
             )
     })
     @APIResponse(
@@ -394,7 +407,7 @@ public class ObservationResource {
      * @param query query to perform
      * @return Response containing HTTP response code and expected body if successful.
      */
-    private Response performQuery(@QueryParam("page") Integer page, @QueryParam("size") Integer size, TypedQuery<Observation> query) {
+    private Response performQuery(Integer page, Integer size, TypedQuery<Observation> query) {
         try {
             if (page != null && size != null) {
                 int firstResult = page * size;
