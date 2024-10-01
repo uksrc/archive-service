@@ -5,9 +5,15 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.hibernate.PropertyValueException;
 
-public class Responses {
+/**
+ * <p>Utility class providing common helper methods for generating error messages.
+ * </p>
+ *
+ * <p>Static members intended to assist with human-readable responses for the caller.</p>
+ */
+public final class Responses {
     /**
-     * Generate an error response
+     * Generate an error response (also details which property if missing)
      * @param e Whatever exception has been thrown
      * @return A 400 response containing the exception error.
      */

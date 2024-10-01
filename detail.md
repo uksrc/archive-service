@@ -13,6 +13,17 @@ Example resources suitable for **minimal** testing (Mandatory properties only).
     <uri>auri</uri>
 </observation>
 ```
+
+Type has to be set for JSON
+```json
+{
+  "@type": "caom2:caom2.SimpleObservation",
+  "id": "myData12345",
+  "collection": "test",
+  "uri": "auri",
+  "intent": "science"
+}
+```
 #### Example Derived Observation
 ```xml
 <Observation>
@@ -123,12 +134,17 @@ Endpoints available for interaction with the archive-service.
 > | `201`         | `application/xml` | `Observation added successfully, body contains new Observation` |
 > | `400`         | `text/plain`      | `{"code":"400","message":"Bad Request"}`                        |
 
-##### Example cURL
+##### Example XML cURL
 
 > ```
 >  curl -v --header "Content-Type: application/xml" -T observation1.xml http://localhost:8080/observations/add
 > ```
 
+##### Example JSON cURL
+with JSON response also
+> ```
+>  curl -v --header "Content-Type: application/json" --header "Accept: application/json" -T observation1.xml http://localhost:8080/observations/add
+> ```
 </details>
 
 <details>

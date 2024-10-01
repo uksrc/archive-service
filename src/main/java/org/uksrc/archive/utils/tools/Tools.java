@@ -9,7 +9,13 @@ import org.uksrc.archive.utils.responses.Responses;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class Tools {
+/**
+ * <p>Utility class providing common helper methods for web requests.
+ * </p>
+ *
+ * <p>Intended to contain supportive functionality.</p>
+ */
+public final class Tools {
     /**
      * Performs the supplied query (with or without the pagination parameters)
      * @param page zero-indexed page index
