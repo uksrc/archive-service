@@ -34,7 +34,7 @@ public class ObservationResource {
     @PersistenceContext
     protected EntityManager em;  // exists for the application lifetime no need to close
 
-    @PUT
+    @POST
     @Path("/add")
     @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique.")
     @RequestBody(
@@ -61,7 +61,7 @@ public class ObservationResource {
         return submitObservation(observation);
     }
 
-    @PUT
+    @POST
     @Path("/derived/add")
     @Operation(summary = "Create a new Derived Observation", description = "Create a DERIVED observation in the database, note ID must be unique across all observations.")
     @RequestBody(
@@ -88,7 +88,7 @@ public class ObservationResource {
         return submitObservation(observation);
     }
 
-    @POST
+    @PUT
     @Path("/update/{observationId}")
     @Operation(summary = "Update an existing Observation", description = "Updates an existing observation with the supplied ID")
     @Parameter(
@@ -285,7 +285,7 @@ public class ObservationResource {
     }
 
     @DELETE
-    @Path("/delete/{observationId}")
+    @Path("/{observationId}")
     @Operation(summary = "Delete an existing observation")
     @Parameters({
             @Parameter(

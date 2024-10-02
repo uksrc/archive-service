@@ -114,7 +114,7 @@ Endpoints available for interaction with the archive-service.
 #### Adding new Observations
 
 <details>
- <summary><code>PUT</code> <code><b>/observations/add</b></code> <code>(Add a new observation)</code></summary>
+ <summary><code>POST</code> <code><b>/observations/add</b></code> <code>(Add a new observation)</code></summary>
 
 ##### Responses
 
@@ -132,7 +132,7 @@ Endpoints available for interaction with the archive-service.
 </details>
 
 <details>
- <summary><code>PUT</code> <code><b>/observations/derived/add</b></code> <code>(Add a new derived observation)</code></summary>
+ <summary><code>POST</code> <code><b>/observations/derived/add</b></code> <code>(Add a new derived observation)</code></summary>
 
 ##### Responses
 
@@ -154,7 +154,7 @@ Endpoints available for interaction with the archive-service.
 #### Updating observations
 
 <details>
- <summary><code>POST</code> <code><b>/observations/update/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
+ <summary><code>PUT</code> <code><b>/observations/update/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
 
 ##### Parameters
 
