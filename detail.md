@@ -184,7 +184,7 @@ Endpoints available for interaction with the archive-service.
 #### Deleting Observations
 
 <details>
- <summary><code>GET</code> <code><b>/observations/delete/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
+ <summary><code>GET</code> <code><b>/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
 
 ##### Parameters
 
