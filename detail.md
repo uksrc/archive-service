@@ -5,16 +5,17 @@ Details of the functionality of the archive-service endpoints.
 ------------------------------------------------------------------------------------------
 Example resources suitable for **minimal** testing (Mandatory properties only).
 #### Example Simple Observation
+Namespace details must conform with the current vo-dml model used.
 ```xml
-<observation>
-    <id>123456</id>
+<SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.SimpleObservation">
+    <id>988</id>
     <collection>e-merlin</collection>
-    <intent>science</intent>
     <uri>auri</uri>
-</observation>
+    <intent>science</intent>
+</SimpleObservation>
 ```
 
-Type has to be set for JSON
+*@type* has to be set for JSON
 ```json
 {
   "@type": "caom2:caom2.SimpleObservation",
@@ -26,13 +27,14 @@ Type has to be set for JSON
 ```
 #### Example Derived Observation
 ```xml
-<Observation>
-    <id>999</id>
-    <collection>e-merlin</collection>
-    <intent>science</intent>
+<DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.DerivedObservation">
+    <id>10</id>
+    <collection>test</collection>
     <uri>auri</uri>
-    <members>anyURI</members>
-</Observation>
+    <intent>science</intent>
+    <members>jbo-simple1</members>
+    <members>jbo-simple2</members>
+</DerivedObservation>
 ```
 ------------------------------------------------------------------------------------------
 ### REST API details  

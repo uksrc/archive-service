@@ -7,6 +7,9 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
 import org.ivoa.dm.caom2.Caom2Model;
 
+/**
+ * Helper class for the automatic xml/json to Java object
+ */
 public class CustomObjectMapper {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory
             .getLogger(CustomObjectMapper.class);

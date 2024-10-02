@@ -20,7 +20,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.ivoa.dm.caom2.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.caom2.Observation;
-import org.ivoa.dm.caom2.caom2.ObservationIntentType;
 import org.ivoa.dm.caom2.caom2.SimpleObservation;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.responses.Responses;
@@ -416,21 +415,35 @@ public class ObservationResource {
         }
     }
 
+    //Test method only - remove when required
   /*  @GET
     @Path("/collections/test")
     @Produces(MediaType.APPLICATION_XML)
     public Response getObservation() {
         // Create a SimpleObservation object (could be fetched from DB or any source)
-        SimpleObservation observation = new SimpleObservation();
+        DerivedObservation observation = new DerivedObservation();
         observation.setId("10");
         observation.setCollection("test");
         observation.setIntent(ObservationIntentType.SCIENCE);
         observation.setUri("auri");
-        //observation.setMembers(new ArrayList<String>("someone"));
+
+        List<String> members = new ArrayList<>();
+        members.add("jbo-simple1");
+        members.add("jbo-simple2");
+        observation.setMembers(members);
 
         // Return as JSON
         return Response.ok(observation).build();
     }*/
+
+    @PUT
+    @Path("/addany")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces({MediaType.APPLICATION_XML})
+    @Transactional
+    public Response addAny(Observation observation) {
+        return submitObservation(observation);
+    }
 
 
     /**
@@ -450,6 +463,12 @@ public class ObservationResource {
                 .build();
     }
 
+    /**
+     * Updates the observation with the supplied Id with the details supplied
+     * @param id The observation to update
+     * @param observation The body of the observation to update
+     * @return Response containing the status of operation
+     */
     private Response updateObservation(String id, Observation observation) {
         try {
             //Only update IF found
