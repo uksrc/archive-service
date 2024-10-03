@@ -31,20 +31,20 @@ import static org.hamcrest.Matchers.containsString;
 public class ObservationResourceTest {
 
     //Caution with the id value if re-using.
-    private static final String XML_OBSERVATION = "<observation>" +
+    private static final String XML_OBSERVATION = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.SimpleObservation\">" +
             "<id>%s</id>" +
             "<collection>%s</collection>" +
             "<intent>science</intent>" +
             "<uri>auri</uri>" +
-            "</observation>";
+            "</SimpleObservation>";
 
-    private static final String XML_DERIVED_OBSERVATION = "<Observation>" +
+    private static final String XML_DERIVED_OBSERVATION = "<DerivedObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.DerivedObservation\">" +
             "<id>%s</id>" +
             "<collection>e-merlin</collection>" +
             "<intent>science</intent>" +
             "<uri>auri</uri>" +
             "<members>someone</members>" +
-            "</Observation>";
+            "</DerivedObservation>";
 
     private static final String COLLECTION1 = "e-merlin";
     private static final String COLLECTION2 = "testCollection";
@@ -105,7 +105,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(uniqueObservation)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.CREATED.getStatusCode())
                 .body("simpleObservation.id", is("123"))   // XML expectation (remove 'simpleObservation.' for JSON)
@@ -122,7 +122,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(duplicateObservation)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.CREATED.getStatusCode())
                 .body("simpleObservation.id", is("256"));
@@ -132,7 +132,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(duplicateObservation)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.BAD_REQUEST.getStatusCode())
                 .body(containsString("duplicate key value violates unique constraint"));
@@ -182,7 +182,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(uniqueObservation)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.CREATED.getStatusCode())
                 .body("simpleObservation.id", is(ID))
@@ -194,7 +194,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(updatedObservation)
                 .when()
-                .put(("/observations/update/" + ID))
+                .put(("/observations/" + ID))
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
                 .body("simpleObservation.id", is(ID))
@@ -224,7 +224,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(updatedObservation)
                 .when()
-                .put(("/observations/update/" + ID))
+                .put(("/observations/" + ID))
                 .then()
                 .statusCode(Response.Status.NOT_FOUND.getStatusCode());
     }
@@ -329,7 +329,7 @@ public class ObservationResourceTest {
         given()
                 .header("Content-Type", "application/xml")
                 .when()
-                .delete(("/observations/delete/" + "9876"))
+                .delete(("/observations/" + "9876"))
                 .then()
                 .statusCode(Response.Status.NOT_FOUND.getStatusCode());
     }
@@ -348,7 +348,7 @@ public class ObservationResourceTest {
                     .header("Content-Type", "application/xml")
                     .body(uniqueObservation)
                     .when()
-                    .post("/observations/add")
+                    .post("/observations")
                     .then()
                     .statusCode(Response.Status.CREATED.getStatusCode())
                     .body("simpleObservation.id", is(observationId));
