@@ -127,7 +127,7 @@ Endpoints available for interaction with the archive-service.
 #### Adding new Observations
 
 <details>
- <summary><code>PUT</code> <code><b>/observations/add</b></code> <code>(Add a new observation)</code></summary>
+ <summary><code>POST</code> <code><b>/observations/add</b></code> <code>(Add a new observation)</code></summary>
 
 ##### Responses
 
@@ -150,7 +150,7 @@ with JSON response also
 </details>
 
 <details>
- <summary><code>PUT</code> <code><b>/observations/derived/add</b></code> <code>(Add a new derived observation)</code></summary>
+ <summary><code>POST</code> <code><b>/observations/derived/add</b></code> <code>(Add a new derived observation)</code></summary>
 
 ##### Responses
 
@@ -172,7 +172,7 @@ with JSON response also
 #### Updating observations
 
 <details>
- <summary><code>POST</code> <code><b>/observations/update/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
+ <summary><code>PUT</code> <code><b>/observations/update/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
 
 ##### Parameters
 
@@ -202,7 +202,7 @@ with JSON response also
 #### Deleting Observations
 
 <details>
- <summary><code>GET</code> <code><b>/observations/delete/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
+ <summary><code>GET</code> <code><b>/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
 
 ##### Parameters
 

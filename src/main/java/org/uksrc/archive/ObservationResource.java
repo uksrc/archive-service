@@ -13,20 +13,19 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.hibernate.PropertyValueException;
 import org.ivoa.dm.caom2.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.caom2.Observation;
 import org.ivoa.dm.caom2.caom2.SimpleObservation;
+import jakarta.validation.constraints.NotNull;
 import org.uksrc.archive.utils.ObservationListWrapper;
-import org.uksrc.archive.utils.responses.Responses;
-import org.uksrc.archive.utils.tools.Tools;
 
-import java.util.List;
+import java.util.*;
 
 
 @Path("/observations")
@@ -35,11 +34,10 @@ public class ObservationResource {
     @PersistenceContext
     protected EntityManager em;  // exists for the application lifetime no need to close
 
-    @PUT
-    @Path("/simple/add")
+    @POST
     @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique.")
     @RequestBody(
-            description = "XML or JSON representation of the Observation",
+            description = "XML representation of the Observation",
             required = true,
             content = {
                     @Content(
@@ -70,8 +68,8 @@ public class ObservationResource {
             responseCode = "400",
             description = "Invalid input"
     )
-    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_XML)
     @Transactional
     public Response addObservation(SimpleObservation observation) {
         return submitObservation(observation);
@@ -79,7 +77,7 @@ public class ObservationResource {
 
     @PUT
     @Path("/derived/add")
-    @Operation(summary = "Create a new Derived Observation", description = "Create a DERIVED observation in the database. Note, ID must be unique across all observations.")
+    @Operation(summary = "Create a new Derived Observation", description = "Create a DERIVED observation in the database, note ID must be unique across all observations.")
     @RequestBody(
             description = "XML representation of the Derived Observation",
             required = true,
@@ -110,41 +108,8 @@ public class ObservationResource {
         return submitObservation(observation);
     }
 
-    @POST
-    @Path("/add")
-    @Operation(summary = "Create a new Observation", description = "Create an observation in the database. Note, ID must be unique across all observations. The observation can be either Simple or Derived but the XML namespaces/JSON types must be present.")
-    @RequestBody(
-            description = "XML or JSON representation of the Observation",
-            required = true,
-            content = {
-                    @Content(
-                            mediaType = MediaType.APPLICATION_XML,
-                            schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
-                    ),
-                    @Content(
-                            mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
-                    )
-            }
-    )
-    @APIResponse(
-            responseCode = "201",
-            description = "Observation created successfully",
-            content = @Content(schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class}))
-    )
-    @APIResponse(
-            responseCode = "400",
-            description = "Invalid input"
-    )
-    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Transactional
-    public Response addAny(Observation observation) {
-        return submitObservation(observation);
-    }
-
-    @POST
-    @Path("/simple/update/{observationId}")
+    @PUT
+    @Path("{observationId}")
     @Operation(summary = "Update an existing Observation", description = "Updates an existing observation with the supplied ID")
     @Parameter(
             name = "observationId",
@@ -155,21 +120,15 @@ public class ObservationResource {
     @RequestBody(
             description = "XML representation of the Observation",
             required = true,
-            content = {
-                    @Content(
-                            mediaType = MediaType.APPLICATION_XML,
-                            schema = @Schema(implementation = SimpleObservation.class)
-                    ),
-                    @Content(
-                            mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(implementation = SimpleObservation.class)
-                    )
-            }
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_XML,
+                    schema = @Schema(implementation = Observation.class)
+            )
     )
     @APIResponse(
             responseCode = "200",
             description = "Observation updated successfully",
-            content = @Content(schema = @Schema(implementation = SimpleObservation.class))
+            content = @Content(schema = @Schema(implementation = Observation.class))
     )
     @APIResponse(
             responseCode = "404",
@@ -179,54 +138,26 @@ public class ObservationResource {
             responseCode = "400",
             description = "Invalid input"
     )
-    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_XML)
     @Transactional
-    public Response updateSimpleObservation(@PathParam("observationId") String id, SimpleObservation observation) {
-        return updateObservation(id, observation);
-    }
+    public Response updateObservation(@PathParam("observationId") String id, SimpleObservation observation) {
+        try {
+            //Only update IF found
+            Observation existing = em.find(Observation.class, id);
+            if (existing != null && observation != null) {
+                observation.setId(id);
+                em.merge(observation);
+                return Response.ok(observation).build();
+            }
+        } catch (Exception e) {
+            return errorResponse(e);
+        }
 
-    @POST
-    @Path("/derived/update/{observationId}")
-    @Operation(summary = "Update an existing DerivedObservation", description = "Updates an existing observation with the supplied ID")
-    @Parameter(
-            name = "observationId",
-            description = "ID of the Observation to be updated",
-            required = true,
-            example = "123"
-    )
-    @RequestBody(
-            description = "XML representation of the Observation",
-            required = true,
-            content = {
-                    @Content(
-                            mediaType = MediaType.APPLICATION_XML,
-                            schema = @Schema(implementation = DerivedObservation.class)
-                    ),
-                    @Content(
-                            mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(implementation = DerivedObservation.class)
-                    )
-            }
-    )
-    @APIResponse(
-            responseCode = "200",
-            description = "Observation updated successfully",
-            content = @Content(schema = @Schema(implementation = DerivedObservation.class))
-    )
-    @APIResponse(
-            responseCode = "404",
-            description = "An Observation with the supplied ID has not been found."
-    )
-    @APIResponse(
-            responseCode = "400",
-            description = "Invalid input"
-    )
-    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Transactional
-    public Response updateDerivedObservation(@PathParam("observationId") String id, DerivedObservation observation) {
-        return updateObservation(id, observation);
+        return Response.status(Response.Status.NOT_FOUND)
+                .type(MediaType.TEXT_PLAIN)
+                .entity("Observation not found")
+                .build();
     }
 
     @GET
@@ -249,35 +180,30 @@ public class ObservationResource {
     @APIResponse(
             responseCode = "200",
             description = "List of observations retrieved successfully",
-            content = {
-                    @Content(
-                            mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = ObservationListWrapper.class)
-                    ),
-                    @Content(
-                            mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ObservationListWrapper.class)
-                    )
-            }
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = ObservationListWrapper.class)
+            )
     )
     @APIResponse(
             responseCode = "400",
             description = "Internal error whilst retrieving Observations or parameter error (if supplied)."
     )
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_XML)
     public Response getAllObservations(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         if ((page != null && size == null) || (page == null && size != null)) {
-            return Responses.errorResponse("Both 'page' and 'size' must be provided together or neither.");
+            return errorResponse("Both 'page' and 'size' must be provided together or neither.");
         }
 
         try {
             if (page != null && (page < 0 || size < 1)) {
-                return Responses.errorResponse("Page must be 0 or greater and size must be greater than 0.");
+                return errorResponse("Page must be 0 or greater and size must be greater than 0.");
             }
 
             // Create query and apply pagination if required
             TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o", Observation.class);
-            return Tools.performQuery(page, size, query);
+            return performQuery(page, size, query);
         } catch (Exception e) {
-            return Responses.errorResponse(e);
+            return errorResponse(e);
         }
     }
 
@@ -308,41 +234,36 @@ public class ObservationResource {
     @APIResponse(
             responseCode = "200",
             description = "List of observations retrieved successfully",
-            content = {
-                    @Content(
-                            mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = ObservationListWrapper.class)
-                    ),
-                    @Content(
-                            mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ObservationListWrapper.class)
-                    )
-            }
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = ObservationListWrapper.class)
+            )
     )
     @APIResponse(
             responseCode = "400",
             description = "Internal error whilst retrieving Observations."
     )
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_XML)
     public Response getObservations(@PathParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         if ((page != null && size == null) || (page == null && size != null)) {
-            return Responses.errorResponse("Both 'page' and 'size' must be provided together or neither.");
+            return errorResponse("Both 'page' and 'size' must be provided together or neither.");
         }
 
         try {
             if (page != null && (page < 0 || size < 1)) {
-                return Responses.errorResponse("Page must be 0 or greater and size must be greater than 0.");
+                return errorResponse("Page must be 0 or greater and size must be greater than 0.");
             }
 
             TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o WHERE o.collection = :collection", Observation.class);
             query.setParameter("collection", collection);
-            return Tools.performQuery(page, size, query);
+            return performQuery(page, size, query);
         } catch (Exception e) {
-            return Responses.errorResponse(e);
+            return errorResponse(e);
         }
     }
 
     @GET
     @Path("/{observationId}")
-    @Operation(summary = "Retrieve an observation", description = "Returns an observation with the supplied ID.")
+    @Operation(summary = "Retrieve observations from a collection", description = "Returns a list of observations that are members of the supplied collection")
     @Parameters({
             @Parameter(
                     name = "observationId",
@@ -354,14 +275,9 @@ public class ObservationResource {
     @APIResponse(
             responseCode = "200",
             description = "Observation retrieved successfully",
-            content = {
-                    @Content(
-                        mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = Observation.class)
-                    ),
-                    @Content(
-                        mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Observation.class)
-                    )
-            }
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = Observation.class)
+            )
     )
     @APIResponse(
             responseCode = "404",
@@ -371,7 +287,7 @@ public class ObservationResource {
             responseCode = "400",
             description = "Internal error whilst retrieving Observations."
     )
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_XML)
     public Response getObservation(@PathParam("observationId") String observationId) {
         try {
             Observation observation = em.find(Observation.class, observationId);
@@ -384,7 +300,7 @@ public class ObservationResource {
                         .entity("Observation with ID " + observationId + " not found").build();
             }
         } catch (Exception e) {
-            return Responses.errorResponse(e);
+            return errorResponse(e);
         }
     }
 
@@ -425,7 +341,7 @@ public class ObservationResource {
                         .build();
             }
         } catch (Exception e) {
-            return Responses.errorResponse(e);
+            return errorResponse(e);
         }
     }
 
@@ -448,36 +364,15 @@ public class ObservationResource {
         try {
             TypedQuery<String> query = em.createQuery("SELECT DISTINCT o.collection FROM Observation o", String.class);
             List<String> uniqueCollections = query.getResultList();
-            String tabbed = Tools.convertListToTsv(uniqueCollections);
 
             return Response.ok()
                     .type(MediaType.TEXT_PLAIN)
-                    .entity(tabbed).build();
+                    .entity(convertListToTsv(uniqueCollections))
+                    .build();
         } catch (Exception e) {
-            return Responses.errorResponse(e);
+            return errorResponse(e);
         }
     }
-
-    //Test method only - remove when required
-  /*  @GET
-    @Path("/collections/test")
-    @Produces(MediaType.APPLICATION_XML)
-    public Response getObservation() {
-        // Create a SimpleObservation object (could be fetched from DB or any source)
-        DerivedObservation observation = new DerivedObservation();
-        observation.setId("10");
-        observation.setCollection("test");
-        observation.setIntent(ObservationIntentType.SCIENCE);
-        observation.setUri("auri");
-
-        List<String> members = new ArrayList<>();
-        members.add("jbo-simple1");
-        members.add("jbo-simple2");
-        observation.setMembers(members);
-
-        // Return as JSON
-        return Response.ok(observation).build();
-    }*/
 
     /**
      * Adds an observation to the database
@@ -489,7 +384,7 @@ public class ObservationResource {
             em.persist(observation);
             em.flush();
         } catch (Exception e) {
-            return Responses.errorResponse(e);
+            return errorResponse(e);
         }
         return Response.status(Response.Status.CREATED)
                 .entity(observation)
@@ -497,27 +392,69 @@ public class ObservationResource {
     }
 
     /**
-     * Updates the observation with the supplied Id with the details supplied
-     * @param id The observation to update
-     * @param observation The body of the observation to update
-     * @return Response containing the status of operation
+     * Generate an error response
+     * @param e Whatever exception has been thrown
+     * @return A 400 response containing the exception error.
      */
-    private Response updateObservation(String id, Observation observation) {
-        try {
-            //Only update IF found
-            Observation existing = em.find(Observation.class, id);
-            if (existing != null && observation != null) {
-                observation.setId(id);
-                em.merge(observation);
-                return Response.ok(observation).build();
-            }
-        } catch (Exception e) {
-            return Responses.errorResponse(e);
+    private Response errorResponse (@NotNull Exception e){
+        String additional = "";
+        if (e instanceof PropertyValueException){
+            //Inform caller of exact property that's missing/invalid
+            additional = ((PropertyValueException)e).getPropertyName();
         }
-
-        return Response.status(Response.Status.NOT_FOUND)
+        return Response.status(Response.Status.BAD_REQUEST)
                 .type(MediaType.TEXT_PLAIN)
-                .entity("Observation not found")
+                .entity(e.getMessage() + " " + additional)
                 .build();
+    }
+
+    /**
+     * Generate an error message
+     * @param message Message to return to the caller.
+     * @return A 400 response containing the supplied message
+     */
+    private Response errorResponse (@NotNull String message){
+        return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.TEXT_PLAIN)
+                .entity(message)
+                .build();
+    }
+
+    /**
+     * Performs the supplied query (with or without the pagination parameters)
+     * @param page zero-indexed page index
+     * @param size number of entries per page
+     * @param query query to perform
+     * @return Response containing HTTP response code and expected body if successful.
+     */
+    private Response performQuery(Integer page, Integer size, TypedQuery<Observation> query) {
+        try {
+            if (page != null && size != null) {
+                int firstResult = page * size;
+                query.setFirstResult(firstResult);
+                query.setMaxResults(size);
+            }
+
+            List<Observation> observations = query.getResultList();
+            ObservationListWrapper wrapper = new ObservationListWrapper(observations);
+
+            return Response.ok(wrapper).build();
+        } catch (Exception e) {
+            return errorResponse(e);
+        }
+    }
+
+    /**
+     * Converts a List of strings to a TSV
+     * @param list The list of elements to convert to a TSV string.
+     * @return list of items "e-merlin  test    ALMA"
+     */
+    public String convertListToTsv(List<String> list) {
+        StringJoiner joiner = new StringJoiner("\t");
+
+        for (String item : list) {
+            joiner.add(item);
+        }
+        return joiner.toString();
     }
 }
