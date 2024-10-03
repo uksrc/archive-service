@@ -13,6 +13,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
@@ -43,7 +44,16 @@ public class ObservationResource {
             content = {
                     @Content(
                             mediaType = MediaType.APPLICATION_XML,
-                            schema = @Schema(implementation = SimpleObservation.class)
+                            schema = @Schema(implementation = SimpleObservation.class),
+                            examples = @ExampleObject(
+                                    name = "XML Example - SimpleObservation",
+                                    value = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.SimpleObservation\">\n" +
+                                            "    <id>1</id>\n" +
+                                            "    <collection>test</collection>\n" +
+                                            "    <uri>auri</uri>\n" +
+                                            "    <intent>science</intent>\n" +
+                                            "</SimpleObservation>"
+                            )
                     ),
                     @Content(
                             mediaType = MediaType.APPLICATION_JSON,
@@ -97,6 +107,39 @@ public class ObservationResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Transactional
     public Response addObservation(DerivedObservation observation) {
+        return submitObservation(observation);
+    }
+
+    @POST
+    @Path("/add")
+    @Operation(summary = "Create a new Observation", description = "Create an observation in the database. Note, ID must be unique across all observations. The observation can be either Simple or Derived but the XML namespaces/JSON types must be present.")
+    @RequestBody(
+            description = "XML or JSON representation of the Observation",
+            required = true,
+            content = {
+                    @Content(
+                            mediaType = MediaType.APPLICATION_XML,
+                            schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
+                    ),
+                    @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
+                    )
+            }
+    )
+    @APIResponse(
+            responseCode = "201",
+            description = "Observation created successfully",
+            content = @Content(schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class}))
+    )
+    @APIResponse(
+            responseCode = "400",
+            description = "Invalid input"
+    )
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Transactional
+    public Response addAny(Observation observation) {
         return submitObservation(observation);
     }
 
@@ -435,16 +478,6 @@ public class ObservationResource {
         // Return as JSON
         return Response.ok(observation).build();
     }*/
-
-    @PUT
-    @Path("/addany")
-    @Consumes(MediaType.APPLICATION_XML)
-    @Produces({MediaType.APPLICATION_XML})
-    @Transactional
-    public Response addAny(Observation observation) {
-        return submitObservation(observation);
-    }
-
 
     /**
      * Adds an observation to the database
