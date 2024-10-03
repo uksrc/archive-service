@@ -35,7 +35,6 @@ public class ObservationResource {
     protected EntityManager em;  // exists for the application lifetime no need to close
 
     @POST
-    @Path("/add")
     @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique.")
     @RequestBody(
             description = "XML representation of the Observation",
@@ -62,7 +61,7 @@ public class ObservationResource {
     }
 
     @POST
-    @Path("/derived/add")
+    @Path("/derived/")
     @Operation(summary = "Create a new Derived Observation", description = "Create a DERIVED observation in the database, note ID must be unique across all observations.")
     @RequestBody(
             description = "XML representation of the Derived Observation",
@@ -89,7 +88,7 @@ public class ObservationResource {
     }
 
     @PUT
-    @Path("/update/{observationId}")
+    @Path("{observationId}")
     @Operation(summary = "Update an existing Observation", description = "Updates an existing observation with the supplied ID")
     @Parameter(
             name = "observationId",
@@ -141,7 +140,6 @@ public class ObservationResource {
     }
 
     @GET
-    @Path("/")
     @Operation(summary = "Retrieve list(s) of observations", description = "Returns either all the Observations currently stored or a subset using pagination IF page AND size are supplied.")
     @Parameters({
             @Parameter(
