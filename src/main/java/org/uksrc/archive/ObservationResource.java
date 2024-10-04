@@ -19,6 +19,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.ivoa.dm.caom2.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.caom2.Observation;
 import org.ivoa.dm.caom2.caom2.SimpleObservation;
 import org.uksrc.archive.utils.ObservationListWrapper;
@@ -35,41 +36,84 @@ public class ObservationResource {
     protected EntityManager em;  // exists for the application lifetime no need to close
 
     @POST
-    @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique.")
+    @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique and XML namespace/JSON type supplied.")
     @RequestBody(
             description = "XML representation of the Observation",
             required = true,
             content = {
                     @Content(
                             mediaType = MediaType.APPLICATION_XML,
-                            schema = @Schema(implementation = SimpleObservation.class),
-                            examples = @ExampleObject(
-                                    name = "XML Example - SimpleObservation",
-                                    value = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.SimpleObservation\">\n" +
-                                            "    <id>1</id>\n" +
-                                            "    <collection>test</collection>\n" +
-                                            "    <uri>auri</uri>\n" +
-                                            "    <intent>science</intent>\n" +
-                                            "</SimpleObservation>"
-                            )
+                            schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class}),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "XML Example - SimpleObservation",
+                                            value = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.SimpleObservation\">" +
+                                                    "<id>1</id>" +
+                                                    "<collection>test</collection>" +
+                                                    "<uri>auri</uri>" +
+                                                    "<intent>science</intent>" +
+                                                    "</SimpleObservation>"
+                                    ),
+                                    @ExampleObject(
+                                            name = "XML Example - DerivedObservation",
+                                            value = "<DerivedObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.DerivedObservation\">" +
+                                                    "<id>1</id>" +
+                                                    "<collection>test</collection>" +
+                                                    "<uri>auri</uri>" +
+                                                    "<intent>science</intent>" +
+                                                    "<members>jbo-simple1</members>" +
+                                                    "<members>jbo-simple2</members>" +
+                                                "</DerivedObservation>"
+                                    )
+                            }
                     ),
                     @Content(
                             mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(implementation = SimpleObservation.class)
+                            schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class}),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "JSON Example - SimpleObservation",
+                                            value = """
+                                                     {
+                                                        "@type": "caom2:caom2.SimpleObservation",
+                                                        "id": "3",
+                                                        "collection": "test",
+                                                        "uri": "auri",
+                                                        "intent": "science",
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "JSON Example - DerivedObservation",
+                                            value = """
+                                                    {
+                                                        "@type": "caom2:caom2.DerivedObservation",
+                                                        "id": "3",
+                                                        "collection": "test",
+                                                        "uri": "auri",
+                                                        "intent": "science",
+                                                        "members": [
+                                                            "jbo-simple1",
+                                                            "jbo-simple2"
+                                                        ]
+                                                    }
+                                                """
+                                    )
+                            }
                     )
             }
     )
     @APIResponse(
             responseCode = "201",
             description = "Observation created successfully",
-            content = @Content(schema = @Schema(implementation = SimpleObservation.class))
+            content = @Content(schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class}))
     )
     @APIResponse(
             responseCode = "400",
             description = "Invalid input"
     )
-    @Consumes(MediaType.APPLICATION_XML)
-    @Produces(MediaType.APPLICATION_XML)
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Transactional
     public Response addObservation(Observation observation) {
         return submitObservation(observation);
@@ -87,15 +131,73 @@ public class ObservationResource {
     @RequestBody(
             description = "XML representation of the Observation",
             required = true,
-            content = @Content(
-                    mediaType = MediaType.APPLICATION_XML,
-                    schema = @Schema(implementation = Observation.class)
-            )
+            content = {
+                    @Content(
+                            mediaType = MediaType.APPLICATION_XML,
+                            schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class}),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "XML Example - SimpleObservation",
+                                            value = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.SimpleObservation\">" +
+                                                    "<id>1</id>" +
+                                                    "<collection>test</collection>" +
+                                                    "<uri>auri</uri>" +
+                                                    "<intent>science</intent>" +
+                                                    "</SimpleObservation>"
+                                    ),
+                                    @ExampleObject(
+                                            name = "XML Example - DerivedObservation",
+                                            value = "<DerivedObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.DerivedObservation\">" +
+                                                    "<id>1</id>" +
+                                                    "<collection>test</collection>" +
+                                                    "<uri>auri</uri>" +
+                                                    "<intent>science</intent>" +
+                                                    "<members>jbo-simple1</members>" +
+                                                    "<members>jbo-simple2</members>" +
+                                                    "</DerivedObservation>"
+                                    )
+                            }
+                    ),
+                    @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class}),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "JSON Example - SimpleObservation",
+                                            value = """
+                                                     {
+                                                        "@type": "caom2:caom2.SimpleObservation",
+                                                        "id": "3",
+                                                        "collection": "test",
+                                                        "uri": "auri",
+                                                        "intent": "science",
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "JSON Example - DerivedObservation",
+                                            value = """
+                                                    {
+                                                        "@type": "caom2:caom2.DerivedObservation",
+                                                        "id": "3",
+                                                        "collection": "test",
+                                                        "uri": "auri",
+                                                        "intent": "science",
+                                                        "members": [
+                                                            "jbo-simple1",
+                                                            "jbo-simple2"
+                                                        ]
+                                                    }
+                                                """
+                                    )
+                            }
+                    )
+            }
     )
     @APIResponse(
             responseCode = "200",
             description = "Observation updated successfully",
-            content = @Content(schema = @Schema(implementation = Observation.class))
+            content = @Content(schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class}))
     )
     @APIResponse(
             responseCode = "404",
@@ -105,8 +207,8 @@ public class ObservationResource {
             responseCode = "400",
             description = "Invalid input"
     )
-    @Consumes(MediaType.APPLICATION_XML)
-    @Produces(MediaType.APPLICATION_XML)
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Transactional
     public Response updateObservation(@PathParam("observationId") String id, SimpleObservation observation) {
         try {
@@ -147,15 +249,21 @@ public class ObservationResource {
     @APIResponse(
             responseCode = "200",
             description = "List of observations retrieved successfully",
-            content = @Content(
-                    mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = ObservationListWrapper.class)
-            )
+            content = {
+                    @Content(
+                            //Technically it should be ObservationListWrapper containing a list of:
+                            mediaType = MediaType.APPLICATION_XML, schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
+                    ),
+                    @Content(
+                            mediaType = MediaType.APPLICATION_JSON, schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
+                    )
+            }
     )
     @APIResponse(
             responseCode = "400",
             description = "Internal error whilst retrieving Observations or parameter error (if supplied)."
     )
-    @Produces(MediaType.APPLICATION_XML)
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Response getAllObservations(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         if ((page != null && size == null) || (page == null && size != null)) {
             return Responses.errorResponse("Both 'page' and 'size' must be provided together or neither.");
@@ -201,15 +309,21 @@ public class ObservationResource {
     @APIResponse(
             responseCode = "200",
             description = "List of observations retrieved successfully",
-            content = @Content(
-                    mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = ObservationListWrapper.class)
-            )
+            content = {
+                    @Content(
+                            //Technically it should be ObservationListWrapper containing a list of:
+                            mediaType = MediaType.APPLICATION_XML, schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
+                    ),
+                    @Content(
+                            mediaType = MediaType.APPLICATION_JSON, schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
+                    )
+            }
     )
     @APIResponse(
             responseCode = "400",
             description = "Internal error whilst retrieving Observations."
     )
-    @Produces(MediaType.APPLICATION_XML)
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Response getObservations(@PathParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         if ((page != null && size == null) || (page == null && size != null)) {
             return Responses.errorResponse("Both 'page' and 'size' must be provided together or neither.");
@@ -242,9 +356,14 @@ public class ObservationResource {
     @APIResponse(
             responseCode = "200",
             description = "Observation retrieved successfully",
-            content = @Content(
-                    mediaType = MediaType.APPLICATION_XML, schema = @Schema(implementation = Observation.class)
-            )
+            content = {
+                    @Content(
+                            mediaType = MediaType.APPLICATION_XML, schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
+                    ),
+                    @Content(
+                            mediaType = MediaType.APPLICATION_JSON, schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
+                    )
+            }
     )
     @APIResponse(
             responseCode = "404",
@@ -254,7 +373,7 @@ public class ObservationResource {
             responseCode = "400",
             description = "Internal error whilst retrieving Observations."
     )
-    @Produces(MediaType.APPLICATION_XML)
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Response getObservation(@PathParam("observationId") String observationId) {
         try {
             Observation observation = em.find(Observation.class, observationId);
