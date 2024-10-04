@@ -237,6 +237,12 @@ public class ObservationResource {
     @Operation(summary = "Retrieve list(s) of observations", description = "Returns either all the Observations currently stored or a subset using pagination IF page AND size are supplied.")
     @Parameters({
             @Parameter(
+                    name = "collectionId",
+                    description = "Filter the results by a collection id if required.",
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(type = SchemaType.STRING)
+            ),
+            @Parameter(
                     name = "page",
                     description = "The page number to retrieve, zero-indexed. If not provided, ALL results are returned.",
                     in = ParameterIn.QUERY,
@@ -267,78 +273,22 @@ public class ObservationResource {
             description = "Internal error whilst retrieving Observations or parameter error (if supplied)."
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    public Response getAllObservations(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
-        if ((page != null && size == null) || (page == null && size != null)) {
+    public Response getAllObservations(@QueryParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
+        //Both page and size need to be supplied OR neither
+        if ((page != null) ^ (size != null)) {
             return Responses.errorResponse("Both 'page' and 'size' must be provided together or neither.");
+        } else if ((page != null && page < 0) || (size != null && size < 1)) {
+            return Responses.errorResponse("Page must be 0 or greater and size must be greater than 0.");
         }
 
         try {
-            if (page != null && (page < 0 || size < 1)) {
-                return Responses.errorResponse("Page must be 0 or greater and size must be greater than 0.");
+            TypedQuery<Observation> query;
+            if (collection != null && !collection.isEmpty()) {
+                query = em.createQuery("SELECT o FROM Observation o WHERE o.collection = :collection", Observation.class);
+                query.setParameter("collection", collection);
+            } else {
+                query = em.createQuery("SELECT o FROM Observation o", Observation.class);
             }
-
-            // Create query and apply pagination if required
-            TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o", Observation.class);
-            return Tools.performQuery(page, size, query);
-        } catch (Exception e) {
-            return Responses.errorResponse(e);
-        }
-    }
-
-    @GET
-    @Path("/collection/{collectionId}")
-    @Operation(summary = "Retrieve observations from a collection", description = "Returns a list of observations that are members of the supplied collection")
-    @Parameters({
-            @Parameter(
-                    name = "collectionId",
-                    description = "The collection name to retrieve observations for",
-                    in = ParameterIn.PATH,
-                    required = true,
-                    example = "e-merlin"
-            ),
-            @Parameter(
-                    name = "page",
-                    description = "The page number to retrieve, zero-indexed. If not provided, ALL results are returned.",
-                    in = ParameterIn.QUERY,
-                    schema = @Schema(type = SchemaType.INTEGER, minimum = "0")
-            ),
-            @Parameter(
-                    name = "size",
-                    description = "The number of observations per page. If not provided, ALL results are returned.",
-                    in = ParameterIn.QUERY,
-                    schema = @Schema(type = SchemaType.INTEGER, minimum = "1")
-            )
-    })
-    @APIResponse(
-            responseCode = "200",
-            description = "List of observations retrieved successfully",
-            content = {
-                    @Content(
-                            //Technically it should be ObservationListWrapper containing a list of:
-                            mediaType = MediaType.APPLICATION_XML, schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
-                    ),
-                    @Content(
-                            mediaType = MediaType.APPLICATION_JSON, schema = @Schema(oneOf = {SimpleObservation.class, DerivedObservation.class})
-                    )
-            }
-    )
-    @APIResponse(
-            responseCode = "400",
-            description = "Internal error whilst retrieving Observations."
-    )
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    public Response getObservations(@PathParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
-        if ((page != null && size == null) || (page == null && size != null)) {
-            return Responses.errorResponse("Both 'page' and 'size' must be provided together or neither.");
-        }
-
-        try {
-            if (page != null && (page < 0 || size < 1)) {
-                return Responses.errorResponse("Page must be 0 or greater and size must be greater than 0.");
-            }
-
-            TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o WHERE o.collection = :collection", Observation.class);
-            query.setParameter("collection", collection);
             return Tools.performQuery(page, size, query);
         } catch (Exception e) {
             return Responses.errorResponse(e);
@@ -429,35 +379,6 @@ public class ObservationResource {
                         .entity("Observation with ID " + id + " not found")
                         .build();
             }
-        } catch (Exception e) {
-            return Responses.errorResponse(e);
-        }
-    }
-
-    @GET
-    @Path("/collections")
-    @Operation(summary = "Retrieve all collection IDs", description = "Returns a list of unique collectionIds as a TSV (Tab Separated List).")
-    @APIResponse(
-            responseCode = "200",
-            description = "CollectionIds retrieved successfully",
-            content = @Content(
-                    mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)
-            )
-    )
-    @APIResponse(
-            responseCode = "400",
-            description = "Internal error whilst retrieving collectionIds."
-    )
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response getCollections(){
-        try {
-            TypedQuery<String> query = em.createQuery("SELECT DISTINCT o.collection FROM Observation o", String.class);
-            List<String> uniqueCollections = query.getResultList();
-
-            return Response.ok()
-                    .type(MediaType.TEXT_PLAIN)
-                    .entity(Tools.convertListToTsv(uniqueCollections))
-                    .build();
         } catch (Exception e) {
             return Responses.errorResponse(e);
         }
