@@ -25,8 +25,6 @@ import org.ivoa.dm.caom2.caom2.SimpleObservation;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
 
-import java.util.*;
-
 
 @Path("/observations")
 public class ObservationResource {
@@ -121,7 +119,7 @@ public class ObservationResource {
     }
 
     @PUT
-    @Path("{observationId}")
+    @Path("/{observationId}")
     @Operation(summary = "Update an existing Observation", description = "Updates an existing observation with the supplied ID")
     @Parameter(
             name = "observationId",
