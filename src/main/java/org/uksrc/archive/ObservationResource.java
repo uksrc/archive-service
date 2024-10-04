@@ -22,7 +22,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.ivoa.dm.caom2.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.caom2.Observation;
 import org.ivoa.dm.caom2.caom2.SimpleObservation;
-import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
 
@@ -47,23 +46,25 @@ public class ObservationResource {
                             examples = {
                                     @ExampleObject(
                                             name = "XML Example - SimpleObservation",
-                                            value = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.SimpleObservation\">" +
-                                                    "<id>1</id>" +
-                                                    "<collection>test</collection>" +
-                                                    "<uri>auri</uri>" +
-                                                    "<intent>science</intent>" +
-                                                    "</SimpleObservation>"
+                                            value = """
+                                                    <SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.SimpleObservation">
+                                                    <id>1</id>
+                                                    <collection>test</collection>
+                                                    <uri>auri</uri>
+                                                    <intent>science</intent>
+                                                    </SimpleObservation>"""
                                     ),
                                     @ExampleObject(
                                             name = "XML Example - DerivedObservation",
-                                            value = "<DerivedObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.DerivedObservation\">" +
-                                                    "<id>1</id>" +
-                                                    "<collection>test</collection>" +
-                                                    "<uri>auri</uri>" +
-                                                    "<intent>science</intent>" +
-                                                    "<members>jbo-simple1</members>" +
-                                                    "<members>jbo-simple2</members>" +
-                                                "</DerivedObservation>"
+                                            value = """
+                                                    <DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.DerivedObservation">
+                                                    <id>1</id>
+                                                    <collection>test</collection>
+                                                    <uri>auri</uri>
+                                                    <intent>science</intent>
+                                                    <members>jbo-simple1</members>
+                                                    <members>jbo-simple2</members>
+                                                    </DerivedObservation>"""
                                     )
                             }
                     ),
@@ -138,23 +139,25 @@ public class ObservationResource {
                             examples = {
                                     @ExampleObject(
                                             name = "XML Example - SimpleObservation",
-                                            value = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.SimpleObservation\">" +
-                                                    "<id>1</id>" +
-                                                    "<collection>test</collection>" +
-                                                    "<uri>auri</uri>" +
-                                                    "<intent>science</intent>" +
-                                                    "</SimpleObservation>"
+                                            value = """
+                                                    <SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.SimpleObservation">
+                                                    <id>1</id>
+                                                    <collection>test</collection>
+                                                    <uri>auri</uri>
+                                                    <intent>science</intent>
+                                                    </SimpleObservation>"""
                                     ),
                                     @ExampleObject(
                                             name = "XML Example - DerivedObservation",
-                                            value = "<DerivedObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.DerivedObservation\">" +
-                                                    "<id>1</id>" +
-                                                    "<collection>test</collection>" +
-                                                    "<uri>auri</uri>" +
-                                                    "<intent>science</intent>" +
-                                                    "<members>jbo-simple1</members>" +
-                                                    "<members>jbo-simple2</members>" +
-                                                    "</DerivedObservation>"
+                                            value = """
+                                                    <DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.DerivedObservation">
+                                                    <id>1</id>
+                                                    <collection>test</collection>
+                                                    <uri>auri</uri>
+                                                    <intent>science</intent>
+                                                    <members>jbo-simple1</members>
+                                                    <members>jbo-simple2</members>
+                                                    </DerivedObservation>"""
                                     )
                             }
                     ),
