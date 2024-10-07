@@ -115,13 +115,13 @@ Endpoints available for interaction with the archive-service.
 ##### Example XML cURL
 
 > ```
->  curl -v --header "Content-Type: application/xml" -T observation1.xml http://localhost:8080/observations
+>  curl -X 'POST' -H 'Content-Type: application/xml' -H 'accept: application/xml' --data "@observation2.json" http://localhost:8080/observations
 > ```
 
 ##### Example JSON cURL
 with JSON response also
 > ```
->  curl -v --header "Content-Type: application/json" --header "Accept: application/json" -T observation1.xml http://localhost:8080/observations/add
+>  curl -X 'POST' -H 'Content-Type: application/json' -H 'accept: application/json' --data "@observation2.json" http://localhost:8080/observations
 > ```
 </details>
 
@@ -150,7 +150,7 @@ with JSON response also
 ##### Example cURL
 
 > ```
->  curl -v --header "Content-Type: application/xml" -T observation123.xml http://localhost:8080/observations/update/123
+>  curl -X 'PUT' -H 'Content-Type: application/xml' -H 'Accept: application/xml' -T observation2.xml http://localhost:8080/observations/988
 > ```
 
 </details>
@@ -160,7 +160,7 @@ with JSON response also
 #### Deleting Observations
 
 <details>
- <summary><code>GET</code> <code><b>/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
+ <summary><code>DELETE</code> <code><b>/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
 
 ##### Parameters
 
@@ -203,7 +203,7 @@ with JSON response also
 ##### Example cURL
 
 > ```
->  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/observations/collections'
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/collections'
 > ```
 
 </details>
