@@ -29,6 +29,19 @@ public class CollectionResourceTest {
     }
 
     @Test
+    @DisplayName("Test retrieving collection Ids from empty DB")
+    public void testRetrieveCollectionIdsFromEmptyDB() {
+        String collections = when()
+                .get("/collections")
+                .then()
+                .statusCode(Response.Status.OK.getStatusCode())
+                .extract()
+                .asString();
+
+        assert(collections.isEmpty());
+    }
+
+    @Test
     @DisplayName("Test retrieving collection Ids")
     public void testRetrievingCollectionIds() {
         for (int i = 0; i < 5; i++){

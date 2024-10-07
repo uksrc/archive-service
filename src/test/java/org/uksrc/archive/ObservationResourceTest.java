@@ -15,9 +15,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.Utilities;
 
-import java.util.Arrays;
-import java.util.List;
-
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.is;
@@ -92,6 +89,38 @@ public class ObservationResourceTest {
                     });
 
             assert (wrapper.getObservations().size() == 2);
+        }
+    }
+
+    @Test
+    @DisplayName("Get observations via collection Id")
+    public void testGettingObservationsViaCollectionId() {
+        try(Response res1 = Utilities.addObservationToDatabase("1234", COLLECTION1);
+            Response res2 = Utilities.addObservationToDatabase("6789", COLLECTION1)) {
+            assert (res1.getStatus() == Response.Status.CREATED.getStatusCode() &&
+                    res2.getStatus() == Response.Status.CREATED.getStatusCode());
+
+            //Both previously added observations should be returned
+            ObservationListWrapper wrapper = when()
+                    .get("/observations?collectionId=" + COLLECTION1)
+                    .then()
+                    .statusCode(Response.Status.OK.getStatusCode())
+                    .extract()
+                    .as(new TypeRef<>() {
+                    });
+
+            assert (wrapper.getObservations().size() == 2);
+
+            //Neither of the previously added observations should be returned
+            wrapper = when()
+                    .get("/observations?collectionId=" + COLLECTION2)
+                    .then()
+                    .statusCode(Response.Status.OK.getStatusCode())
+                    .extract()
+                    .as(new TypeRef<>() {
+                    });
+
+            assert (wrapper.getObservations().isEmpty());
         }
     }
 
