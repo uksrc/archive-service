@@ -5,23 +5,36 @@ Details of the functionality of the archive-service endpoints.
 ------------------------------------------------------------------------------------------
 Example resources suitable for **minimal** testing (Mandatory properties only).
 #### Example Simple Observation
+Namespace details must conform with the current vo-dml model used.
 ```xml
-<observation>
-    <id>123456</id>
+<SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.SimpleObservation">
+    <id>988</id>
     <collection>e-merlin</collection>
-    <intent>science</intent>
     <uri>auri</uri>
-</observation>
+    <intent>science</intent>
+</SimpleObservation>
+```
+
+*@type* has to be set for JSON
+```json
+{
+  "@type": "caom2:caom2.SimpleObservation",
+  "id": "myData12345",
+  "collection": "test",
+  "uri": "auri",
+  "intent": "science"
+}
 ```
 #### Example Derived Observation
 ```xml
-<Observation>
-    <id>999</id>
-    <collection>e-merlin</collection>
-    <intent>science</intent>
+<DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.DerivedObservation">
+    <id>10</id>
+    <collection>test</collection>
     <uri>auri</uri>
-    <members>anyURI</members>
-</Observation>
+    <intent>science</intent>
+    <members>jbo-simple1</members>
+    <members>jbo-simple2</members>
+</DerivedObservation>
 ```
 ------------------------------------------------------------------------------------------
 ### REST API details  
@@ -34,10 +47,11 @@ Endpoints available for interaction with the archive-service.
 
 ##### Parameters
 
-> | name | type     | data type | description                                                                    |
-> |------|----------|-----------|--------------------------------------------------------------------------------|
-> | page | optional | integer   | The page index, zero-indexed                                                   |
-> | size | optional | integer   | The number of observations to return for each page, must be greater than zero. |
+> | name         | type     | data type | description                                                                    |
+> |--------------|----------|-----------|--------------------------------------------------------------------------------|
+> | collectionId | optional | String    | Filter by collection Id if required (not supplying will return all).           |
+> | page         | optional | integer   | The page index, zero-indexed                                                   |
+> | size         | optional | integer   | The number of observations to return for each page, must be greater than zero. |
 
 
 ##### Responses
@@ -82,39 +96,14 @@ Endpoints available for interaction with the archive-service.
 
 </details>
 
-<details>
- <summary><code>GET</code> <code><b>/observations/collection/{collectionId}</b></code> <code>(Returns all observations for the supplied collectionId, if found)</code></summary>
 
-##### Parameters
-
-> | name         | type     | data type | description                                                                    |
-> |--------------|----------|-----------|--------------------------------------------------------------------------------|
-> | collectionId | required | String    | The unique identifier of a specific collection                                 |
-> | page         | optional | integer   | The page index, zero-indexed                                                   |
-> | size         | optional | integer   | The number of observations to return for each page, must be greater than zero. |
-
-
-##### Responses
-
-> | http code | content-type      | response                                                                      |
-> |-----------|-------------------|-------------------------------------------------------------------------------|
-> | `201`     | `application/xml` | `List of Observation (Simple and/or Derived) found and returned successfully` |
-> | `400`     | `text/plain`      | `{"code":"400","message":"Bad Request"}`                                      |
-
-##### Example cURL
-
-> ```
->  curl -X 'GET' 'http://localhost:8080/observations/23456' -H 'accept: application/xml'
-> ```
-
-</details>
 
 ------------------------------------------------------------------------------------------
 
 #### Adding new Observations
 
 <details>
- <summary><code>POST</code> <code><b>/observations/add</b></code> <code>(Add a new observation)</code></summary>
+ <summary><code>POST</code> <code><b>/observations</b></code> <code>(Add a new observation)</code></summary>
 
 ##### Responses
 
@@ -123,30 +112,17 @@ Endpoints available for interaction with the archive-service.
 > | `201`         | `application/xml` | `Observation added successfully, body contains new Observation` |
 > | `400`         | `text/plain`      | `{"code":"400","message":"Bad Request"}`                        |
 
-##### Example cURL
+##### Example XML cURL
 
 > ```
->  curl -v --header "Content-Type: application/xml" -T observation1.xml http://localhost:8080/observations/add
+>  curl -X 'POST' -H 'Content-Type: application/xml' -H 'accept: application/xml' --data "@observation2.json" http://localhost:8080/observations
 > ```
 
-</details>
-
-<details>
- <summary><code>POST</code> <code><b>/observations/derived/add</b></code> <code>(Add a new derived observation)</code></summary>
-
-##### Responses
-
-> | http code     | content-type      | response                                                               |
-> |---------------|-------------------|------------------------------------------------------------------------|
-> | `201`         | `application/xml` | `Observation added successfully, body contains new DerivedObservation` |
-> | `400`         | `text/plain`      | `{"code":"400","message":"Bad Request"}`                               |
-
-##### Example cURL
-
+##### Example JSON cURL
+with JSON response also
 > ```
->  curl -v --header "Content-Type: application/xml" -T observation1.xml http://localhost:8080/observations/derived/add
+>  curl -X 'POST' -H 'Content-Type: application/json' -H 'accept: application/json' --data "@observation2.json" http://localhost:8080/observations
 > ```
-
 </details>
 
 ------------------------------------------------------------------------------------------
@@ -154,7 +130,7 @@ Endpoints available for interaction with the archive-service.
 #### Updating observations
 
 <details>
- <summary><code>PUT</code> <code><b>/observations/update/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
+ <summary><code>UPDATE</code> <code><b>/observations/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
 
 ##### Parameters
 
@@ -174,7 +150,7 @@ Endpoints available for interaction with the archive-service.
 ##### Example cURL
 
 > ```
->  curl -v --header "Content-Type: application/xml" -T observation123.xml http://localhost:8080/observations/update/123
+>  curl -X 'PUT' -H 'Content-Type: application/xml' -H 'Accept: application/xml' -T observation2.xml http://localhost:8080/observations/988
 > ```
 
 </details>
@@ -184,7 +160,7 @@ Endpoints available for interaction with the archive-service.
 #### Deleting Observations
 
 <details>
- <summary><code>GET</code> <code><b>/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
+ <summary><code>DELETE</code> <code><b>/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
 
 ##### Parameters
 
@@ -214,7 +190,7 @@ Endpoints available for interaction with the archive-service.
 #### Retrieving collections
 
 <details>
- <summary><code>GET</code> <code><b>/observations/collections</b></code> <code>(Returns the names of all the collections as a TSV (Tab Separated List))</code></summary>
+ <summary><code>GET</code> <code><b>/collections</b></code> <code>(Returns the names of all the collections as a TSV (Tab Separated List))</code></summary>
 
 ##### Responses
 
@@ -227,7 +203,7 @@ Endpoints available for interaction with the archive-service.
 ##### Example cURL
 
 > ```
->  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/observations/collections'
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/collections'
 > ```
 
 </details>

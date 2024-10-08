@@ -13,9 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
-
-import java.util.Arrays;
-import java.util.List;
+import org.uksrc.archive.utils.Utilities;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
@@ -31,20 +29,20 @@ import static org.hamcrest.Matchers.containsString;
 public class ObservationResourceTest {
 
     //Caution with the id value if re-using.
-    private static final String XML_OBSERVATION = "<observation>" +
+    private static final String XML_OBSERVATION = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.SimpleObservation\">" +
             "<id>%s</id>" +
             "<collection>%s</collection>" +
             "<intent>science</intent>" +
             "<uri>auri</uri>" +
-            "</observation>";
+            "</SimpleObservation>";
 
-    private static final String XML_DERIVED_OBSERVATION = "<Observation>" +
+    private static final String XML_DERIVED_OBSERVATION = "<DerivedObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.DerivedObservation\">" +
             "<id>%s</id>" +
             "<collection>e-merlin</collection>" +
             "<intent>science</intent>" +
             "<uri>auri</uri>" +
             "<members>someone</members>" +
-            "</Observation>";
+            "</DerivedObservation>";
 
     private static final String COLLECTION1 = "e-merlin";
     private static final String COLLECTION2 = "testCollection";
@@ -77,8 +75,8 @@ public class ObservationResourceTest {
     @Test
     @DisplayName("Add two observation and check two are returned.")
     public void testGettingObservationsNonEmpty() {
-        try(Response res1 = addObservationToDatabase("1234", COLLECTION1);
-            Response res2 = addObservationToDatabase("6789", COLLECTION1)) {
+        try(Response res1 = Utilities.addObservationToDatabase("1234", COLLECTION1);
+            Response res2 = Utilities.addObservationToDatabase("6789", COLLECTION1)) {
             assert (res1.getStatus() == Response.Status.CREATED.getStatusCode() &&
                     res2.getStatus() == Response.Status.CREATED.getStatusCode());
 
@@ -94,6 +92,38 @@ public class ObservationResourceTest {
         }
     }
 
+    @Test
+    @DisplayName("Get observations via collection Id")
+    public void testGettingObservationsViaCollectionId() {
+        try(Response res1 = Utilities.addObservationToDatabase("1234", COLLECTION1);
+            Response res2 = Utilities.addObservationToDatabase("6789", COLLECTION1)) {
+            assert (res1.getStatus() == Response.Status.CREATED.getStatusCode() &&
+                    res2.getStatus() == Response.Status.CREATED.getStatusCode());
+
+            //Both previously added observations should be returned
+            ObservationListWrapper wrapper = when()
+                    .get("/observations?collectionId=" + COLLECTION1)
+                    .then()
+                    .statusCode(Response.Status.OK.getStatusCode())
+                    .extract()
+                    .as(new TypeRef<>() {
+                    });
+
+            assert (wrapper.getObservations().size() == 2);
+
+            //Neither of the previously added observations should be returned
+            wrapper = when()
+                    .get("/observations?collectionId=" + COLLECTION2)
+                    .then()
+                    .statusCode(Response.Status.OK.getStatusCode())
+                    .extract()
+                    .as(new TypeRef<>() {
+                    });
+
+            assert (wrapper.getObservations().isEmpty());
+        }
+    }
+
     @ParameterizedTest
     @DisplayName("Add an observation and check that part of the response body matches.")
     @ValueSource(strings = {XML_OBSERVATION, XML_DERIVED_OBSERVATION})
@@ -105,7 +135,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(uniqueObservation)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.CREATED.getStatusCode())
                 .body("simpleObservation.id", is("123"))   // XML expectation (remove 'simpleObservation.' for JSON)
@@ -122,7 +152,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(duplicateObservation)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.CREATED.getStatusCode())
                 .body("simpleObservation.id", is("256"));
@@ -132,7 +162,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(duplicateObservation)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.BAD_REQUEST.getStatusCode())
                 .body(containsString("duplicate key value violates unique constraint"));
@@ -182,7 +212,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(uniqueObservation)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.CREATED.getStatusCode())
                 .body("simpleObservation.id", is(ID))
@@ -194,7 +224,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(updatedObservation)
                 .when()
-                .put(("/observations/update/" + ID))
+                .put(("/observations/" + ID))
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
                 .body("simpleObservation.id", is(ID))
@@ -224,7 +254,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(updatedObservation)
                 .when()
-                .put(("/observations/update/" + ID))
+                .put(("/observations/" + ID))
                 .then()
                 .statusCode(Response.Status.NOT_FOUND.getStatusCode());
     }
@@ -233,7 +263,7 @@ public class ObservationResourceTest {
     @DisplayName("Attempt to delete an observation.")
     public void testDeletingObservation() {
         final String ID = "256";
-        try(Response res = addObservationToDatabase(ID, COLLECTION1)) {
+        try(Response res = Utilities.addObservationToDatabase(ID, COLLECTION1)) {
             assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
 
             // Check it exists
@@ -258,7 +288,7 @@ public class ObservationResourceTest {
     @DisplayName("Test paging results, first page")
     public void testPagingResults() {
         for (int i = 0; i < 15; i++){
-            addObservationToDatabase(String.valueOf(i), COLLECTION1);
+            Utilities.addObservationToDatabase(String.valueOf(i), COLLECTION1);
         }
 
         ObservationListWrapper wrapper = when()
@@ -273,37 +303,10 @@ public class ObservationResourceTest {
     }
 
     @Test
-    @DisplayName("Test retrieving collection Ids")
-    public void testRetrievingCollectionIds() {
-        for (int i = 0; i < 5; i++){
-            addObservationToDatabase(String.valueOf(i), COLLECTION1);
-        }
-
-        for (int i = 5; i < 12; i++){
-            addObservationToDatabase(String.valueOf(i), COLLECTION2);
-        }
-
-        String collections = when()
-                .get("/observations/collections")
-                .then()
-                .statusCode(Response.Status.OK.getStatusCode())
-                .extract()
-                .asString();
-
-        //Split the response on the tab separator
-        String[] collectionIds = collections.split("\t");
-        List<String> names = Arrays.asList(collectionIds);
-
-        assert(names.size() == 2);
-        assert(names.contains(COLLECTION1));
-        assert(names.contains(COLLECTION2));
-    }
-
-    @Test
     @DisplayName("Test paging results, second page")
     public void testPagingResults2() {
         for (int i = 0; i < 15; i++){
-            addObservationToDatabase(String.valueOf(i), COLLECTION1);
+            Utilities.addObservationToDatabase(String.valueOf(i), COLLECTION1);
         }
 
         ObservationListWrapper wrapper = when()
@@ -332,29 +335,5 @@ public class ObservationResourceTest {
                 .delete(("/observations/" + "9876"))
                 .then()
                 .statusCode(Response.Status.NOT_FOUND.getStatusCode());
-    }
-
-    /**
-     * Adds a SimpleObservation to the database with the supplied observationId
-     * @param observationId unique identifier for the observation
-     * @param collectionId identifier for the collection to add this observation to.
-     * @return Response of 400 for failure or 201 for created successfully.
-     */
-    private Response addObservationToDatabase(String observationId, String collectionId) {
-        String uniqueObservation = String.format(XML_OBSERVATION, observationId, collectionId);
-
-        try {
-            given()
-                    .header("Content-Type", "application/xml")
-                    .body(uniqueObservation)
-                    .when()
-                    .post("/observations/add")
-                    .then()
-                    .statusCode(Response.Status.CREATED.getStatusCode())
-                    .body("simpleObservation.id", is(observationId));
-        } catch (Exception e) {
-            return Response.status(Response.Status.BAD_REQUEST.getStatusCode()).build();
-        }
-        return Response.status(Response.Status.CREATED.getStatusCode()).build();
     }
 }
