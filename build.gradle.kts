@@ -1,3 +1,5 @@
+import org.gradle.internal.impldep.bsh.commands.dir
+
 plugins {
     java
     id("io.quarkus")
@@ -8,6 +10,7 @@ val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
 dependencies {
+    implementation("io.quarkus:quarkus-undertow")
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation("org.opencadc:CAOM:2.5.0-SNAPSHOT:quarkus")
     implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
@@ -21,6 +24,12 @@ dependencies {
     implementation ("jakarta.validation:jakarta.validation-api:3.0.2")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
+    implementation(fileTree("lib") { include("*.jar") })
+   // implementation ("javax.servlet:javax.servlet-api:4.0.1")
+    implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
+
+    //TEMP - included for TAP dependencies - make Vollt tap stuff FAT JARs
+    implementation ("uk.ac.starlink:stil:4.3")
 }
 
 group = "org.uksrc.archive"
