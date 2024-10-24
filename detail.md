@@ -231,3 +231,12 @@ Endpoints available for interaction with the archive-service.
 > ```
 
 </details>
+
+------------------------------------------------------------------------------------------
+
+### TAP SCHEMA setup
+
+The TAP schema is currently added to the database with the import.sql file which runs automatically on startup and adds the required tables to the database.
+This is followed by a bean (TapSchemaPopulator) that will read the database and add each type (Observation etc.) to the generated TAP schema entries.
+
+TODO: Generate a VO-DML/XSD model definition so that the TAP schema entries can be auto-added in the same way as the CAOM library.

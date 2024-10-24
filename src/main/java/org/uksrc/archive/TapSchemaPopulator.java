@@ -7,7 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 
 import java.util.List;
-import uk.co.man.srcnet.Utilities;
+
 /*
 Adds any existing entities in the database to the TAP_SCHEMA (tables & columns)
  */
@@ -25,7 +25,6 @@ public class TapSchemaPopulator {
     @PostConstruct
     public void initialize() {
         try {
-            String test = Utilities.sayHello();
             @SuppressWarnings("unchecked")
             List<String> newTables = entityManager.createNativeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").getResultList();
             for (String tableName : newTables) {
