@@ -1,3 +1,7 @@
+/*
+ Example TAP_SCHEMA taken from the Vollt examples.
+ TODO - Check if tis is correct for either ALL use cases (or just ours)
+ */
 CREATE SCHEMA "TAP_SCHEMA";
 
 CREATE TABLE "TAP_SCHEMA"."schemas" ("schema_name" VARCHAR, "description" VARCHAR, "utype" VARCHAR, "dbname" VARCHAR, PRIMARY KEY("schema_name"));
@@ -47,9 +51,38 @@ INSERT INTO "TAP_SCHEMA"."columns" VALUES ('TAP_SCHEMA.key_columns', 'target_col
 /* ************************************* */
 INSERT INTO "TAP_SCHEMA"."schemas"(schema_name) VALUES ('public');
 
-/*INSERT INTO "TAP_SCHEMA"."tables"(schema_name,table_name,description) VALUES ('public', 'Observation', 'Details of a Observation.');
-INSERT INTO "TAP_SCHEMA"."columns"(table_name,column_name,description,datatype,"size",unit,ucd,principal,indexed) VALUES ('Observation', 'id', NULL, 'VARCHAR', NULL, NULL, NULL, 1, 1);
-INSERT INTO "TAP_SCHEMA"."columns"(table_name,column_name,description,datatype,"size",unit,ucd,principal,indexed) VALUES ('Observation', 'collection', NULL, 'VARCHAR', NULL, NULL, NULL, 0, 0);
-INSERT INTO "TAP_SCHEMA"."columns"(table_name,column_name,description,datatype,"size",unit,ucd,principal,indexed) VALUES ('Observation', 'intent', NULL, 'VARCHAR', NULL, NULL, NULL, 0, 0);
-*/
 
+/* Attempt at reading resources from the database & adding them to the TAP_SCHEMA.
+   Works from a console (as a script) but can't get the converted function to work here so moving to
+   java as an initial/alternate solution.
+ */
+
+/*
+
+ DO $$
+    DECLARE
+        table_record RECORD;
+        c RECORD;
+    BEGIN
+        -- Iterate over the result of the obs_tables query
+        FOR table_record IN
+            (SELECT table_name
+             FROM information_schema.tables
+             WHERE table_name IN ('Observation', 'SimpleObservation', 'DerivedObservation'))    -- Limited to Observation(s) for testing only
+            LOOP
+                -- Insert the table name and row count into the fixed table
+                INSERT INTO "TAP_SCHEMA"."tables"(schema_name,table_name,description) VALUES ('public', table_record.table_name, 'Details of a(n) ' || table_record.table_name);
+
+                -- Insert each column from the current table
+                FOR c IN
+                    EXECUTE 'SELECT column_name, data_type, character_maximum_length
+                     FROM information_schema.columns
+                     WHERE table_name = ' || quote_literal(table_record.table_name)
+                    LOOP
+                        -- Insert the column metadata into column_metadata table
+                        INSERT INTO "TAP_SCHEMA"."columns"(table_name,column_name,description,datatype,"size",unit,ucd,principal,indexed) VALUES (table_record.table_name, c.column_name, NULL, c.data_type, NULL, NULL, NULL, 0, 0);
+                    END LOOP;
+            END LOOP;
+    END $$;
+
+ */
