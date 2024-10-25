@@ -5,6 +5,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -21,6 +23,8 @@ public class TapSchemaPopulator {
     TapSchemaRepository tapSchemaRepository;
 
     static final String checkTableExistsSql = "SELECT 1 FROM \"TAP_SCHEMA\".\"tables\" WHERE table_name = ?";
+
+    private static final Logger LOG = LoggerFactory.getLogger(TapSchemaPopulator.class);
 
     @PostConstruct
     public void initialize() {
@@ -48,7 +52,7 @@ public class TapSchemaPopulator {
             }
 
         }catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Populating TAP Schema");
         }
 
     }
