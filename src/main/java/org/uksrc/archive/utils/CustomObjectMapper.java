@@ -6,20 +6,20 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
 import org.ivoa.dm.caom2.Caom2Model;
+import org.jboss.logging.Logger;
 
 /**
  * Helper class for the automatic xml/json to Java object
  */
 public class CustomObjectMapper {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory
-            .getLogger(CustomObjectMapper.class);
+    private static final Logger log = Logger.getLogger(CustomObjectMapper.class);
 
     // Replaces the CDI producer for ObjectMapper built into Quarkus
     @Singleton
     @Produces
     ObjectMapper objectMapper(Instance<ObjectMapperCustomizer> customizers) {
         ObjectMapper mapper = Caom2Model.jsonMapper(); // Custom `ObjectMapper`
-        logger.info("custom jackson mapper used");
+        log.info("custom jackson mapper used");
         // Apply all ObjectMapperCustomizer beans (incl. Quarkus)
         for (ObjectMapperCustomizer customizer : customizers) {
             customizer.customize(mapper);

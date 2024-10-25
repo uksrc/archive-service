@@ -1,4 +1,4 @@
-package org.uksrc.archive;
+package org.uksrc.archive.utils.tools.tap;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;

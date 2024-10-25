@@ -1,5 +1,3 @@
-import org.gradle.internal.impldep.bsh.commands.dir
-
 plugins {
     java
     id("io.quarkus")
@@ -25,9 +23,9 @@ dependencies {
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
     implementation(fileTree("lib") { include("*.jar") })
-   // implementation ("javax.servlet:javax.servlet-api:4.0.1")
     implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation ("io.quarkus:quarkus-core")
+
 
     //TEMP - included for TAP dependencies - make Vollt tap stuff FAT JARs
     implementation ("uk.ac.starlink:stil:4.3")

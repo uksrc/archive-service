@@ -1,12 +1,11 @@
-package org.uksrc.archive;
+package org.uksrc.archive.utils.tools.tap;
 
 import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import java.util.List;
 
@@ -22,9 +21,9 @@ public class TapSchemaPopulator {
     @Inject
     TapSchemaRepository tapSchemaRepository;
 
-    static final String checkTableExistsSql = "SELECT 1 FROM \"TAP_SCHEMA\".\"tables\" WHERE table_name = ?";
+    private static final Logger LOG = Logger.getLogger(TapSchemaPopulator.class);
 
-    private static final Logger LOG = LoggerFactory.getLogger(TapSchemaPopulator.class);
+    static final String checkTableExistsSql = "SELECT 1 FROM \"TAP_SCHEMA\".\"tables\" WHERE table_name = ?";
 
     @PostConstruct
     public void initialize() {
@@ -52,7 +51,7 @@ public class TapSchemaPopulator {
             }
 
         }catch (Exception e) {
-            LOG.error("Populating TAP Schema");
+            LOG.error("Populating TAP Schema", e);
         }
 
     }
