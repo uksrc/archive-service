@@ -39,20 +39,17 @@ public class TapSchemaPopulator {
                     tapSchemaRepository.addTable("public", tableName, "table", "Details of a(n) " + tableName);
 
                     @SuppressWarnings("unchecked")
-                    List<Object[]> columns = entityManager.createNativeQuery("SELECT column_name, data_type, character_maximum_length FROM information_schema.columns WHERE table_name = ?")
+                    List<Object[]> columns = entityManager.createNativeQuery("SELECT column_name, data_type, udt_name, character_maximum_length FROM information_schema.columns WHERE table_name = ?")
                             .setParameter(1, tableName)
                             .getResultList();
 
                     for (Object[] column : columns) {
-                        tapSchemaRepository.addColumn(tableName, (String) column[0], (String) column[1], Integer.getInteger((String) column[0]), "colDesc");
+                        tapSchemaRepository.addColumn(tableName, (String) column[0], (String) column[1], (String) column[2], (Integer) column[3], "colDesc");
                     }
-
                 }
             }
-
         }catch (Exception e) {
             LOG.error("Populating TAP Schema", e);
         }
-
     }
 }
