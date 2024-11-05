@@ -28,7 +28,12 @@ dependencies {
 
 
     //TEMP - included for TAP dependencies - make Vollt tap stuff FAT JARs
-    implementation ("uk.ac.starlink:stil:4.3")
+    implementation ("uk.ac.starlink:stil:4.3") {
+        //Transitive dependency (outdated) from starlink causes conflict with Vollt's TAP ADQL query for JSON output.
+        exclude("org.json", "json")
+    }
+    implementation("org.json:json:20240303")
+
 }
 
 group = "org.uksrc.archive"
