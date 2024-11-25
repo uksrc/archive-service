@@ -11,6 +11,7 @@ dependencies {
     implementation("io.quarkus:quarkus-undertow")
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation("org.opencadc:CAOM:2.5.0-SNAPSHOT:quarkus")
+    implementation("org.javastro:jaxbjpa-utils:0.2.3")                      //NOTE: May not be needed, suddenly (2024/11/21) failed to start (classNotFound SchemaNamer) out of the blue.
     implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
     implementation("io.quarkus:quarkus-resteasy-reactive-jaxb")
     implementation("io.quarkus:quarkus-hibernate-orm")
@@ -26,7 +27,7 @@ dependencies {
     implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation ("io.quarkus:quarkus-core")
 
-    implementation ("uk.ac.starlink:stil:4.3.1") 
+    implementation ("uk.ac.starlink:stil:4.3.1")
 }
 
 group = "org.uksrc.archive"
