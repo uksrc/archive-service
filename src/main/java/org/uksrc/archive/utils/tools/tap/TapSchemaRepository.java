@@ -17,13 +17,14 @@ import java.util.Map;
 @ApplicationScoped
 public class TapSchemaRepository {
 
-    private Map<String, String> typeMapping;
+    private final Map<String, String> typeMapping;
 
     @PersistenceContext
     EntityManager entityManager;
 
     static final String insertTableSql = "INSERT INTO \"TAP_SCHEMA\".\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
-    static final String insertColumnSql = "INSERT INTO \"TAP_SCHEMA\".\"columns\"(table_name, column_name, description, datatype, size, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,0,1,0)";
+    static final String insertColumnSql = "INSERT INTO \"TAP_SCHEMA\".\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,?,NULL,NULL,0,1,0)";
+    //TODO - add in extra properties xtype & arraysize & add in * for any arrays
 
     //STILTS' Taplint is case-sensitve it seems CompareMetadataStage.java - compatibleDataTypesOneWay(~)
     //E-MDQ-CTYP-5 Declared/result type mismatch for column photometric in table Environment (BOOLEAN != char) - ERROR seems to be caused by BOOLEAN not being set correctly (Vollt?) and defaulting to 'char' dataType when testing.
@@ -58,30 +59,34 @@ public class TapSchemaRepository {
     //INSERT INTO "TAP_SCHEMA"."columns"(table_name,column_name,description,datatype,"size",unit,ucd,principal,indexed) VALUES (table_record.table_name, c.column_name, NULL, c.data_type, NULL, NULL, NULL, 0, 0);
     @Transactional
     public void addColumn(final String tableName, final String columnName, final String dataType, final String udt, Integer maxLength, final String description) {
-        if (columnName.contains("productType")){
-            System.out.println(tableName + " " + columnName + " " + dataType + " " + udt + " " + maxLength + " " + description);
-        }
-        if (columnName.contains("bool")){
-            System.out.println(tableName + " " + columnName + " " + dataType + " " + udt + " " + maxLength + " " + description);
-        }
-        String dt = udt;//dataType;
+//        if (columnName.contains("productType")){
+//            System.out.println(tableName + " " + columnName + " " + dataType + " " + udt + " " + maxLength + " " + description);
+//        }
+//        if (columnName.contains("bool")){
+//            System.out.println(tableName + " " + columnName + " " + dataType + " " + udt + " " + maxLength + " " + description);
+//        }
+        String dt;
+        String arraySize = "";
         if (dataType.contains("ARRAY")){
             System.out.println(tableName + " " + columnName + " " + udt);
             dt = convertUdtToArrayType(udt);
             //NOTE need to find a way to pass "ARRAY" type to vollt
+            arraySize = "-1";       //This should be "*" for 'multiple' but Vollt compares it against int
         }
         else {
             dt = getStandardType(dataType);
+            arraySize = null;
         }
-        if(tableName.equalsIgnoreCase("Energy")){
-            System.out.println(tableName + " " + columnName + " " + udt + " " + maxLength + " " + description);
-        }
+//        if(tableName.equalsIgnoreCase("Energy")){
+//            System.out.println(tableName + " " + columnName + " " + udt + " " + maxLength + " " + description);
+//        }
         entityManager.createNativeQuery(insertColumnSql)
                 .setParameter(1, tableName)
                 .setParameter(2, columnName )
                 .setParameter(3, description)
                 .setParameter(4, dt.toUpperCase())
                 .setParameter(5, maxLength)
+                .setParameter(6, arraySize)
                 .executeUpdate();
     }
 

@@ -26,6 +26,8 @@ dependencies {
     implementation(fileTree("lib") { include("*.jar") })
     implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation ("io.quarkus:quarkus-core")
+    implementation("org.apache.commons:commons-fileupload2-javax:2.0.0-M2")     //Required by Vollt TAP lib upload func.
+    implementation("org.apache.commons:commons-fileupload2-jakarta-servlet6:2.0.0-M2")
 
     implementation ("uk.ac.starlink:stil:4.3.1")
 }

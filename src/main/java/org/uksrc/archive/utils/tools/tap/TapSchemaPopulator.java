@@ -44,6 +44,7 @@ public class TapSchemaPopulator {
                             .getResultList();
 
                     for (Object[] column : columns) {
+                        //TODO - column description source?
                         tapSchemaRepository.addColumn(tableName, (String) column[0], (String) column[1], (String) column[2], (Integer) column[3], "colDesc");
                     }
                 }
