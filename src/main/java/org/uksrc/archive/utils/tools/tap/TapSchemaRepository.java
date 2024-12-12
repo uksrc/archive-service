@@ -10,9 +10,14 @@ import java.util.Map;
 
 /**
  * Added to allow the submission of TAP_SCHEMA entities (for "transactional" reasons)
- * TODO - If we replace the import.sql approach to creating the TAP_SCHEMA using a JAR for Entity
- * creation, then we can possibly replace this.
- * As createNativeQuery seems to need isolating from a @PostConstruct bean, so encapsulated here.
+ * Performs minor datatype conversions that may be required for compliance with TAP1.0 (Vollt restriction).
+ * <p>
+ * NOTE: if using STILTS' Taplint, please note that it is case-sensitve it seems see CompareMetadataStage.java - compatibleDataTypesOneWay(~)
+ * NOTE: Unrecognised data types are set to CHAR by default, make sure all dataTypes are supported. Vollt TAP restricts data types in ADQLLib::DataType.java -
+ * DBDatatype to one of { SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY, CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, CIRCLE, POLYGON, REGION, UNKNOWN, UNKNOWN_NUMERIC }
+ * note that there is no BOOLEAN in TAP1.0 (Vollt restriction) and has to be converted to SMALLINT
+ * <p>
+ * Only tested using CADC's CAOM 2.5 model that has been generated automatically by this framework.
  */
 @ApplicationScoped
 public class TapSchemaRepository {
@@ -23,29 +28,28 @@ public class TapSchemaRepository {
     EntityManager entityManager;
 
     static final String insertTableSql = "INSERT INTO \"TAP_SCHEMA\".\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
-    static final String insertColumnSql = "INSERT INTO \"TAP_SCHEMA\".\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,?,NULL,NULL,0,1,0)";
-    //TODO - add in extra properties xtype & arraysize & add in * for any arrays
+    static final String insertColumnSql = "INSERT INTO \"TAP_SCHEMA\".\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,NULL,0,1,0)";
 
     //STILTS' Taplint is case-sensitve it seems CompareMetadataStage.java - compatibleDataTypesOneWay(~)
     //E-MDQ-CTYP-5 Declared/result type mismatch for column photometric in table Environment (BOOLEAN != char) - ERROR seems to be caused by BOOLEAN not being set correctly (Vollt?) and defaulting to 'char' dataType when testing.
 
     //Vollt TAP restricts data types in ADQLLib::DataType.java - DBDatatype to one of {	SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY,	CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, CIRCLE, POLYGON, REGION, UNKNOWN, UNKNOWN_NUMERIC }
-    //So neither BOOLEAN or varchar[] ARRAY will work (potential to convert BOOLEAN to SMALLINT)
+    //So neither BOOLEAN or varchar[] ARRAY will work, need to convert BOOLEAN to SMALLINT (0,1) for example.
     public TapSchemaRepository(){
         typeMapping = new HashMap<>();
         typeMapping.put("character varying", "VARCHAR");
-        typeMapping.put("timestamp", "TIMESTAMP");             //precision removal for vollt
-      //  typeMapping.put("bool", "BOOLEAN");                 //Doesn't seem to work for BOOLEAN or VARCHAR[]/ARRAY
-        typeMapping.put("bool", "SMALLINT");
+        typeMapping.put("timestamp", "TIMESTAMP");             //precision removal required for vollt
+        typeMapping.put("bool", "SMALLINT");                    //Vollt TAP 1_0 doesn't support bool, publisher suggested using 0,1 SMALLINT until TAP1_1
         typeMapping.put("double precision", "DOUBLE");
-     /*   typeMapping.put("decimal", "DECIMAL");
-        typeMapping.put("date", "DATE");
-        typeMapping.put("varchar", "VARCHAR");
-        typeMapping.put("char", "CHAR");
-        typeMapping.put("integer", "INTEGER");
-        typeMapping.put("bigint", "BIGINT");*/
     }
 
+    /**
+     * Adds a table's details to the TAP_SCHEMA in the database.
+     * @param schemaName
+     * @param tableName
+     * @param tableType
+     * @param description
+     */
     @Transactional
     public void addTable(final String schemaName, final String tableName, final String tableType, final String description) {
         entityManager.createNativeQuery(insertTableSql)
@@ -56,54 +60,61 @@ public class TapSchemaRepository {
                 .executeUpdate();
     }
 
-    //INSERT INTO "TAP_SCHEMA"."columns"(table_name,column_name,description,datatype,"size",unit,ucd,principal,indexed) VALUES (table_record.table_name, c.column_name, NULL, c.data_type, NULL, NULL, NULL, 0, 0);
+    /**
+     * Adds a column's details to the TAP_SCHEMA in the database
+     * @param tableName
+     * @param columnName
+     * @param dataType
+     * @param udt
+     * @param maxLength
+     * @param description
+     */
     @Transactional
     public void addColumn(final String tableName, final String columnName, final String dataType, final String udt, Integer maxLength, final String description) {
-//        if (columnName.contains("productType")){
-//            System.out.println(tableName + " " + columnName + " " + dataType + " " + udt + " " + maxLength + " " + description);
-//        }
-//        if (columnName.contains("bool")){
-//            System.out.println(tableName + " " + columnName + " " + dataType + " " + udt + " " + maxLength + " " + description);
-//        }
         String dt;
-        String arraySize = "";
+        String size = maxLength.toString();                     //FOR TAP1.0, TAP1.1 should support arraySize if Vollt gets updated.
         if (dataType.contains("ARRAY")){
             System.out.println(tableName + " " + columnName + " " + udt);
             dt = convertUdtToArrayType(udt);
-            //NOTE need to find a way to pass "ARRAY" type to vollt
-            arraySize = "-1";       //This should be "*" for 'multiple' but Vollt compares it against int
+            //NOTE: When 'arraySize' (TAP1.1) used then convert to arraySize and should be "*" for 'multiple' (Vollt compares it against int currently which has been raised as a bug)
+            size = "-1";
         }
         else {
             dt = getStandardType(dataType);
-            arraySize = null;
         }
-//        if(tableName.equalsIgnoreCase("Energy")){
-//            System.out.println(tableName + " " + columnName + " " + udt + " " + maxLength + " " + description);
-//        }
+
         entityManager.createNativeQuery(insertColumnSql)
                 .setParameter(1, tableName)
                 .setParameter(2, columnName )
                 .setParameter(3, description)
                 .setParameter(4, dt.toUpperCase())
-                .setParameter(5, maxLength)
-                .setParameter(6, arraySize)
+                .setParameter(5, size)              //"-1" for array or maxlength for other types
                 .executeUpdate();
     }
 
+    /**
+     * Remove leading underscore from arrays.
+     * @param udtName
+     * @return
+     */
     private String convertUdtToArrayType(String udtName) {
         if (udtName.startsWith("_")) {
-            return udtName.substring(1);// + "[]";  // Remove the underscore and add []
+            return udtName.substring(1);//Remove the underscore and remember to add either "-1" to size (TAP1.0) or "*" to arraySize(TAP1.1)
         }
-        return udtName;  // Return as is if it's not an array
+        return udtName;
     }
 
-    public String getStandardType(String dataType) {
-        // Iterate over the keys to check if any of them are contained in dataType
+    /**
+     * Return the TAP equivalent of the supplied datatype, @see typeMapping
+     * @param dataType type supplied by the input data
+     * @return The TAP equivalent, could just be to removed superfluous suffix/prefix etc.
+     */
+    private String getStandardType(String dataType) {
         for (String key : typeMapping.keySet()) {
             if (dataType.contains(key)) {
-                return typeMapping.get(key);  // Return the mapped standard type
+                return typeMapping.get(key);
             }
         }
-        return dataType;  // Return the original type if no match is found
+        return dataType;
     }
 }
