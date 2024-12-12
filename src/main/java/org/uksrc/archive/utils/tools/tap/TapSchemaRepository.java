@@ -5,8 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Added to allow the submission of TAP_SCHEMA entities (for "transactional" reasons)
@@ -30,6 +29,9 @@ public class TapSchemaRepository {
     static final String insertTableSql = "INSERT INTO \"TAP_SCHEMA\".\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
     static final String insertColumnSql = "INSERT INTO \"TAP_SCHEMA\".\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,NULL,0,1,0)";
 
+    //Columns that are reserved words in TAP (currently only CAOM 2.5 entries) - raised with CADC to see if a model adjustment is in order before release.
+    static final Set<String> reservedWords = Set.of("coordsys", "pi", "position", "time");
+
     //STILTS' Taplint is case-sensitve it seems CompareMetadataStage.java - compatibleDataTypesOneWay(~)
     //E-MDQ-CTYP-5 Declared/result type mismatch for column photometric in table Environment (BOOLEAN != char) - ERROR seems to be caused by BOOLEAN not being set correctly (Vollt?) and defaulting to 'char' dataType when testing.
 
@@ -52,9 +54,10 @@ public class TapSchemaRepository {
      */
     @Transactional
     public void addTable(final String schemaName, final String tableName, final String tableType, final String description) {
+        boolean reserved = reservedWords.contains(tableName.toLowerCase(Locale.ROOT));
         entityManager.createNativeQuery(insertTableSql)
                 .setParameter(1, schemaName)
-                .setParameter(2, tableName)
+                .setParameter(2, reserved ? "\"" + tableName + "\"" : tableName)
                 .setParameter(3, tableType)
                 .setParameter(4, description)
                 .executeUpdate();
@@ -72,20 +75,22 @@ public class TapSchemaRepository {
     @Transactional
     public void addColumn(final String tableName, final String columnName, final String dataType, final String udt, Integer maxLength, final String description) {
         String dt;
-        String size = maxLength.toString();                     //FOR TAP1.0, TAP1.1 should support arraySize if Vollt gets updated.
+        Integer size = maxLength;                     //FOR TAP1.0, TAP1.1 should support arraySize if Vollt gets updated.
         if (dataType.contains("ARRAY")){
             System.out.println(tableName + " " + columnName + " " + udt);
             dt = convertUdtToArrayType(udt);
             //NOTE: When 'arraySize' (TAP1.1) used then convert to arraySize and should be "*" for 'multiple' (Vollt compares it against int currently which has been raised as a bug)
-            size = "-1";
+            size = -1;  // -1 signifies an array
         }
         else {
             dt = getStandardType(dataType);
         }
 
+        boolean reservedCol = reservedWords.contains(columnName.toLowerCase(Locale.ROOT));
+        boolean reservedTab = reservedWords.contains(tableName.toLowerCase(Locale.ROOT));
         entityManager.createNativeQuery(insertColumnSql)
-                .setParameter(1, tableName)
-                .setParameter(2, columnName )
+                .setParameter(1, reservedTab ? "\"" + tableName + "\"" : tableName)
+                .setParameter(2, reservedCol ? "\"" + columnName + "\"" : columnName)
                 .setParameter(3, description)
                 .setParameter(4, dt.toUpperCase())
                 .setParameter(5, size)              //"-1" for array or maxlength for other types
