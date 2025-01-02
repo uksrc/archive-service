@@ -47,8 +47,8 @@ public class TapSchemaRepository {
      * Adds a table's details to the TAP_SCHEMA in the database.
      * @param schemaName The schema that this table belongs to.
      * @param tableName The name of the table to be added to the TAP_SCHEMA
-     * @param tableType
-     * @param description
+     * @param tableType One of either "table" or "view"
+     * @param description Human-readable description of the table
      */
     @Transactional
     public void addTable(final String schemaName, final String tableName, final String tableType, final String description) {
@@ -63,19 +63,18 @@ public class TapSchemaRepository {
 
     /**
      * Adds a column's details to the TAP_SCHEMA in the database
-     * @param tableName
-     * @param columnName
-     * @param dataType
-     * @param udt
-     * @param maxLength
-     * @param description
+     * @param tableName The name of the table that the column belongs to
+     * @param columnName The name of the column as it appears in the table
+     * @param dataType The type of data stored in the column, such as SMALLINT or VARCHAR
+     * @param udt The user-defined type, for example the actual data type for when a dataType is ARRAY
+     * @param maxLength maximum length of the data
+     * @param description Human-readable description of the table
      */
     @Transactional
     public void addColumn(final String tableName, final String columnName, final String dataType, final String udt, Integer maxLength, final String description) {
         String dt;
         Integer size = maxLength;                     //FOR TAP1.0, TAP1.1 should support arraySize if Vollt gets updated.
         if (dataType.contains("ARRAY")){
-            //System.out.println(tableName + " " + columnName + " " + udt);
             dt = convertUdtToArrayType(udt);
             //NOTE: When 'arraySize' (TAP1.1) used then convert to arraySize and should be "*" for 'multiple' (Vollt compares it against int currently which has been raised as a bug)
             size = -1;  // -1 signifies an array
@@ -97,8 +96,8 @@ public class TapSchemaRepository {
 
     /**
      * Remove leading underscore from arrays.
-     * @param udtName
-     * @return
+     * @param udtName formats a udt if required
+     * @return formatted version
      */
     private String convertUdtToArrayType(String udtName) {
         if (udtName.startsWith("_")) {
