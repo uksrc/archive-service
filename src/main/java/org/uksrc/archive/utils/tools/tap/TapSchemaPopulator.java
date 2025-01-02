@@ -8,7 +8,6 @@ import jakarta.persistence.EntityManager;
 import org.jboss.logging.Logger;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /*
 Adds any existing entities in the database to the TAP_SCHEMA (tables & columns)
@@ -51,6 +50,9 @@ public class TapSchemaPopulator {
                             //TODO - column description source?
                             if (details.length > 4) {
                                 tapSchemaRepository.addColumn(tableName, (String) details[0], (String) details[1], (String) details[2], (Integer) details[3], "colDesc");
+                            }
+                            else {
+                                LOG.warn("TAP Schema Populating - Error adding a column to table " + tableName);
                             }
                         }
                     }
