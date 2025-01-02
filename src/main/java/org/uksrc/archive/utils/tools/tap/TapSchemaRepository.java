@@ -32,11 +32,9 @@ public class TapSchemaRepository {
     //Columns that are reserved words in TAP (currently only CAOM 2.5 entries) - raised with CADC to see if a model adjustment is in order before release.
     static final Set<String> reservedWords = Set.of("coordsys", "pi", "position", "time");
 
-    //STILTS' Taplint is case-sensitve it seems CompareMetadataStage.java - compatibleDataTypesOneWay(~)
-    //E-MDQ-CTYP-5 Declared/result type mismatch for column photometric in table Environment (BOOLEAN != char) - ERROR seems to be caused by BOOLEAN not being set correctly (Vollt?) and defaulting to 'char' dataType when testing.
-
+    //STILTS' Taplint is case-sensitive  CompareMetadataStage.java - compatibleDataTypesOneWay(~)
     //Vollt TAP restricts data types in ADQLLib::DataType.java - DBDatatype to one of {	SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY,	CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, CIRCLE, POLYGON, REGION, UNKNOWN, UNKNOWN_NUMERIC }
-    //So neither BOOLEAN or varchar[] ARRAY will work, need to convert BOOLEAN to SMALLINT (0,1) for example.
+    //So neither BOOLEAN or varchar[] ARRAY will work, need to convert BOOLEAN to SMALLINT (0,1) for example (TAP 1.0 restriction).
     public TapSchemaRepository(){
         typeMapping = new HashMap<>();
         typeMapping.put("character varying", "VARCHAR");
@@ -47,8 +45,8 @@ public class TapSchemaRepository {
 
     /**
      * Adds a table's details to the TAP_SCHEMA in the database.
-     * @param schemaName
-     * @param tableName
+     * @param schemaName The schema that this table belongs to.
+     * @param tableName The name of the table to be added to the TAP_SCHEMA
      * @param tableType
      * @param description
      */
@@ -77,7 +75,7 @@ public class TapSchemaRepository {
         String dt;
         Integer size = maxLength;                     //FOR TAP1.0, TAP1.1 should support arraySize if Vollt gets updated.
         if (dataType.contains("ARRAY")){
-            System.out.println(tableName + " " + columnName + " " + udt);
+            //System.out.println(tableName + " " + columnName + " " + udt);
             dt = convertUdtToArrayType(udt);
             //NOTE: When 'arraySize' (TAP1.1) used then convert to arraySize and should be "*" for 'multiple' (Vollt compares it against int currently which has been raised as a bug)
             size = -1;  // -1 signifies an array
