@@ -19,9 +19,9 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.ivoa.dm.caom2.caom2.DerivedObservation;
-import org.ivoa.dm.caom2.caom2.Observation;
-import org.ivoa.dm.caom2.caom2.SimpleObservation;
+import org.ivoa.dm.caom2.DerivedObservation;
+import org.ivoa.dm.caom2.Observation;
+import org.ivoa.dm.caom2.SimpleObservation;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
 
@@ -216,7 +216,7 @@ public class ObservationResource {
             //Only update IF found
             Observation existing = em.find(Observation.class, id);
             if (existing != null && observation != null) {
-                observation.setId(id);
+        //        observation. .setId(id); //TODO merge
                 em.merge(observation);
                 return Response.ok(observation).build();
             }

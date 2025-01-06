@@ -2,7 +2,7 @@ package org.uksrc.archive.utils.tools;
 
 import jakarta.persistence.TypedQuery;
 import jakarta.ws.rs.core.Response;
-import org.ivoa.dm.caom2.caom2.Observation;
+import org.ivoa.dm.caom2.Observation;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.responses.Responses;
 

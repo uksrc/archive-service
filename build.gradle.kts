@@ -27,7 +27,7 @@ dependencies {
     implementation("org.javastro:jaxbjpa-utils:0.2.3")
 
     //Model(s)
-    implementation("org.opencadc:CAOM:2.5.0-SNAPSHOT:quarkus")
+    implementation("org.opencadc:CAOM:2.5.1-SNAPSHOT:quarkus")
 
     //Required by Vollt
     // TAP lib upload func.

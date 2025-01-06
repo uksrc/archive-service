@@ -1,10 +1,10 @@
 package org.uksrc.archive.utils;
 
-import org.ivoa.dm.caom2.caom2.DerivedObservation;
-import org.ivoa.dm.caom2.caom2.Observation;
+import org.ivoa.dm.caom2.DerivedObservation;
+import org.ivoa.dm.caom2.Observation;
 
 import jakarta.xml.bind.annotation.*;
-import org.ivoa.dm.caom2.caom2.SimpleObservation;
+import org.ivoa.dm.caom2.SimpleObservation;
 
 import java.util.ArrayList;
 import java.util.List;
