@@ -25,7 +25,7 @@ import org.ivoa.dm.caom2.caom2.SimpleObservation;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
 
-
+@SuppressWarnings("unused")
 @Path("/observations")
 public class ObservationResource {
 

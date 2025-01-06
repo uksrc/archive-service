@@ -15,6 +15,7 @@ import org.uksrc.archive.utils.tools.Tools;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 @Path("/collections")
 public class CollectionResource {
 

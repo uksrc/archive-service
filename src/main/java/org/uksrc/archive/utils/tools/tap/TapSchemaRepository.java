@@ -18,6 +18,7 @@ import java.util.*;
  * <p>
  * Only tested using CADC's CAOM 2.5 model that has been generated automatically by this framework.
  */
+@SuppressWarnings("unused")
 @ApplicationScoped
 public class TapSchemaRepository {
 
@@ -34,7 +35,7 @@ public class TapSchemaRepository {
 
     //STILTS' Taplint is case-sensitive  CompareMetadataStage.java - compatibleDataTypesOneWay(~)
     //Vollt TAP restricts data types in ADQLLib::DataType.java - DBDatatype to one of {	SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY,	CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, CIRCLE, POLYGON, REGION, UNKNOWN, UNKNOWN_NUMERIC }
-    //So neither BOOLEAN or varchar[] ARRAY will work, need to convert BOOLEAN to SMALLINT (0,1) for example (TAP 1.0 restriction).
+    //So neither BOOLEAN nor varchar[] ARRAY will work, need to convert BOOLEAN to SMALLINT (0,1) for example (TAP 1.0 restriction).
     public TapSchemaRepository(){
         typeMapping = new HashMap<>();
         typeMapping.put("character varying", "VARCHAR");

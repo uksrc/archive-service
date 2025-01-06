@@ -15,6 +15,7 @@ public class CustomObjectMapper {
     private static final Logger log = Logger.getLogger(CustomObjectMapper.class);
 
     // Replaces the CDI producer for ObjectMapper built into Quarkus
+    @SuppressWarnings("unused")
     @Singleton
     @Produces
     ObjectMapper objectMapper(Instance<ObjectMapperCustomizer> customizers) {

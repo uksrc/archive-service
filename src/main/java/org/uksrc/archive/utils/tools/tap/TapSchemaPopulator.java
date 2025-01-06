@@ -25,6 +25,7 @@ public class TapSchemaPopulator {
 
     static final String checkTableExistsSql = "SELECT 1 FROM \"TAP_SCHEMA\".\"tables\" WHERE table_name = ?";
 
+    @SuppressWarnings("unused")
     @PostConstruct
     public void initialize() {
         try {
@@ -48,7 +49,7 @@ public class TapSchemaPopulator {
                     for (Object columnDetails : colResults) {
                         if (columnDetails instanceof Object[] details) {
                             //TODO - column description source?
-                            if (details.length > 4) {
+                            if (details.length >= 4) {
                                 tapSchemaRepository.addColumn(tableName, (String) details[0], (String) details[1], (String) details[2], (Integer) details[3], "colDesc");
                             }
                             else {
