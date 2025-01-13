@@ -25,6 +25,8 @@ dependencies {
     implementation(fileTree("lib") { include("*.jar") })
     implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation("org.javastro:jaxbjpa-utils:0.2.3")
+    implementation("io.quarkus:quarkus-agroal")
+
 
     //Model(s)
     implementation("org.opencadc:CAOM:2.5.0-SNAPSHOT:quarkus")
@@ -51,4 +53,15 @@ tasks.withType<Test> {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
+}
+
+
+apply(from = "src/main/kotlin/generateTapProperties.gradle.kts")
+
+tasks.named("build") {
+    dependsOn("generateTapProperties")
+}
+
+tasks.named("quarkusDev") {
+    dependsOn("generateTapProperties")
 }

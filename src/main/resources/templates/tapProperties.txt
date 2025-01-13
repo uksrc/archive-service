@@ -2,9 +2,9 @@ provider_name = UKSRC Archive Service
 
 database_access = jdbc
 jdbc_driver = org.postgresql.Driver
-jdbc_url = jdbc:postgresql://localhost:5432/quarkus
-db_username = quarkus
-db_password = quarkus
+jdbc_url = {db_url}
+db_username = {db_user}
+db_password = {db_password}
 
 file_manager = local
 #Switch to linux path upon release deployment
