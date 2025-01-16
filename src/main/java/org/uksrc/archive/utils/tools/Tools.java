@@ -2,12 +2,14 @@ package org.uksrc.archive.utils.tools;
 
 import jakarta.persistence.TypedQuery;
 import jakarta.ws.rs.core.Response;
-import org.ivoa.dm.caom2.caom2.Observation;
+import org.ivoa.dm.caom2.Observation;
 import org.uksrc.archive.utils.ObservationListWrapper;
+import org.uksrc.archive.utils.responses.ObservationResponse;
 import org.uksrc.archive.utils.responses.Responses;
 
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 /**
  * <p>Utility class providing common helper methods for web requests.
@@ -32,7 +34,7 @@ public final class Tools {
             }
 
             List<Observation> observations = query.getResultList();
-            ObservationListWrapper wrapper = new ObservationListWrapper(observations);
+            ObservationListWrapper wrapper = new ObservationListWrapper(toObservationResponses(observations));
 
             return Response.ok(wrapper).build();
         } catch (Exception e) {
@@ -52,5 +54,11 @@ public final class Tools {
             joiner.add(item);
         }
         return joiner.toString();
+    }
+
+    private static List<ObservationResponse> toObservationResponses(List<Observation> observations) {
+        return observations.stream()
+                .map(obs -> new ObservationResponse(obs.getId(), obs))
+                .collect(Collectors.toList());
     }
 }

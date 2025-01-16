@@ -26,10 +26,11 @@ dependencies {
     implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation("org.javastro:jaxbjpa-utils:0.2.3")
     implementation("io.quarkus:quarkus-agroal")
+    implementation("commons-beanutils:commons-beanutils:1.9.4")
 
 
     //Model(s)
-    implementation("org.opencadc:CAOM:2.5.0-SNAPSHOT:quarkus")
+    implementation("org.opencadc:CAOM:2.5.1-SNAPSHOT:quarkus")
 
     //Required by Vollt
     // TAP lib upload func.

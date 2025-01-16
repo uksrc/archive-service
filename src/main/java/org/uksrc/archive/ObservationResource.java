@@ -3,12 +3,14 @@ package org.uksrc.archive;
  * Created on 21/08/2024 by Paul Harrison (paul.harrison@manchester.ac.uk).
  */
 
+import com.fasterxml.jackson.databind.util.BeanUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import org.apache.commons.beanutils.BeanUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -19,9 +21,10 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.ivoa.dm.caom2.caom2.DerivedObservation;
-import org.ivoa.dm.caom2.caom2.Observation;
-import org.ivoa.dm.caom2.caom2.SimpleObservation;
+import org.ivoa.dm.caom2.DerivedObservation;
+import org.ivoa.dm.caom2.Observation;
+import org.ivoa.dm.caom2.SimpleObservation;
+import org.uksrc.archive.utils.responses.ObservationResponse;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
 
@@ -216,9 +219,11 @@ public class ObservationResource {
             //Only update IF found
             Observation existing = em.find(Observation.class, id);
             if (existing != null && observation != null) {
-                observation.setId(id);
-                em.merge(observation);
-                return Response.ok(observation).build();
+                //Copy all properties from the supplied observation over the existing observation.
+                //ID MUST remain the same and won't be affected as long as setId is unavailable.
+                BeanUtils.copyProperties(existing, observation);
+                ObservationResponse observationResponse = new ObservationResponse(existing.getId(), existing);
+                return Response.ok(observationResponse).build();
             }
         } catch (Exception e) {
             return Responses.errorResponse(e);
@@ -329,8 +334,9 @@ public class ObservationResource {
         try {
             Observation observation = em.find(Observation.class, observationId);
             if (observation != null) {
+                ObservationResponse observationResponse = new ObservationResponse(observation.getId(), observation);
                 return Response.status(Response.Status.OK)
-                        .entity(observation).build();
+                        .entity(observationResponse).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
                         .type(MediaType.TEXT_PLAIN)
@@ -391,11 +397,12 @@ public class ObservationResource {
         try {
             em.persist(observation);
             em.flush();
+            ObservationResponse response = new ObservationResponse(observation.getId(), observation);
+            return Response.status(Response.Status.CREATED)
+                    .entity(response)
+                    .build();
         } catch (Exception e) {
             return Responses.errorResponse(e);
         }
-        return Response.status(Response.Status.CREATED)
-                .entity(observation)
-                .build();
     }
 }

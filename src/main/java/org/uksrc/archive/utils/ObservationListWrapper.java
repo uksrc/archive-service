@@ -1,10 +1,10 @@
 package org.uksrc.archive.utils;
 
-import org.ivoa.dm.caom2.caom2.DerivedObservation;
-import org.ivoa.dm.caom2.caom2.Observation;
+import org.ivoa.dm.caom2.DerivedObservation;
 
 import jakarta.xml.bind.annotation.*;
-import org.ivoa.dm.caom2.caom2.SimpleObservation;
+import org.ivoa.dm.caom2.SimpleObservation;
+import org.uksrc.archive.utils.responses.ObservationResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,27 +19,27 @@ import java.util.List;
 public class ObservationListWrapper {
 
     //@XmlElement(name = "Observation")  //NOTE: Use this instead of the lower one to make them all "Observation" if required
-    @XmlElements({
+   /* @XmlElements({
             @XmlElement(name = "SimpleObservation", type = SimpleObservation.class),
             @XmlElement(name = "DerivedObservation", type = DerivedObservation.class)
-    })
-    private List<Observation> observations = new ArrayList<>();
+    })*/
+    private List<ObservationResponse> observations = new ArrayList<>();
 
     @SuppressWarnings("unused")
     public ObservationListWrapper() {
     }
 
-    public ObservationListWrapper(List<Observation> observations) {
+    public ObservationListWrapper(List<ObservationResponse> observations) {
         this.observations = observations;
     }
 
     @SuppressWarnings("unused")
-    public List<Observation> getObservations() {
+    public List<ObservationResponse> getObservations() {
         return observations;
     }
 
     @SuppressWarnings("unused")
-    public void setObservations(List<Observation> observations) {
+    public void setObservations(List<ObservationResponse> observations) {
         this.observations = observations;
     }
 }
