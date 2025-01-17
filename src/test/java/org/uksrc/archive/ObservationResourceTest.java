@@ -334,7 +334,6 @@ public class ObservationResourceTest {
 
         //Ensure that the returned 5 are actually the last five
         ObservationResponse lastEntry = wrapper.getObservations().get(size - 1);
-        System.out.println(lastEntry.getId());
         assert (lastEntry.getId() >= 15);
     }
 
