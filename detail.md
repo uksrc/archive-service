@@ -241,6 +241,13 @@ This displays the default [Vollt](http://cdsportal.u-strasbg.fr/taptuto/gettings
 
 along with a textbox to run experimental queries.
 
+### Deployment Settings
+Update ``resources/templates/tapProperties.txt`` as required.
+
+One setting that may need changing is ``file_root_path`` it should resolve to a local folder (Windows requires full path too)
+
+``file_root_path = /some/linux/path``
+
 ### Testing
 Using [Stilts TapLint utility](https://www.star.bris.ac.uk/mbt/stilts/sun256/taplint.html), any issues can be highlighted.
 ```

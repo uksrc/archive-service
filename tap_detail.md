@@ -6,6 +6,9 @@ The Vollt service requires a file called tap.properties to be available at runti
 
 There is a template located at ``/src/main/resource/templates/tapProperties.txt`` which contains the required properties including some variabled ones. The variabled properties will be injected at build-time with values from the ``application.properties`` file. Once updated the generated ``tap.properties`` file will be deployed to ``/src/main/resources`` where it can be accessed by the Vollt service at run-time. 
 
+Depedendent on the operating system that is being deployed on (mainly testing), the following property will need to be changed to the correct folder path:
+``file_root_path = /some/linux/path`` This is where user data will be stored (such as generated VOTable output files). 
+
 ### Vollt Dependencies
 The three libraries required to the TAP service are custom versions of Vollt and can be found here - https://github.com/slloyd-src/vollt. The individual JARs (adql, tap & uws) are built are embedded within the archive-service application under the ``lib`` folder.
 
