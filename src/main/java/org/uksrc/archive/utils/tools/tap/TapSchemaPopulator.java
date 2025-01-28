@@ -7,6 +7,8 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.jboss.logging.Logger;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 /*
@@ -29,6 +31,12 @@ public class TapSchemaPopulator {
     @PostConstruct
     public void initialize() {
         try {
+            //For production builds, Schema not added automatically for release builds
+            int num = entityManager.createNativeQuery("SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'TAP_SCHEMA';").getResultList().size();
+            if (num == 0){
+                addTapSchema();
+            }
+
             List<?> result = entityManager.createNativeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").getResultList();
             List<String> newTables = result.stream()
                     .map(Object::toString)
@@ -61,6 +69,21 @@ public class TapSchemaPopulator {
             }
         }catch (Exception e) {
             LOG.error("Populating TAP Schema", e);
+        }
+    }
+
+    private void addTapSchema() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        URL resource = classLoader.getResource("import.sql");
+        if (resource == null) {
+            System.out.println("No import.sql found");
+        }
+        else {
+            try {
+                tapSchemaRepository.executeSQLFile("import.sql");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

@@ -1,11 +1,17 @@
 package org.uksrc.archive.utils.tools.tap;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Added to allow the submission of TAP_SCHEMA entities (for "transactional" reasons)
@@ -119,5 +125,52 @@ public class TapSchemaRepository {
             }
         }
         return dataType;
+    }
+
+    @Transactional
+    public void executeSQLFile(String resourcePath) throws IOException {
+        // Read the file as a single string
+        try {
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resourcePath);
+            if (inputStream != null) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                List<String> lines = reader.lines().toList();
+                List<String> instructions = removeCommentedLines(lines);
+
+                // Execute each statement
+                for (String statement : instructions) {
+                    String trimmedStatement = statement.trim();
+                    if (!trimmedStatement.isEmpty()) {
+                        entityManager.createNativeQuery(trimmedStatement).executeUpdate();
+                    }
+                }
+            }
+        }
+        catch (Exception e) {
+            Log.debug("Error while executing import.sql", e);
+        }
+    }
+
+    private List<String> removeCommentedLines(List<String> lines) {
+        List<String> cleanedLines = new ArrayList<>();
+        boolean inCommentBlock = false;
+
+        for (String line : lines) {
+            String trimmedLine = line.trim();
+
+            if (trimmedLine.startsWith("/*")) {
+                inCommentBlock = true;
+            }
+
+            if (!inCommentBlock && !line.isEmpty()) {
+                cleanedLines.add(line);
+            }
+
+            if (trimmedLine.endsWith("*/")) {
+                inCommentBlock = false;
+            }
+        }
+
+        return cleanedLines;
     }
 }

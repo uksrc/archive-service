@@ -7,6 +7,29 @@ tasks.register("generateTapProperties") {
     group = "build"
     description = "Generates the tap.properties file based on application.properties"
 
+    var jdbcProperty = "quarkus.datasource.jdbc.url"
+
+    doFirst {
+        val executedTasks = project.gradle.startParameter.taskNames
+        val isBuild = "build" in executedTasks || executedTasks.any { it.contains("assemble") || it.contains("package") }
+        println("isBuild " + isBuild)
+
+
+        if ("quarkusDev" in executedTasks) {
+            jdbcProperty = "dev.quarkus.datasource.jdbc.url"
+        }
+        else if (isBuild) {
+            val profile = project.findProperty("quarkus.profile") ?: "prod"
+            println("profile " + profile)
+            jdbcProperty = when (profile) {
+                "dev" -> "%dev.quarkus.datasource.jdbc.url"
+                "prod" -> "%prod.quarkus.datasource.jdbc.url"
+                else -> "quarkus.datasource.jdbc.url"
+            }
+        }
+        println("jdbcProperty : " + jdbcProperty)
+    }
+
     doLast {
         // Load the application.properties file
         val appProps = Properties()
@@ -17,9 +40,10 @@ tasks.register("generateTapProperties") {
         appProps.load(appPropsFile.reader())
 
         // Required properties from application.properties
-        val jdbcUrl = appProps.getProperty("quarkus.datasource.jdbc.url") ?: "jdbc:postgresql://localhost:5432/quarkus"
+        val jdbcUrl = appProps.getProperty(jdbcProperty) ?: "jdbc:postgresql://localhost:5432/quarkus"
         val username = appProps.getProperty("quarkus.datasource.username") ?: "quarkus"
         val password = appProps.getProperty("quarkus.datasource.password") ?: "quarkus"
+        println("dbase API: " + jdbcUrl)
 
         // Template with variable placements
         val templatePath = file("src/main/resources/templates/tapProperties.txt")

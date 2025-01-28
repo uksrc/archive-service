@@ -9,7 +9,8 @@ db_password = {db_password}
 file_manager = local
 #Switch to linux path upon release deployment
 #file_root_path = /some/linux/path
-file_root_path = C:\\Users\\mdehssln\\Documents
+#file_root_path = C:\\Users\\mdehssln\\Documents
+file_root_path = /tmp
 sql_translator = postgres
 metadata = db
 
