@@ -1,7 +1,26 @@
 ## Details of the TAP Service
 Any information regarding the current TAP service in use.
 
-### TAP Properties
+### Running locally on minikube
+1. Start minikube
+2. Make sure the images created are added to minikube's docker repository and not to the host machine:
+``` 
+eval $(minikube docker-env)
+Or on windows 
+& minikube -p minikube docker-env | Invoke-Expression``
+```
+3. check the tap.properties template for suitable values. See [*TAP Properties*](#tap_properties)
+4. clean and build the archive-service
+```
+gradle clean
+gradle build -x test
+```
+5. Expose the archive service on the minikube cluster and the displayed localhost:<port> should resolve the service (just add /tap)
+```
+minikube service archive-service --url
+```
+
+### <a id="tap_properties"></a>TAP Properties
 The Vollt service requires a file called tap.properties to be available at runtime, this supplies properties such as the URL of the database.
 
 There is a template located at ``/src/main/resource/templates/tapProperties.txt`` which contains the required properties including some variabled ones. The variabled properties will be injected at build-time with values from the ``application.properties`` file. Once updated the generated ``tap.properties`` file will be deployed to ``/src/main/resources`` where it can be accessed by the Vollt service at run-time. 
