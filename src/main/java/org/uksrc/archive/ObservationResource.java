@@ -3,7 +3,6 @@ package org.uksrc.archive;
  * Created on 21/08/2024 by Paul Harrison (paul.harrison@manchester.ac.uk).
  */
 
-import com.fasterxml.jackson.databind.util.BeanUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;

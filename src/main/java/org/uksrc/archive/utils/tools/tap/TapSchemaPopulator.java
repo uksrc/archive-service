@@ -7,7 +7,6 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.jboss.logging.Logger;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
@@ -72,6 +71,10 @@ public class TapSchemaPopulator {
         }
     }
 
+    /**
+     * Add the TAP Schema to the database.
+     * Requires the import.sql to be in the resources folder
+     */
     private void addTapSchema() {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         URL resource = classLoader.getResource("import.sql");
@@ -79,11 +82,7 @@ public class TapSchemaPopulator {
             System.out.println("No import.sql found");
         }
         else {
-            try {
-                tapSchemaRepository.executeSQLFile("import.sql");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            tapSchemaRepository.executeSQLFile("import.sql");
         }
     }
 }

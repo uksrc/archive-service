@@ -3,7 +3,6 @@ package org.uksrc.archive.utils;
 import jakarta.ws.rs.core.Response;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.is;
 
 public class Utilities {
 

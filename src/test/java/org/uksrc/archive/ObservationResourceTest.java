@@ -149,34 +149,6 @@ public class ObservationResourceTest {
         assert(uri.compareTo("auri") == 0);
     }
 
-    //Disabled as ID is now auto-generated in the database.
-    //Leaving in case we want to add a canonical ID too (or revert back to supplying an ID)
-/*    @Test
-    @DisplayName("Check that an error is raised if trying to add two observations with the same ID.")
-    public void testAddingDuplicateObservation() {
-        String duplicateObservation = String.format(XML_DERIVED_OBSERVATION, "256");
-
-        // Add 1st instance
-        given()
-                .header("Content-Type", "application/xml")
-                .body(duplicateObservation)
-                .when()
-                .post("/observations")
-                .then()
-                .statusCode(Response.Status.CREATED.getStatusCode())
-                .body("simpleObservation.id", is("256"));
-
-        // An Observation with the same ID as an added resource should not be allowed.
-        given()
-                .header("Content-Type", "application/xml")
-                .body(duplicateObservation)
-                .when()
-                .post("/observations")
-                .then()
-                .statusCode(Response.Status.BAD_REQUEST.getStatusCode())
-                .body(containsString("duplicate key value violates unique constraint"));
-    }*/
-
     @Test
     @DisplayName("Attempt to add some data that doesn't comply with model.")
     public void testAddingJunkObservation() {

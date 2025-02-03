@@ -7,11 +7,9 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Added to allow the submission of TAP_SCHEMA entities (for "transactional" reasons)
@@ -128,7 +126,7 @@ public class TapSchemaRepository {
     }
 
     @Transactional
-    public void executeSQLFile(String resourcePath) throws IOException {
+    public void executeSQLFile(String resourcePath) {
         // Read the file as a single string
         try {
             InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resourcePath);
