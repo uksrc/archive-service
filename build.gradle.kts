@@ -7,6 +7,14 @@ val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
+group = "org.uksrc.archive"
+version = "0.1-SNAPSHOT"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 dependencies {
     implementation("io.quarkus:quarkus-container-image-docker")
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
@@ -29,6 +37,11 @@ dependencies {
     implementation("io.quarkus:quarkus-agroal")
     implementation("commons-beanutils:commons-beanutils:1.9.4")
 
+    //Vollt TAP
+    implementation("fr.unistra.cds:ADQLlib:2.0-SNAPSHOT")
+    implementation("fr.unistra.cds:TAPlib:2.4-SNAPSHOT")
+    implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
+
 
     //Model(s)
     implementation("org.opencadc:CAOM:2.5.1-SNAPSHOT:quarkus")
@@ -41,13 +54,20 @@ dependencies {
     implementation ("uk.ac.starlink:stil:4.3.1")
 }
 
-group = "org.uksrc.archive"
-version = "0.1-SNAPSHOT"
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+repositories {
+    mavenCentral()
+    /*
+         add this repository to pick up the SNAPSHOT version of the IVOA base library - in the future when this
+         will not be necessary when this library is released as a non-SNAPSHOT version.
+          */
+    maven {
+        url= uri("https://oss.sonatype.org/content/repositories/snapshots/")    //CAOM requires IVOA base
+    }
+    maven {
+        url = uri("https://repo.dev.uksrc.org/repository/maven-snapshots/") //change to maven-releases when required
+    }
 }
+
 
 tasks.withType<Test> {
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
@@ -57,7 +77,7 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
 }
 
-
+//Generates the tapProperties.txt from the template when building.
 apply(from = "src/main/kotlin/generateTapProperties.gradle.kts")
 
 tasks.named("build") {
