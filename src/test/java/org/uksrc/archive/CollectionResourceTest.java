@@ -49,11 +49,11 @@ public class CollectionResourceTest {
     public void testRetrievingCollectionIds() {
         logger.warn("Assumed database is empty and indexing starting from 1");
         for (int i = 1; i < 6; i++){
-            Utilities.addObservationToDatabase(Utilities.COLLECTION1);
+            Utilities.addObservationToDatabase(Utilities.COLLECTION1, Utilities.OBSERVATION1);
         }
 
         for (int i = 6; i < 13; i++){
-            Utilities.addObservationToDatabase(Utilities.COLLECTION2);
+            Utilities.addObservationToDatabase(Utilities.COLLECTION2, Utilities.OBSERVATION2);
         }
 
         String collections = when()

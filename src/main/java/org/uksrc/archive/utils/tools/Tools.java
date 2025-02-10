@@ -35,8 +35,6 @@ public final class Tools {
             List<Observation> observations = query.getResultList();
             ObservationListWrapper wrapper = new ObservationListWrapper(observations);
 
-            Long id = wrapper.getObservations().get(1).getId();
-
             return Response.ok(wrapper).build();
         } catch (Exception e) {
             return Responses.errorResponse(e);
