@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
+import org.ivoa.dm.caom2.Observation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.Utilities;
-import org.uksrc.archive.utils.responses.ObservationResponse;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
@@ -86,6 +86,7 @@ public class ObservationResourceTest {
                     .as(new TypeRef<>() {
                     });
 
+            Long id = wrapper.getObservations().get(1).getId();
             assert (wrapper.getObservations().size() == 2);
         }
     }
@@ -138,9 +139,9 @@ public class ObservationResourceTest {
                 .statusCode(Response.Status.CREATED.getStatusCode())// XML expectation (remove 'simpleObservation.' for JSON)
                 .extract().response().body().asString();
 
-        String searchString = "ObservationResponse.SimpleObservation.";
+        String searchString = "SimpleObservation.";
         if (observation.contains("DerivedObservation")){
-            searchString = "ObservationResponse.DerivedObservation.";
+            searchString = "DerivedObservation.";
         }
         String intent = XmlPath.from(res).getString(searchString + "intent");
         String uri = XmlPath.from(res).getString(searchString + "uri");
@@ -188,7 +189,7 @@ public class ObservationResourceTest {
         String uniqueObservation = String.format(XML_OBSERVATION, COLLECTION1);
 
         // Add an observation
-        ObservationResponse res = given()
+        Observation res = given()
                 .header("Content-Type", "application/xml")
                 .body(uniqueObservation)
                 .when()
@@ -305,7 +306,7 @@ public class ObservationResourceTest {
         assert(size == 5);
 
         //Ensure that the returned 5 are actually the last five
-        ObservationResponse lastEntry = wrapper.getObservations().get(size - 1);
+        Observation lastEntry = wrapper.getObservations().get(size - 1);
         assert (lastEntry.getId() >= 15);
     }
 

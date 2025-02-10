@@ -23,7 +23,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.SimpleObservation;
-import org.uksrc.archive.utils.responses.ObservationResponse;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
 
@@ -221,8 +220,7 @@ public class ObservationResource {
                 //Copy all properties from the supplied observation over the existing observation.
                 //ID MUST remain the same and won't be affected as long as setId is unavailable.
                 BeanUtils.copyProperties(existing, observation);
-                ObservationResponse observationResponse = new ObservationResponse(existing.getId(), existing);
-                return Response.ok(observationResponse).build();
+                return Response.ok(existing).build();
             }
         } catch (Exception e) {
             return Responses.errorResponse(e);
@@ -333,9 +331,8 @@ public class ObservationResource {
         try {
             Observation observation = em.find(Observation.class, observationId);
             if (observation != null) {
-                ObservationResponse observationResponse = new ObservationResponse(observation.getId(), observation);
                 return Response.status(Response.Status.OK)
-                        .entity(observationResponse).build();
+                        .entity(observation).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
                         .type(MediaType.TEXT_PLAIN)
@@ -396,9 +393,8 @@ public class ObservationResource {
         try {
             em.persist(observation);
             em.flush();
-            ObservationResponse response = new ObservationResponse(observation.getId(), observation);
             return Response.status(Response.Status.CREATED)
-                    .entity(response)
+                    .entity(/*response*/observation)
                     .build();
         } catch (Exception e) {
             return Responses.errorResponse(e);
