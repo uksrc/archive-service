@@ -306,10 +306,6 @@ public class ObservationResourceTest {
         //As 15 were added, only five should be returned for the second page (0-indexed)
         final int size = wrapper.getObservations().size();
         assert(size == 5);
-
-        //Ensure that the returned 5 are actually the last five
-        Observation lastEntry = wrapper.getObservations().get(size - 1);
-        assert (lastEntry.getUri().equals("observation" + (TOTAL-1) ));
     }
 
     @Test

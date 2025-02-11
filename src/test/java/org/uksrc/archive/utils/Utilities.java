@@ -16,7 +16,7 @@ public class Utilities {
     public static final String COLLECTION1 = "e-merlin";
     public static final String COLLECTION2 = "testCollection";
     public static final String OBSERVATION1 = "https://observatory.org/observations/CY9004_C_001_20200721";
-    public static final String OBSERVATION2 = "https://observatory.org/observations/CY9004_C_001_20200722";
+    public static final String OBSERVATION2 = "https://observatory.org/observations/CY9004_C_002_20200722";
 
     /**
      * Adds a SimpleObservation to the database with the supplied observationId
