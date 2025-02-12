@@ -14,9 +14,8 @@ Example resources suitable for **minimal** testing (Mandatory properties only).
 Namespace details must conform with the current vo-dml model used.
 ```xml
 <SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.SimpleObservation">
-    <id>988</id>
     <collection>e-merlin</collection>
-    <uri>auri</uri>
+    <uri>urn:obs:jbo:20170801:obs1</uri>    //Must be unique
     <intent>science</intent>
 </SimpleObservation>
 ```
@@ -25,18 +24,16 @@ Namespace details must conform with the current vo-dml model used.
 ```json
 {
   "@type": "caom2:caom2.SimpleObservation",
-  "id": "myData12345",
   "collection": "test",
-  "uri": "auri",
+  "uri": "urn:obs:jbo:20170801:obs1",
   "intent": "science"
 }
 ```
 #### Example Derived Observation
 ```xml
 <DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.DerivedObservation">
-    <id>10</id>
     <collection>test</collection>
-    <uri>auri</uri>
+    <uri>urn:obs:jbo:20170801:obs1</uri>
     <intent>science</intent>
     <members>jbo-simple1</members>
     <members>jbo-simple2</members>

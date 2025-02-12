@@ -8,7 +8,6 @@ import org.uksrc.archive.utils.responses.Responses;
 
 import java.util.List;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 /**
  * <p>Utility class providing common helper methods for web requests.
