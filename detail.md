@@ -1,16 +1,21 @@
 # archive-service
 
-Details of the functionality of the archive-service endpoints.
+1. [Example resources](#examples)
+2. [Submission and retrieval endpoints (REST APIs)](#endpoints).
+3. [Tap service](#tapservice).
+
 
 ------------------------------------------------------------------------------------------
+### Examples
+<a id="examples"></a>
 Example resources suitable for **minimal** testing (Mandatory properties only).
+
 #### Example Simple Observation
 Namespace details must conform with the current vo-dml model used.
 ```xml
 <SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.SimpleObservation">
-    <id>988</id>
     <collection>e-merlin</collection>
-    <uri>auri</uri>
+    <uri>urn:obs:jbo:20170801:obs1</uri>    //Must be unique
     <intent>science</intent>
 </SimpleObservation>
 ```
@@ -19,26 +24,25 @@ Namespace details must conform with the current vo-dml model used.
 ```json
 {
   "@type": "caom2:caom2.SimpleObservation",
-  "id": "myData12345",
   "collection": "test",
-  "uri": "auri",
+  "uri": "urn:obs:jbo:20170801:obs1",
   "intent": "science"
 }
 ```
 #### Example Derived Observation
 ```xml
 <DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.DerivedObservation">
-    <id>10</id>
     <collection>test</collection>
-    <uri>auri</uri>
+    <uri>urn:obs:jbo:20170801:obs1</uri>
     <intent>science</intent>
     <members>jbo-simple1</members>
     <members>jbo-simple2</members>
 </DerivedObservation>
 ```
 ------------------------------------------------------------------------------------------
+<a id="endpoints"></a>
 ### REST API details  
-Endpoints available for interaction with the archive-service.
+Details of the functionality of the archive-service endpoints.
 
 #### Retrieving observations
 
@@ -207,3 +211,48 @@ with JSON response also
 > ```
 
 </details>
+
+------------------------------------------------------------------------------------------
+<a id="tapservice"></a>
+## Tap Service
+
+### TAP SCHEMA setup
+
+The TAP schema is currently added to the database with the import.sql file which runs automatically on startup and adds the required tables to the database.
+This is followed by a bean (TapSchemaPopulator) that will read the database and add each type (Observation etc.) to the generated TAP schema entries.
+
+TODO: Generate a VO-DML/XSD model definition so that the TAP schema entries can be auto-added in the same way as the CAOM library.
+
+### TAP service usage
+
+Navigate to the <host>/tap endpoint (http://localhost:8080/tap for example), the host is the root of the archive-service.
+
+This displays the default [Vollt](http://cdsportal.u-strasbg.fr/taptuto/gettingstarted_file.html#firststart) user interface and displays links to the standard utilities:
+
+- async
+- tables 
+- capabilities
+- examples
+- availability
+- sync
+
+along with a textbox to run experimental queries.
+
+### Deployment Settings
+Update ``resources/templates/tapProperties.txt`` as required.
+
+One setting that may need changing is ``file_root_path`` it should resolve to a local folder (Windows requires full path too)
+
+``file_root_path = /some/linux/path``
+
+### Testing
+Using [Stilts TapLint utility](https://www.star.bris.ac.uk/mbt/stilts/sun256/taplint.html), any issues can be highlighted.
+```
+java -jar .\stilts.jar taplint interface=tap1.0 tapurl=http://localhost:8080/tap 
+```
+Can be focused on a subset if required using the ```report``` parameter, see [Usages](https://www.star.bris.ac.uk/mbt/stilts/sun256/taplint-usage.html) 
+
+Caution: Some of the TapLint tests seem to assume TAP 1.1 compliance and Vollt is currently 1.0. So double-check any issues with the specifications:
+
+- [TAP 1.0](https://www.ivoa.net/documents/TAP/20100327/REC-TAP-1.0.html)
+- [TAP 1.1](https://www.ivoa.net/documents/TAP/20190927/REC-TAP-1.1.html)

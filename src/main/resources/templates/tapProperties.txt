@@ -1,0 +1,22 @@
+provider_name = UKSRC Archive Service
+
+database_access = jdbc
+jdbc_driver = org.postgresql.Driver
+jdbc_url = {db_url}
+db_username = {db_user}
+db_password = {db_password}
+
+file_manager = local
+#Switch to linux path upon release deployment
+#file_root_path = /some/linux/path
+#file_root_path = C:\\Users\\mdehssln\\Documents
+file_root_path = /tmp
+sql_translator = postgres
+metadata = db
+
+fix_on_fail = true
+
+examples = /tap-examples.html
+
+#Needs to be true for either uploads or STILTS testing (STILTS' taplint considered no upload func. as a failure)
+upload_enabled = true

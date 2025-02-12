@@ -4,11 +4,13 @@ package org.uksrc.archive;
  */
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import org.apache.commons.beanutils.BeanUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -19,13 +21,13 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.ivoa.dm.caom2.caom2.DerivedObservation;
-import org.ivoa.dm.caom2.caom2.Observation;
-import org.ivoa.dm.caom2.caom2.SimpleObservation;
+import org.ivoa.dm.caom2.DerivedObservation;
+import org.ivoa.dm.caom2.Observation;
+import org.ivoa.dm.caom2.SimpleObservation;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
 
-
+@SuppressWarnings("unused")
 @Path("/observations")
 public class ObservationResource {
 
@@ -35,7 +37,7 @@ public class ObservationResource {
     @POST
     @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique and XML namespace/JSON type supplied.")
     @RequestBody(
-            description = "XML representation of the Observation",
+            description = "XML representation of the Observation, the uri parameter is the unique ID of the observation.",
             required = true,
             content = {
                     @Content(
@@ -46,9 +48,8 @@ public class ObservationResource {
                                             name = "XML Example - SimpleObservation",
                                             value = """
                                                     <SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.SimpleObservation">
-                                                    <id>1</id>
                                                     <collection>test</collection>
-                                                    <uri>auri</uri>
+                                                    <uri>https://observatory.org/observations/CY9004_C_001_20200721</uri>
                                                     <intent>science</intent>
                                                     </SimpleObservation>"""
                                     ),
@@ -56,9 +57,8 @@ public class ObservationResource {
                                             name = "XML Example - DerivedObservation",
                                             value = """
                                                     <DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.DerivedObservation">
-                                                    <id>1</id>
                                                     <collection>test</collection>
-                                                    <uri>auri</uri>
+                                                    <uri>https://observatory.org/observations/CY9004_C_001_20200722</uri>
                                                     <intent>science</intent>
                                                     <members>jbo-simple1</members>
                                                     <members>jbo-simple2</members>
@@ -75,9 +75,8 @@ public class ObservationResource {
                                             value = """
                                                      {
                                                         "@type": "caom2:caom2.SimpleObservation",
-                                                        "id": "3",
                                                         "collection": "test",
-                                                        "uri": "auri",
+                                                        "uri": "https://observatory.org/observations/CY9004_C_001_20200721",
                                                         "intent": "science",
                                                     }
                                                     """
@@ -87,9 +86,8 @@ public class ObservationResource {
                                             value = """
                                                     {
                                                         "@type": "caom2:caom2.DerivedObservation",
-                                                        "id": "3",
                                                         "collection": "test",
-                                                        "uri": "auri",
+                                                        "uri": "https://observatory.org/observations/CY9004_C_001_20200722",
                                                         "intent": "science",
                                                         "members": [
                                                             "jbo-simple1",
@@ -123,9 +121,9 @@ public class ObservationResource {
     @Operation(summary = "Update an existing Observation", description = "Updates an existing observation with the supplied ID")
     @Parameter(
             name = "observationId",
-            description = "ID of the Observation to be updated",
+            description = "ID of the Observation to be updated, actually the Observation.uri property",
             required = true,
-            example = "123"
+            example = "https://observatory.org/observations/CY9004_C_001_20200721"
     )
     @RequestBody(
             description = "XML representation of the Observation",
@@ -139,9 +137,8 @@ public class ObservationResource {
                                             name = "XML Example - SimpleObservation",
                                             value = """
                                                     <SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.SimpleObservation">
-                                                    <id>1</id>
                                                     <collection>test</collection>
-                                                    <uri>auri</uri>
+                                                    <uri>https://observatory.org/observations/CY9004_C_001_20200721</uri>
                                                     <intent>science</intent>
                                                     </SimpleObservation>"""
                                     ),
@@ -149,9 +146,8 @@ public class ObservationResource {
                                             name = "XML Example - DerivedObservation",
                                             value = """
                                                     <DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.DerivedObservation">
-                                                    <id>1</id>
                                                     <collection>test</collection>
-                                                    <uri>auri</uri>
+                                                    <uri>https://observatory.org/observations/CY9004_C_001_20200722</uri>
                                                     <intent>science</intent>
                                                     <members>jbo-simple1</members>
                                                     <members>jbo-simple2</members>
@@ -168,9 +164,8 @@ public class ObservationResource {
                                             value = """
                                                      {
                                                         "@type": "caom2:caom2.SimpleObservation",
-                                                        "id": "3",
                                                         "collection": "test",
-                                                        "uri": "auri",
+                                                        "uri": "https://observatory.org/observations/CY9004_C_001_20200721",
                                                         "intent": "science",
                                                     }
                                                     """
@@ -180,9 +175,8 @@ public class ObservationResource {
                                             value = """
                                                     {
                                                         "@type": "caom2:caom2.DerivedObservation",
-                                                        "id": "3",
                                                         "collection": "test",
-                                                        "uri": "auri",
+                                                        "uri": "https://observatory.org/observations/CY9004_C_001_20200721",
                                                         "intent": "science",
                                                         "members": [
                                                             "jbo-simple1",
@@ -211,14 +205,22 @@ public class ObservationResource {
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Transactional
-    public Response updateObservation(@PathParam("observationId") String id, SimpleObservation observation) {
+    public Response updateObservation(@PathParam("observationId") String id, Observation observation) {
         try {
+            if(id == null || id.isEmpty()) {
+                return Responses.errorResponse("Invalid ID");
+            }
+            else if (!id.equals(observation.getUri())){
+                return Responses.errorResponse("id MUST be the same as observation.uri");
+            }
+
             //Only update IF found
-            Observation existing = em.find(Observation.class, id);
-            if (existing != null && observation != null) {
-                observation.setId(id);
-                em.merge(observation);
-                return Response.ok(observation).build();
+            Observation existing = findObservation(id);
+            if (existing != null) {
+                //Copy all properties from the supplied observation over the existing observation.
+                //Observation.uri MUST remain the same and won't be affected.
+                BeanUtils.copyProperties(existing, observation);
+                return Response.ok(existing).build();
             }
         } catch (Exception e) {
             return Responses.errorResponse(e);
@@ -295,13 +297,13 @@ public class ObservationResource {
 
     @GET
     @Path("/{observationId}")
-    @Operation(summary = "Retrieve an observation", description = "Returns an observation with the supplied ID.")
+    @Operation(summary = "Retrieve an observation", description = "Returns an observation with the supplied ID, the ID is actually defined as Observation.uri.")
     @Parameters({
             @Parameter(
                     name = "observationId",
-                    description = "The id of the observation",
+                    description = "The id of the observation (Observation.uri)",
                     required = true,
-                    example = "123456"
+                    example = "https://observatory.org/observations/CY9004_C_001_20200722"
             )
     })
     @APIResponse(
@@ -327,7 +329,7 @@ public class ObservationResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Response getObservation(@PathParam("observationId") String observationId) {
         try {
-            Observation observation = em.find(Observation.class, observationId);
+            Observation observation = findObservation(observationId);
             if (observation != null) {
                 return Response.status(Response.Status.OK)
                         .entity(observation).build();
@@ -347,9 +349,9 @@ public class ObservationResource {
     @Parameters({
             @Parameter(
                     name = "observationId",
-                    description = "The id of the observation to delete.",
+                    description = "The id of the observation to delete (id is actually Observation.uri).",
                     required = true,
-                    example = "123"
+                    example = "https://observatory.org/observations/CY9004_C_001_20200722"
             )
     })
     @APIResponse(
@@ -367,7 +369,7 @@ public class ObservationResource {
     @Transactional
     public Response deleteObservation(@PathParam("observationId") String id) {
         try {
-            Observation observation = em.find(Observation.class, id);
+            Observation observation = findObservation(id);
             if (observation != null) {
                 em.remove(observation);
                 return Response.status(Response.Status.NO_CONTENT).build();
@@ -389,13 +391,36 @@ public class ObservationResource {
      */
     private Response submitObservation(Observation observation) {
         try {
-            em.persist(observation);
-            em.flush();
+            if (observation.getUri() != null && findObservation(observation.getUri()) == null) {
+                em.persist(observation);
+                em.flush();
+                return Response.status(Response.Status.CREATED)
+                        .entity(observation)
+                        .build();
+            }
+            else {
+                return Responses.errorResponse("Observation URI " + observation.getUri() + " already exists.");
+            }
         } catch (Exception e) {
             return Responses.errorResponse(e);
         }
-        return Response.status(Response.Status.CREATED)
-                .entity(observation)
-                .build();
+    }
+
+    /**
+     * Checks to see if an observation with the supplied ID already exists
+     * @param observationId Observation.uri
+     * @return The observation if found, null if not
+     */
+    private Observation findObservation(String observationId) {
+        TypedQuery<Observation> existsQuery = em.createQuery(
+                "SELECT o FROM Observation o WHERE o.uri = :uri", Observation.class
+        );
+
+        try {
+            existsQuery.setParameter("uri", observationId);
+            return existsQuery.getSingleResult();
+        } catch (NoResultException e){
+            return null;
+        }
     }
 }

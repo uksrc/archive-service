@@ -5,13 +5,14 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.jboss.logging.Logger;
 
+@SuppressWarnings("unused")
 @Provider
 public class GenericExceptionMapper implements ExceptionMapper<Exception> {
-    private static final Logger LOG = Logger.getLogger(GenericExceptionMapper.class);
+    private static final Logger log = Logger.getLogger(GenericExceptionMapper.class);
 
     @Override
     public Response toResponse(Exception exception) {
-        LOG.error(exception);
+        log.error(exception);
 
         return Response.status(Response.Status.BAD_REQUEST)
                 .entity("Error: " + exception.getMessage())

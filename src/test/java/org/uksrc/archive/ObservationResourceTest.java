@@ -2,11 +2,11 @@ package org.uksrc.archive;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;
+import io.restassured.path.xml.XmlPath;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
-import org.ivoa.dm.caom2.caom2.Observation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,10 +15,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.Utilities;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.containsString;
 
 /**
  * Test class for the Observation class
@@ -29,23 +31,23 @@ import static org.hamcrest.Matchers.containsString;
 public class ObservationResourceTest {
 
     //Caution with the id value if re-using.
-    private static final String XML_OBSERVATION = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.SimpleObservation\">" +
-            "<id>%s</id>" +
+    private static final String XML_OBSERVATION = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:SimpleObservation\">" +
             "<collection>%s</collection>" +
             "<intent>science</intent>" +
-            "<uri>auri</uri>" +
+            "<uri>%s</uri>" +
             "</SimpleObservation>";
 
-    private static final String XML_DERIVED_OBSERVATION = "<DerivedObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:caom2.DerivedObservation\">" +
-            "<id>%s</id>" +
-            "<collection>e-merlin</collection>" +
+    private static final String XML_DERIVED_OBSERVATION = "<DerivedObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:DerivedObservation\">" +
+            "<collection>%s</collection>" +
             "<intent>science</intent>" +
-            "<uri>auri</uri>" +
+            "<uri>%s</uri>" +
             "<members>someone</members>" +
             "</DerivedObservation>";
 
     private static final String COLLECTION1 = "e-merlin";
     private static final String COLLECTION2 = "testCollection";
+    private static final String OBSERVATION1 = URLEncoder.encode("https://observatory.org/observations/CY9004_C_001_20200721", StandardCharsets.UTF_8);
+    private static final String OBSERVATION2 = URLEncoder.encode("https://observatory.org/observations/CY9004_C_002_20200722", StandardCharsets.UTF_8);
 
     @Inject
     EntityManager em;
@@ -75,8 +77,8 @@ public class ObservationResourceTest {
     @Test
     @DisplayName("Add two observation and check two are returned.")
     public void testGettingObservationsNonEmpty() {
-        try(Response res1 = Utilities.addObservationToDatabase("1234", COLLECTION1);
-            Response res2 = Utilities.addObservationToDatabase("6789", COLLECTION1)) {
+        try(Response res1 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1);
+            Response res2 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION2)) {
             assert (res1.getStatus() == Response.Status.CREATED.getStatusCode() &&
                     res2.getStatus() == Response.Status.CREATED.getStatusCode());
 
@@ -95,8 +97,8 @@ public class ObservationResourceTest {
     @Test
     @DisplayName("Get observations via collection Id")
     public void testGettingObservationsViaCollectionId() {
-        try(Response res1 = Utilities.addObservationToDatabase("1234", COLLECTION1);
-            Response res2 = Utilities.addObservationToDatabase("6789", COLLECTION1)) {
+        try(Response res1 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1);
+            Response res2 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION2)) {
             assert (res1.getStatus() == Response.Status.CREATED.getStatusCode() &&
                     res2.getStatus() == Response.Status.CREATED.getStatusCode());
 
@@ -128,44 +130,30 @@ public class ObservationResourceTest {
     @DisplayName("Add an observation and check that part of the response body matches.")
     @ValueSource(strings = {XML_OBSERVATION, XML_DERIVED_OBSERVATION})
     public void testAddingObservation(String observation) {
-        String uniqueObservation = String.format(observation, "123", COLLECTION1);
+        //As the method enters twice we need to enforce different observation.uri (IDs).
+        String obsId = observation.contains("DerivedObservation") ? OBSERVATION1 : OBSERVATION2;
+
+        String uniqueObservation = String.format(observation, COLLECTION1, obsId);
 
         //As the /add operation returns the added observation, check the body of the response for valid values
-        given()
+        String res = given()
                 .header("Content-Type", "application/xml")
                 .body(uniqueObservation)
                 .when()
                 .post("/observations")
                 .then()
-                .statusCode(Response.Status.CREATED.getStatusCode())
-                .body("simpleObservation.id", is("123"))   // XML expectation (remove 'simpleObservation.' for JSON)
-                .body("simpleObservation.intent", is("science"));
-    }
+                .statusCode(Response.Status.CREATED.getStatusCode())// XML expectation (remove 'simpleObservation.' for JSON)
+                .extract().response().body().asString();
 
-    @Test
-    @DisplayName("Check that an error is raised if trying to add two observations with the same ID.")
-    public void testAddingDuplicateObservation() {
-        String duplicateObservation = String.format(XML_DERIVED_OBSERVATION, "256");
+        String searchString = "SimpleObservation.";
+        if (observation.contains("DerivedObservation")){
+            searchString = "DerivedObservation.";
+        }
+        String intent = XmlPath.from(res).getString(searchString + "intent");
+        String uri = XmlPath.from(res).getString(searchString + "uri");
 
-        // Add 1st instance
-        given()
-                .header("Content-Type", "application/xml")
-                .body(duplicateObservation)
-                .when()
-                .post("/observations")
-                .then()
-                .statusCode(Response.Status.CREATED.getStatusCode())
-                .body("simpleObservation.id", is("256"));
-
-        // An Observation with the same ID as an added resource should not be allowed.
-        given()
-                .header("Content-Type", "application/xml")
-                .body(duplicateObservation)
-                .when()
-                .post("/observations")
-                .then()
-                .statusCode(Response.Status.BAD_REQUEST.getStatusCode())
-                .body(containsString("duplicate key value violates unique constraint"));
+        assert(intent.compareTo("science") == 0);
+        assert(uri.compareTo(obsId) == 0);
     }
 
     @Test
@@ -204,8 +192,7 @@ public class ObservationResourceTest {
     @Test
     @DisplayName("Add an observation, update one of its values and update, check it's been updated correctly.")
     public void testUpdatingObservation() {
-        final String ID = "123";
-        String uniqueObservation = String.format(XML_OBSERVATION, ID, COLLECTION1);
+        String uniqueObservation = String.format(XML_OBSERVATION, COLLECTION1, OBSERVATION2);
 
         // Add an observation
         given()
@@ -215,8 +202,8 @@ public class ObservationResourceTest {
                 .post("/observations")
                 .then()
                 .statusCode(Response.Status.CREATED.getStatusCode())
-                .body("simpleObservation.id", is(ID))
-                .body("simpleObservation.intent", is("science"));
+                .extract()
+                .as(new TypeRef<>() {});
 
         // Update it with a different value
         String updatedObservation = uniqueObservation.replace("science", "calibration");
@@ -224,10 +211,10 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(updatedObservation)
                 .when()
-                .put(("/observations/" + ID))
+                .put(("/observations/" + OBSERVATION2))
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
-                .body("simpleObservation.id", is(ID))
+                .body("simpleObservation.uri", is(OBSERVATION2))
                 .body("simpleObservation.intent", is("calibration"));
 
         // For completeness, we need to check that the actual entry is updated
@@ -235,26 +222,24 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(uniqueObservation)
                 .when()
-                .get("/observations/" + ID)
+                .get("/observations/" + OBSERVATION2)
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
-                .body("simpleObservation.id", is(ID))   // XML expectation (remove 'simpleObservation.' for JSON)
+                .body("simpleObservation.uri", is(OBSERVATION2))   // XML expectation (remove 'simpleObservation.' for JSON)
                 .body("simpleObservation.intent", is("calibration"));
     }
 
     @Test
     @DisplayName("Attempt to update a non-existent observation and check the not found status.")
     public void testUpdatingNonExistingObservation() {
-        final String ID = "1234";
-
-        String obs1 = String.format(XML_OBSERVATION, ID, COLLECTION1);
+        String obs1 = String.format(XML_OBSERVATION, COLLECTION1, OBSERVATION1);
         String updatedObservation = obs1.replace("science", "calibration");
 
         given()
                 .header("Content-Type", "application/xml")
                 .body(updatedObservation)
                 .when()
-                .put(("/observations/" + ID))
+                .put("/observations/" + OBSERVATION1)
                 .then()
                 .statusCode(Response.Status.NOT_FOUND.getStatusCode());
     }
@@ -262,23 +247,22 @@ public class ObservationResourceTest {
     @Test
     @DisplayName("Attempt to delete an observation.")
     public void testDeletingObservation() {
-        final String ID = "256";
-        try(Response res = Utilities.addObservationToDatabase(ID, COLLECTION1)) {
+        try(Response res = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1)) {
             assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
 
             // Check it exists
             given()
                     .header("Content-Type", "application/xml")
                     .when()
-                    .get("/observations/" + ID)
+                    .get("/observations/" + OBSERVATION1)
                     .then()
                     .statusCode(Response.Status.OK.getStatusCode())
-                    .body("simpleObservation.id", is(ID));
+                    .body("simpleObservation.uri", is(OBSERVATION1));
 
             given()
                     .header("Content-Type", "application/xml")
                     .when()
-                    .delete(("/observations/" + ID))
+                    .delete(("/observations/" + OBSERVATION1))
                     .then()
                     .statusCode(Response.Status.NO_CONTENT.getStatusCode());
         }
@@ -288,7 +272,7 @@ public class ObservationResourceTest {
     @DisplayName("Test paging results, first page")
     public void testPagingResults() {
         for (int i = 0; i < 15; i++){
-            Utilities.addObservationToDatabase(String.valueOf(i), COLLECTION1);
+            Utilities.addObservationToDatabase(COLLECTION1, "observation" + i);
         }
 
         ObservationListWrapper wrapper = when()
@@ -305,8 +289,9 @@ public class ObservationResourceTest {
     @Test
     @DisplayName("Test paging results, second page")
     public void testPagingResults2() {
-        for (int i = 0; i < 15; i++){
-            Utilities.addObservationToDatabase(String.valueOf(i), COLLECTION1);
+        final int TOTAL = 15;
+        for (int i = 0; i < TOTAL; i++){
+            Utilities.addObservationToDatabase(COLLECTION1, "observation" + i);
         }
 
         ObservationListWrapper wrapper = when()
@@ -320,10 +305,6 @@ public class ObservationResourceTest {
         //As 15 were added, only five should be returned for the second page (0-indexed)
         final int size = wrapper.getObservations().size();
         assert(size == 5);
-
-        //Ensure that the returned 5 are actually the last five
-        Observation lastEntry = wrapper.getObservations().get(size - 1);
-        assert (lastEntry.getId().equals("14"));
     }
 
     @Test

@@ -8,6 +8,8 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.uksrc.archive.utils.Utilities;
 
 import java.util.Arrays;
@@ -17,6 +19,7 @@ import static io.restassured.RestAssured.when;
 
 @QuarkusTest
 public class CollectionResourceTest {
+    private static final Logger logger = LoggerFactory.getLogger(CollectionResourceTest.class);
 
     @Inject
     EntityManager em;
@@ -44,12 +47,13 @@ public class CollectionResourceTest {
     @Test
     @DisplayName("Test retrieving collection Ids")
     public void testRetrievingCollectionIds() {
-        for (int i = 0; i < 5; i++){
-            Utilities.addObservationToDatabase(String.valueOf(i), Utilities.COLLECTION1);
+        logger.warn("Assumed database is empty and indexing starting from 1");
+        for (int i = 1; i < 6; i++){
+            Utilities.addObservationToDatabase(Utilities.COLLECTION1, Utilities.OBSERVATION1 + i);
         }
 
-        for (int i = 5; i < 12; i++){
-            Utilities.addObservationToDatabase(String.valueOf(i), Utilities.COLLECTION2);
+        for (int i = 6; i < 13; i++){
+            Utilities.addObservationToDatabase(Utilities.COLLECTION2, Utilities.OBSERVATION2 + i);
         }
 
         String collections = when()
