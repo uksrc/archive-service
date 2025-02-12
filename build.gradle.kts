@@ -31,7 +31,6 @@ dependencies {
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
     implementation ("jakarta.validation:jakarta.validation-api:3.0.2")
-    implementation(fileTree("lib") { include("*.jar") })
     implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation("org.javastro:jaxbjpa-utils:0.2.3")
     implementation("io.quarkus:quarkus-agroal")
