@@ -46,6 +46,12 @@ public class TapSchemaPopulator {
                         .setParameter(1, tableName)
                         .getResultList().isEmpty();
 
+                if (!exists  && !tableName.startsWith("\"")) {
+                    exists = !entityManager.createNativeQuery(checkTableExistsSql)
+                            .setParameter(1, "\"" + tableName + "\"")
+                            .getResultList().isEmpty();
+                }
+
                 if (!exists) {
                     tapSchemaRepository.addTable("public", tableName, "table", "Details of a(n) " + tableName);
 
