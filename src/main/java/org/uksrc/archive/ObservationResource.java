@@ -398,19 +398,23 @@ public class ObservationResource {
      * @return Response containing status code and added observation (if successful)
      */
     private Response submitObservation(Observation observation) {
-        try {
-            if (observation.getUri() != null && findObservation(observation.getUri()) == null) {
-                em.persist(observation);
-                em.flush();
+        if (observation.getUri() == null) {
+            return Responses.errorResponse("Observation.uri must be supplied.");
+        }
 
-                Object specObservation = specialiseObservation(observation);
-                return Response.status(Response.Status.CREATED)
-                        .entity(specObservation)
-                        .build();
-            }
-            else {
-                return Responses.errorResponse("Observation URI " + observation.getUri() + " already exists.");
-            }
+        if (findObservation(observation.getUri()) != null) {
+            return Responses.errorResponse("Observation.uri " + observation.getUri() + " already exists.");
+        }
+
+        try {
+            em.persist(observation);
+            em.flush();
+
+            Object specObservation = specialiseObservation(observation);
+            return Response.status(Response.Status.CREATED)
+                    .entity(specObservation)
+                    .build();
+
         } catch (Exception e) {
             return Responses.errorResponse(e);
         }
