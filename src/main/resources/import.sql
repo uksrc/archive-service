@@ -38,7 +38,7 @@ SELECT 'TAP_SCHEMA', 'TAP_SCHEMA.tables', 'table', 'List of tables published in 
 WHERE NOT EXISTS (
     SELECT 1 FROM "TAP_SCHEMA"."tables"
     WHERE "schema_name" = 'TAP_SCHEMA'
-      AND "table_name" = 'TAP_SCHEMA.schemas'
+      AND "table_name" = 'TAP_SCHEMA.tables'
 );
 
 INSERT INTO "TAP_SCHEMA"."tables" ("schema_name", "table_name", "table_type", "description", "utype", "dbname")
@@ -46,7 +46,7 @@ SELECT 'TAP_SCHEMA', 'TAP_SCHEMA.columns', 'table', 'List of columns of all tabl
 WHERE NOT EXISTS (
     SELECT 1 FROM "TAP_SCHEMA"."tables"
     WHERE "schema_name" = 'TAP_SCHEMA'
-  AND "table_name" = 'TAP_SCHEMA.schemas'
+  AND "table_name" = 'TAP_SCHEMA.columns'
 );
 
 INSERT INTO "TAP_SCHEMA"."tables" ("schema_name", "table_name", "table_type", "description", "utype", "dbname")
@@ -54,7 +54,7 @@ SELECT 'TAP_SCHEMA', 'TAP_SCHEMA.keys', 'table', 'List all foreign keys but prov
 WHERE NOT EXISTS (
     SELECT 1 FROM "TAP_SCHEMA"."tables"
     WHERE "schema_name" = 'TAP_SCHEMA'
-  AND "table_name" = 'TAP_SCHEMA.schemas'
+  AND "table_name" = 'TAP_SCHEMA.keys'
 );
 
 INSERT INTO "TAP_SCHEMA"."tables" ("schema_name", "table_name", "table_type", "description", "utype", "dbname")
@@ -62,7 +62,7 @@ SELECT 'TAP_SCHEMA', 'TAP_SCHEMA.key_columns', 'table', 'List all foreign keys b
 WHERE NOT EXISTS (
     SELECT 1 FROM "TAP_SCHEMA"."tables"
     WHERE "schema_name" = 'TAP_SCHEMA'
-      AND "table_name" = 'TAP_SCHEMA.schemas'
+      AND "table_name" = 'TAP_SCHEMA.key_columns'
 );
 
 INSERT INTO "TAP_SCHEMA"."columns" VALUES ('TAP_SCHEMA.schemas', 'schema_name', 'schema name, possibly qualified', NULL, NULL, NULL, NULL, 'VARCHAR', -1, 1, 1, 1, 1) ON CONFLICT ("table_name", "column_name") DO NOTHING;
