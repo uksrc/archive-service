@@ -1,8 +1,8 @@
 # archive-service
 
 1. [Example resources](#examples)
-2. [Submission and retrieval endpoints (REST APIs)](#endpoints).
-3. [Tap service](#tapservice).
+2. [Submission and retrieval endpoints (REST APIs)](#endpoints)
+3. [Tap service](#tapservice)
 
 
 ------------------------------------------------------------------------------------------
@@ -13,7 +13,7 @@ Example resources suitable for **minimal** testing (Mandatory properties only).
 #### Example Simple Observation
 Namespace details must conform with the current vo-dml model used.
 ```xml
-<SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.SimpleObservation">
+<SimpleObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation">
     <collection>e-merlin</collection>
     <uri>urn:obs:jbo:20170801:obs1</uri>    //Must be unique
     <intent>science</intent>
@@ -31,7 +31,7 @@ Namespace details must conform with the current vo-dml model used.
 ```
 #### Example Derived Observation
 ```xml
-<DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:caom2.DerivedObservation">
+<DerivedObservation xmlns:caom2="http://ivoa.net/dm/models/vo-dml/experiment/caom2"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:DerivedObservation">
     <collection>test</collection>
     <uri>urn:obs:jbo:20170801:obs1</uri>
     <intent>science</intent>
@@ -41,7 +41,7 @@ Namespace details must conform with the current vo-dml model used.
 ```
 ------------------------------------------------------------------------------------------
 <a id="endpoints"></a>
-### REST API details  
+### REST API details
 Details of the functionality of the archive-service endpoints.
 
 #### Retrieving observations
