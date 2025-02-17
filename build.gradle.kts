@@ -51,6 +51,10 @@ dependencies {
     implementation("org.apache.commons:commons-fileupload2-jakarta-servlet6:2.0.0-M2")
 
     implementation ("uk.ac.starlink:stil:4.3.1")
+
+    //Identity Management
+    implementation("io.quarkus:quarkus-oidc")
+
 }
 
 repositories {
