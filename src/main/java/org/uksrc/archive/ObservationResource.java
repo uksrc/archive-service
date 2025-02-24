@@ -33,13 +33,13 @@ import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 @Path("/observations")
+@RolesAllowed("default-role-archive-service")
 public class ObservationResource {
 
     @PersistenceContext
     protected EntityManager em;  // exists for the application lifetime no need to close
 
     @POST
-    @RolesAllowed("default-role-archive-service")
     @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique and XML namespace/JSON type supplied.")
     @RequestBody(
             description = "XML representation of the Observation, the uri parameter is the unique ID of the observation.",
@@ -123,7 +123,6 @@ public class ObservationResource {
 
     @PUT
     @Path("/{observationId}")
-    @RolesAllowed("default-role-archive-service")
     @Operation(summary = "Update an existing Observation", description = "Updates an existing observation with the supplied ID")
     @Parameter(
             name = "observationId",
@@ -241,7 +240,6 @@ public class ObservationResource {
 
     @GET
     @Path("/")
-    @RolesAllowed("default-role-archive-service")
     @Operation(summary = "Retrieve list(s) of observations", description = "Returns either all the Observations currently stored or a subset using pagination IF page AND size are supplied.")
     @Parameters({
             @Parameter(
@@ -305,7 +303,6 @@ public class ObservationResource {
 
     @GET
     @Path("/{observationId}")
-    @RolesAllowed("default-role-archive-service")
     @Operation(summary = "Retrieve an observation", description = "Returns an observation with the supplied ID, the ID is actually defined as Observation.uri.")
     @Parameters({
             @Parameter(
@@ -356,7 +353,6 @@ public class ObservationResource {
 
     @DELETE
     @Path("/{observationId}")
-    @RolesAllowed("default-role-archive-service")
     @Operation(summary = "Delete an existing observation")
     @Parameters({
             @Parameter(

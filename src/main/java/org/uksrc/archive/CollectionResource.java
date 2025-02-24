@@ -18,6 +18,7 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 @Path("/collections")
+@RolesAllowed("default-role-archive-service")
 public class CollectionResource {
 
     @PersistenceContext
@@ -25,7 +26,6 @@ public class CollectionResource {
 
     @GET
     @Path("/")
-    @RolesAllowed("default-role-archive-service")
     @Operation(summary = "Retrieve all collection IDs", description = "Returns a list of unique collectionIds as a TSV (Tab Separated List).")
     @APIResponse(
             responseCode = "200",
