@@ -55,6 +55,8 @@ dependencies {
     //Identity Management
     implementation("io.quarkus:quarkus-oidc")
 
+    testImplementation("io.quarkus:quarkus-test-security")
+
 }
 
 repositories {

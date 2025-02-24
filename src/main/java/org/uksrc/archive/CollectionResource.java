@@ -1,5 +1,6 @@
 package org.uksrc.archive;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -24,6 +25,7 @@ public class CollectionResource {
 
     @GET
     @Path("/")
+    @RolesAllowed("default-role-archive-service")
     @Operation(summary = "Retrieve all collection IDs", description = "Returns a list of unique collectionIds as a TSV (Tab Separated List).")
     @APIResponse(
             responseCode = "200",

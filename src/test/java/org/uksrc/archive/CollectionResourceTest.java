@@ -1,6 +1,7 @@
 package org.uksrc.archive;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -33,6 +34,7 @@ public class CollectionResourceTest {
 
     @Test
     @DisplayName("Test retrieving collection Ids from empty DB")
+    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
     public void testRetrieveCollectionIdsFromEmptyDB() {
         String collections = when()
                 .get("/collections")
@@ -46,6 +48,7 @@ public class CollectionResourceTest {
 
     @Test
     @DisplayName("Test retrieving collection Ids")
+    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
     public void testRetrievingCollectionIds() {
         logger.warn("Assumed database is empty and indexing starting from 1");
         for (int i = 1; i < 6; i++){
