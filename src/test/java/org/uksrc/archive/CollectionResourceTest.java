@@ -50,7 +50,6 @@ public class CollectionResourceTest {
     @DisplayName("Test retrieving collection Ids")
     @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
     public void testRetrievingCollectionIds() {
-        logger.warn("Assumed database is empty and indexing starting from 1");
         for (int i = 1; i < 6; i++){
             Utilities.addObservationToDatabase(Utilities.COLLECTION1, Utilities.OBSERVATION1 + i);
         }
