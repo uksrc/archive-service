@@ -7,6 +7,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.io.StringReader;
 import java.net.URI;
@@ -18,6 +19,12 @@ import java.nio.charset.StandardCharsets;
 
 @Path("/auth-callback")
 public class AuthenticationResource {
+
+    String clientId = System.getenv("OIDC_CLIENT_ID");
+    String clientSecret = System.getenv("OIDC_CLIENT_SECRET");
+
+    @ConfigProperty(name = "authentication.callback")
+    String authUrl;
 
     @GET
     public Response handleOAuthCallback(@QueryParam("code") String code, @QueryParam("state") String state) {
@@ -45,9 +52,9 @@ public class AuthenticationResource {
 
             String formBody = "grant_type=authorization_code"
                     + "&code=" + URLEncoder.encode(code, StandardCharsets.UTF_8)
-                    + "&client_id=" + URLEncoder.encode("REDACTED", StandardCharsets.UTF_8)
-                    + "&client_secret=" + URLEncoder.encode("REDACTED", StandardCharsets.UTF_8)
-                    + "&redirect_uri=" + URLEncoder.encode("http://localhost:8080/auth-callback", StandardCharsets.UTF_8);
+                    + "&client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
+                    + "&client_secret=" + URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)
+                    + "&redirect_uri=" + URLEncoder.encode(authUrl, StandardCharsets.UTF_8);
 
             HttpClient client = HttpClient.newHttpClient();
 
@@ -60,9 +67,11 @@ public class AuthenticationResource {
 
             // Send request and get response
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            JsonObject jsonObject = Json.createReader(new StringReader(response.body())).readObject();
+            String bearerToken = jsonObject.getString("access_token");
 
             // Print response body
-            System.out.println(response.body());
+            System.out.println(bearerToken);
 
             return response.body();
         } catch (Exception e) {

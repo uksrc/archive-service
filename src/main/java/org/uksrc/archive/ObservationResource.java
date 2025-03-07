@@ -33,7 +33,7 @@ import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 @Path("/observations")
-@RolesAllowed("default-role-archive-service")
+@RolesAllowed("prototyping-groups/mini-src")
 public class ObservationResource {
 
     @PersistenceContext
