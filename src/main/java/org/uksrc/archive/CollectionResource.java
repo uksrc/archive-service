@@ -18,7 +18,6 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 @Path("/collections")
-//@RolesAllowed("default-role-archive-service")
 @RolesAllowed("prototyping-groups/mini-src")
 public class CollectionResource {
 

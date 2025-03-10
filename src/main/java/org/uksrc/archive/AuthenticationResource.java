@@ -1,5 +1,6 @@
 package org.uksrc.archive;
 
+import io.quarkus.arc.profile.IfBuildProfile;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.GET;
@@ -8,6 +9,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 import java.io.StringReader;
 import java.net.URI;
@@ -18,13 +20,22 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 @Path("/auth-callback")
+@IfBuildProfile(anyOf = {"dev", "test"})
 public class AuthenticationResource {
 
-    String clientId = System.getenv("OIDC_CLIENT_ID");
-    String clientSecret = System.getenv("OIDC_CLIENT_SECRET");
+    @ConfigProperty(name = "quarkus.oidc.auth-server-url")
+    String tokenServerUrl;
+
+    @ConfigProperty(name = "OIDC_CLIENT_ID")
+    String clientId;
+
+    @ConfigProperty(name = "OIDC_CLIENT_SECRET")
+    String clientSecret;
 
     @ConfigProperty(name = "authentication.callback")
     String authUrl;
+
+    private static final Logger LOG = Logger.getLogger(AuthenticationResource.class);
 
     @GET
     public Response handleOAuthCallback(@QueryParam("code") String code, @QueryParam("state") String state) {
@@ -34,21 +45,24 @@ public class AuthenticationResource {
 
         // Process the authorization code (exchange it for an access token)
         String accessToken = exchangeAuthorizationCodeForToken(code);
+        if (accessToken != null) {
+            JsonObject jsonObject = Json.createReader(new StringReader(accessToken)).readObject();
+            String bearerToken = jsonObject.getString("access_token");
+            System.out.println(bearerToken);
 
-        //  if (accessToken == null) {
-        //      return Response.status(Response.Status.UNAUTHORIZED).entity("Failed to exchange code for token").build();
-        //  }
-
-        // Redirect user to a successful login page
-        return Response.ok()
-                .type(MediaType.TEXT_PLAIN)
-                .entity("Success")
-                .build(); //.seeOther(URI.create("/success")).build();
+            return Response.ok()
+                    .type(MediaType.TEXT_PLAIN)
+                    .entity(bearerToken)
+                    .build();
+        }
+        else {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Failed to exchange code for token").build();
+        }
     }
 
     private String exchangeAuthorizationCodeForToken(String code) {
         try {
-            String tokenEndpoint = "https://ska-iam.stfc.ac.uk/token";
+            String tokenEndpoint = tokenServerUrl + "token";
 
             String formBody = "grant_type=authorization_code"
                     + "&code=" + URLEncoder.encode(code, StandardCharsets.UTF_8)
@@ -67,15 +81,12 @@ public class AuthenticationResource {
 
             // Send request and get response
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            JsonObject jsonObject = Json.createReader(new StringReader(response.body())).readObject();
-            String bearerToken = jsonObject.getString("access_token");
-
-            // Print response body
-            System.out.println(bearerToken);
-
-            return response.body();
+            if (response.statusCode() == 200) {
+                return response.body();
+            }
+            return null;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error(e.getMessage(), e);
             return null;
         }
     }
