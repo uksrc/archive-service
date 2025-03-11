@@ -256,3 +256,59 @@ Caution: Some of the TapLint tests seem to assume TAP 1.1 compliance and Vollt i
 
 - [TAP 1.0](https://www.ivoa.net/documents/TAP/20100327/REC-TAP-1.0.html)
 - [TAP 1.1](https://www.ivoa.net/documents/TAP/20190927/REC-TAP-1.1.html)
+
+### Authentication
+Using a OIDC controller, APIs are restricted to a specific group.
+
+Update the application.properties as required (example below uses environment variables for the client ID and secret).
+The ID and secret are available from the client registered on your auth-server.
+```xml
+quarkus.oidc.auth-server-url=https://your-oidc-service.url
+quarkus.oidc.client-id=${OIDC_CLIENT_ID}
+quarkus.oidc.credentials.secret=${OIDC_CLIENT_SECRET}
+```
+
+Restrict the APIs with the desired group(s)
+
+Change the test group ``prototyping-groups/mini-src`` with the group your users need to be a member of.
+```java
+@RolesAllowed("prototyping-groups/mini-src")
+```
+
+#### Getting a token
+1. Retrieve an authentication code
+    ```shell
+    curl "https://ska-iam.stfc.ac.uk/authorize?response_type=code&client_id=${OIDC_CLIENT_ID}&redirect_uri=http://localhost:8080/auth-callback&audience=authn-api&scope=openid+profile+offline_access&state=yQRL_ZdyAgTLv1H2sXI6w-THqDcqvlM3ulAlyfhB"
+    ```
+
+   - The ``redirect_uri`` has to be a service that receives two strings (code & state)
+   - The ``state`` value is a string that represents this task and can be used to validate in the ``redirect_uri`` method.
+   - Will redirect to the OIDC login screen of your provider via a web browser (unlikely to work when running curl from the command line)
+
+
+2. Handle the response
+
+    Create a method that follows this signature in the language that you are using.
+    ```java
+    // Running in http://localhost:8080/auth-callback for the above curl request
+    @GET
+    public Response handleOAuthCallback(@QueryParam("code") String code, @QueryParam("state") String state) {
+        // Handle auth code and state as required
+    }
+    ```
+  
+ 
+3. Generate a bearer token
+
+    ```shell
+    curl -X POST https://ska-iam.stfc.ac.uk/token -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=authorization_code" -d "code=<YOUR_AUTH_CODE>" -d  "client_id=${OIDC_CLIENT_ID}" -d "client_secret=${OIDC_CLIENT_SECRET}" -d  "redirect_uri=http://localhost:8080/auth-callback"
+    ```
+   
+    This should then return a JSON object that contains various values including the required ``access_token``. The access token can then be used as the bearer token when trying to access the Archive Service's APIs.
+
+
+4. Use the bearer token to make a request
+
+    ```shell
+    curl.exe "http://localhost:8080/observations" -H "Authorization: Bearer <INSERT BEARER TOKEN>"
+    ```

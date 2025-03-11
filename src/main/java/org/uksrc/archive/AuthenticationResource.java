@@ -19,6 +19,12 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Used as a test resource to allow the handling of authentication requests.
+ * Has a method available to retrieve a bearer token from an auth->token chain of requests (redirect_uri) from:
+ * https://<YOUR.OIDC.SERVER>/authorize?response_type=code&client_id=<YOUR.CLIENT.ID>&redirect_uri=<YOUR.HOST>/auth-callback
+ * &audience=authn-api&scope=openid+profile+offline_access&state=<STATE>
+ */
 @Path("/auth-callback")
 @IfBuildProfile(anyOf = {"dev", "test"})
 public class AuthenticationResource {
@@ -40,7 +46,7 @@ public class AuthenticationResource {
     @GET
     public Response handleOAuthCallback(@QueryParam("code") String code, @QueryParam("state") String state) {
         if (code == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Missing authorization code").build();
+            return Response.status(Response.Status.BAD_REQUEST).entity("Missing authorisation code").build();
         }
 
         // Process the authorization code (exchange it for an access token)
