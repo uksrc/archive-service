@@ -68,7 +68,7 @@ public class AuthenticationResource {
 
     private String exchangeAuthorizationCodeForToken(String code) {
         try {
-            String tokenEndpoint = tokenServerUrl + "token";
+            String tokenEndpoint = tokenServerUrl + "/token";
 
             String formBody = "grant_type=authorization_code"
                     + "&code=" + URLEncoder.encode(code, StandardCharsets.UTF_8)
