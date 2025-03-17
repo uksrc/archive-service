@@ -9,6 +9,14 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jboss.logging.Logger;
 
 import java.io.StringReader;
@@ -44,6 +52,36 @@ public class AuthenticationResource {
     private static final Logger LOG = Logger.getLogger(AuthenticationResource.class);
 
     @GET
+    @Operation(summary = "Authentication callback", description = "Will be called when a successful authentication has occurred.")
+    @Parameters({
+            @Parameter(
+                    name = "code",
+                    description = "The user's authentication code.",
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(type = SchemaType.STRING)
+            ),
+            @Parameter(
+                    name = "state",
+                    description = "The unique request value",
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(type = SchemaType.STRING)
+            )
+    })
+    @APIResponse(
+            responseCode = "200",
+            description = "Authenticated AND bearer token generated and returned.",
+            content = @Content(
+                    mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)
+            )
+    )
+    @APIResponse(
+            responseCode = "400",
+            description = "If an authentication code is not supplied."
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "If the user is unauthorised."
+    )
     public Response handleOAuthCallback(@QueryParam("code") String code, @QueryParam("state") String state) {
         if (code == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing authorisation code").build();
@@ -66,6 +104,11 @@ public class AuthenticationResource {
         }
     }
 
+    /**
+     * Request a bearer token with the supplied authentication code.
+     * @param code The authentication code returned from the OIDC authority.
+     * @return The bearer token (or null if request failed).
+     */
     private String exchangeAuthorizationCodeForToken(String code) {
         try {
             String tokenEndpoint = tokenServerUrl + "/token";

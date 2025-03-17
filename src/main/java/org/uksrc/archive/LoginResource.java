@@ -5,6 +5,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import java.util.Random;
 
@@ -14,7 +15,7 @@ import java.util.Random;
  */
 @Path("/")
 public class LoginResource {
-    //"https://ska-iam.stfc.ac.uk/logout" if required for testing
+    //"<tokenServerUrl>/logout" if logging out is required for testing.
 
     @ConfigProperty(name = "quarkus.oidc.auth-server-url")
     String tokenServerUrl;
@@ -23,6 +24,7 @@ public class LoginResource {
     String clientId;
 
     @GET
+    @Operation(summary = "Displays a test login page.", description = "Displays a simple login page that will redirect to the OIDC login process. Intended for testing only.")
     @Produces(MediaType.TEXT_HTML)
     public String loginPage() {
         String state = Long.toString(new Random().nextLong(), 36).substring(7);
