@@ -312,3 +312,8 @@ Change the test group ``prototyping-groups/mini-src`` with the group your users 
     ```shell
     curl.exe "http://localhost:8080/observations" -H "Authorization: Bearer <INSERT BEARER TOKEN>"
     ```
+   
+#### Test Cases
+Location of CADC's test cases.
+
+https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data
