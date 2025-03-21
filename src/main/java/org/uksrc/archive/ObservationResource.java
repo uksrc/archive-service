@@ -7,7 +7,6 @@ import jakarta.persistence.*;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
-import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.beanutils.BeanUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -24,8 +23,6 @@ import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.SimpleObservation;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
-
-import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 @Path("/observations")
@@ -220,8 +217,8 @@ public class ObservationResource {
                 //Copy all properties from the supplied observation over the existing observation.
                 //Observation.uri MUST remain the same and won't be affected.
                 BeanUtils.copyProperties(existing, observation);
-             //   Object specObservation = specialiseObservation(existing);
-                return Response.ok(/*specObservation*/existing).build();
+                Object formattedObs = Tools.formatObservation(existing);
+                return Response.ok(formattedObs).build();
             }
         } catch (Exception e) {
             return Responses.errorResponse(e);
@@ -332,10 +329,10 @@ public class ObservationResource {
         try {
             Observation observation = findObservation(id);
             if (observation != null) {
-                Object specObservation = specialiseObservation(observation);
+                Object formattedObs = Tools.formatObservation(observation);
 
                 return Response.status(Response.Status.OK)
-                        .entity(specObservation).build();
+                        .entity(formattedObs).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
                         .type(MediaType.TEXT_PLAIN)
@@ -401,9 +398,9 @@ public class ObservationResource {
             em.persist(observation);
             em.flush();
 
-            Object specObservation = specialiseObservation(observation);
+            Object formattedObs = Tools.formatObservation(observation);
             return Response.status(Response.Status.CREATED)
-                    .entity(specObservation)
+                    .entity(formattedObs)
                     .build();
 
         } catch (Exception e) {
@@ -427,25 +424,5 @@ public class ObservationResource {
         } catch (NoResultException e){
             return null;
         }
-    }
-
-    /**
-     * Forces the specialisation of a specific type of Observation.
-     * Converts the name to Pascal-case suitable for XML responses.
-     * @param observation The single observation to rename
-     * @return A JAXBElement of either SimpleObservation or DerivedObservation
-     */
-    private Object specialiseObservation(Observation observation) {
-        Object entity = null;
-        if (observation instanceof SimpleObservation) {
-            entity = new JAXBElement<>(
-                    new QName("SimpleObservation"), SimpleObservation.class, (SimpleObservation) observation
-            );
-        } else if (observation instanceof DerivedObservation) {
-            entity = new JAXBElement<>(
-                    new QName("DerivedObservation"), DerivedObservation.class, (DerivedObservation) observation
-            );
-        }
-        return entity;
     }
 }
