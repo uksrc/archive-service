@@ -43,7 +43,7 @@ dependencies {
 
 
     //Model(s)
-    implementation("org.opencadc:CAOM:2.5.1-SNAPSHOT:quarkus")
+    implementation("org.opencadc:CAOM:2.5.3-SNAPSHOT:quarkus")
 
     //Required by Vollt
     // TAP lib upload func.
@@ -57,20 +57,6 @@ dependencies {
 
     testImplementation("io.quarkus:quarkus-test-security")
 
-}
-
-repositories {
-    mavenCentral()
-    /*
-         add this repository to pick up the SNAPSHOT version of the IVOA base library - in the future when this
-         will not be necessary when this library is released as a non-SNAPSHOT version.
-          */
-    maven {
-        url= uri("https://oss.sonatype.org/content/repositories/snapshots/")    //CAOM requires IVOA base
-    }
-    maven {
-        url = uri("https://repo.dev.uksrc.org/repository/maven-snapshots/") //change to maven-releases when required
-    }
 }
 
 
