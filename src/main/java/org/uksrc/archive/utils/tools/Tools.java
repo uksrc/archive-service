@@ -2,10 +2,15 @@ package org.uksrc.archive.utils.tools;
 
 import jakarta.persistence.TypedQuery;
 import jakarta.ws.rs.core.Response;
+import jakarta.xml.bind.JAXBElement;
+import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
+import org.ivoa.dm.caom2.SimpleObservation;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.responses.Responses;
 
+import javax.xml.namespace.QName;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -52,5 +57,22 @@ public final class Tools {
             joiner.add(item);
         }
         return joiner.toString();
+    }
+
+    /**
+     * Forces the Name header tag, now that the specialisation type is defined in the header.
+     * Converts the name to Pascal-case suitable for XML responses.
+     *
+     * @param observation The single observation to rename
+     * @return A JAXBElement of either SimpleObservation or DerivedObservation as a <caom2:Observation...
+     */
+    public static Object formatObservation(Observation observation) {
+        Object entity = null;
+        if (observation != null) {
+            entity = new JAXBElement<>(
+                    new QName("http://www.opencadc.org/caom2/xml/v2.5", "Observation", "caom2"), Observation.class, observation
+            );
+        }
+        return entity;
     }
 }

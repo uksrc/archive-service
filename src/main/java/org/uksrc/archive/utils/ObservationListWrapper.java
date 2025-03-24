@@ -1,9 +1,7 @@
 package org.uksrc.archive.utils;
 
 import jakarta.xml.bind.annotation.*;
-import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.SimpleObservation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,10 +15,7 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ObservationListWrapper {
 
-    @XmlElements({
-            @XmlElement(name = "SimpleObservation", type = SimpleObservation.class),
-            @XmlElement(name = "DerivedObservation", type = DerivedObservation.class)
-    })
+    @XmlElement(name = "Observation", namespace = "http://www.opencadc.org/caom2/xml/v2.5")
     private List<Observation> observations = new ArrayList<>();
 
     @SuppressWarnings("unused")
