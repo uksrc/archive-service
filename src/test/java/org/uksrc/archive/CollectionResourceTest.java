@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static io.restassured.RestAssured.when;
+import static org.uksrc.archive.utils.Utilities.TEST_ROLE;
 
 @QuarkusTest
 public class CollectionResourceTest {
@@ -34,7 +35,7 @@ public class CollectionResourceTest {
 
     @Test
     @DisplayName("Test retrieving collection Ids from empty DB")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testRetrieveCollectionIdsFromEmptyDB() {
         String collections = when()
                 .get("/collections/")
@@ -48,7 +49,7 @@ public class CollectionResourceTest {
 
     @Test
     @DisplayName("Test retrieving collection Ids")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testRetrievingCollectionIds() {
         for (int i = 1; i < 6; i++){
             Utilities.addObservationToDatabase(Utilities.COLLECTION1, Utilities.OBSERVATION1 + i);

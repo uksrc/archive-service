@@ -26,6 +26,8 @@ public class Utilities {
     public static final String OBSERVATION1 = "c630c66f-b06b-4fed-bc16-1d7fd321";
     public static final String OBSERVATION2 = "c630c66f-b06b-4fed-bc16-1d7fd321";
 
+    // Used in testing only, must conform to the @RolesAllowed setting in the APIs
+    public static final String TEST_ROLE = "prototyping-groups/mini-src";
     /**
      * Adds a SimpleObservation to the database with the supplied observationId
      * @param collectionId identifier for the collection to add this observation to.

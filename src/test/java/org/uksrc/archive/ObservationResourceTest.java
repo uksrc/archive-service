@@ -3,15 +3,10 @@ package org.uksrc.archive;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.common.mapper.TypeRef;
-import io.restassured.path.xml.XmlPath;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
-import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.ObservationIntentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,13 +15,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.Utilities;
 
-import java.io.StringReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.is;
+import static org.uksrc.archive.utils.Utilities.TEST_ROLE;
 
 /**
  * Test class for the Observation class
@@ -71,7 +66,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Check that and empty database returns a robust response.")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testGettingObservations() {
         // Wrapper required for de-serialisation of List<Observation>
         ObservationListWrapper wrapper = when()
@@ -87,7 +82,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Add two observation and check two are returned.")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testGettingObservationsNonEmpty() {
         try(Response res1 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1);
             Response res2 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION2)) {
@@ -108,7 +103,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Get observations via collection Id")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testGettingObservationsViaCollectionId() {
         try(Response res1 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1);
             Response res2 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION2)) {
@@ -141,7 +136,7 @@ public class ObservationResourceTest {
 
     @ParameterizedTest
     @DisplayName("Add an observation and check that part of the response body matches.")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     @ValueSource(strings = {XML_OBSERVATION, XML_DERIVED_OBSERVATION})
     public void testAddingObservation(String observation) {
         //As the method enters twice we need to enforce different observation IDs.
@@ -165,7 +160,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to add some data that doesn't comply with model.")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testAddingJunkObservation() {
         final String junkData = "doesn't conform with XML model for Observation";
 
@@ -180,7 +175,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to add an Observation with a MUST property missing.")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testAddingIncompleteObservation() {
         given()
                 .header("Content-Type", "application/xml")
@@ -193,7 +188,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Add an observation, update one of its values and update, check it's been updated correctly.")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testUpdatingObservation() {
         String uniqueObservation = String.format(XML_OBSERVATION, OBSERVATION2, COLLECTION1);
 
@@ -234,7 +229,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to update a non-existent observation and check the not found status.")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testUpdatingNonExistingObservation() {
         String obs1 = String.format(XML_OBSERVATION, OBSERVATION1, COLLECTION1);
         String updatedObservation = obs1.replace("science", "calibration");
@@ -250,7 +245,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to delete an observation.")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testDeletingObservation() {
         try(Response res = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1)) {
             assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
@@ -275,7 +270,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Test paging results, first page")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testPagingResults() {
         for (int i = 0; i < 15; i++){
             Utilities.addObservationToDatabase(COLLECTION1, "observation" + i);
@@ -294,7 +289,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Test paging results, second page")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testPagingResults2() {
         final int TOTAL = 15;
         for (int i = 0; i < TOTAL; i++){
@@ -316,7 +311,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to delete an observation that doesn't exist.")
-    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
+    @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testDeletingNonExistingObservation() {
         given()
                 .header("Content-Type", "application/xml")
