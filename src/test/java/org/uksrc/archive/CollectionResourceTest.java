@@ -21,7 +21,6 @@ import static org.uksrc.archive.utils.Utilities.TEST_ROLE;
 
 @QuarkusTest
 public class CollectionResourceTest {
-    private static final Logger logger = LoggerFactory.getLogger(CollectionResourceTest.class);
 
     @Inject
     EntityManager em;
