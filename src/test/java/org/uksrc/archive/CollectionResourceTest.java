@@ -34,10 +34,10 @@ public class CollectionResourceTest {
 
     @Test
     @DisplayName("Test retrieving collection Ids from empty DB")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testRetrieveCollectionIdsFromEmptyDB() {
         String collections = when()
-                .get("/collections")
+                .get("/collections/")
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
                 .extract()
@@ -48,7 +48,7 @@ public class CollectionResourceTest {
 
     @Test
     @DisplayName("Test retrieving collection Ids")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testRetrievingCollectionIds() {
         for (int i = 1; i < 6; i++){
             Utilities.addObservationToDatabase(Utilities.COLLECTION1, Utilities.OBSERVATION1 + i);
@@ -59,7 +59,7 @@ public class CollectionResourceTest {
         }
 
         String collections = when()
-                .get("/collections")
+                .get("/collections/")
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
                 .extract()

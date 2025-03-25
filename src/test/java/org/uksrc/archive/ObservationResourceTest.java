@@ -39,12 +39,14 @@ public class ObservationResourceTest {
     //Caution with the id value if re-using.
     private static final String XML_OBSERVATION = "<caom2:Observation xmlns:caom2=\"http://www.opencadc.org/caom2/xml/v2.5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:SimpleObservation\" caom2:id=\"%s\">" +
             "<caom2:collection>%s</caom2:collection>" +
+            "<caom2:uriBucket>something</caom2:uriBucket>" +
             "<caom2:uri>c630c66f-b06b-4fed-bc16-1d7fd32172</caom2:uri>" +
             "<caom2:intent>science</caom2:intent>\n" +
             "</caom2:Observation>";
 
     private static final String XML_DERIVED_OBSERVATION = "<caom2:Observation xmlns:caom2=\"http://www.opencadc.org/caom2/xml/v2.5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:DerivedObservation\" caom2:id=\"%s\">" +
             "<caom2:collection>%s</caom2:collection>" +
+            "<caom2:uriBucket>something</caom2:uriBucket>" +
             "<caom2:uri>c630c66f-b06b-4fed-bc16-1d7fd32172</caom2:uri>" +
             "<caom2:intent>science</caom2:intent>" +
             "<caom2:members>" +
@@ -69,7 +71,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Check that and empty database returns a robust response.")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testGettingObservations() {
         // Wrapper required for de-serialisation of List<Observation>
         ObservationListWrapper wrapper = when()
@@ -85,7 +87,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Add two observation and check two are returned.")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testGettingObservationsNonEmpty() {
         try(Response res1 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1);
             Response res2 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION2)) {
@@ -106,7 +108,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Get observations via collection Id")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testGettingObservationsViaCollectionId() {
         try(Response res1 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1);
             Response res2 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION2)) {
@@ -139,7 +141,7 @@ public class ObservationResourceTest {
 
     @ParameterizedTest
     @DisplayName("Add an observation and check that part of the response body matches.")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     @ValueSource(strings = {XML_OBSERVATION, XML_DERIVED_OBSERVATION})
     public void testAddingObservation(String observation) {
         //As the method enters twice we need to enforce different observation IDs.
@@ -163,7 +165,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to add some data that doesn't comply with model.")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testAddingJunkObservation() {
         final String junkData = "doesn't conform with XML model for Observation";
 
@@ -178,18 +180,11 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to add an Observation with a MUST property missing.")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testAddingIncompleteObservation() {
-        final String INCOMPLETE_XML_OBSERVATION = "<observation>" +
-                "<id>444</id>" +
-                "<collection>e-merlin</collection>" +
-             //   "<intent>science</intent>" +      //deliberately excluded
-                "<uri>auri</uri>" +
-                "</observation>";
-
         given()
                 .header("Content-Type", "application/xml")
-                .body(INCOMPLETE_XML_OBSERVATION)
+                .body(Utilities.INCOMPLETE_XML_OBSERVATION)
                 .when()
                 .post("/observations")
                 .then()
@@ -198,7 +193,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Add an observation, update one of its values and update, check it's been updated correctly.")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testUpdatingObservation() {
         String uniqueObservation = String.format(XML_OBSERVATION, OBSERVATION2, COLLECTION1);
 
@@ -239,7 +234,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to update a non-existent observation and check the not found status.")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testUpdatingNonExistingObservation() {
         String obs1 = String.format(XML_OBSERVATION, OBSERVATION1, COLLECTION1);
         String updatedObservation = obs1.replace("science", "calibration");
@@ -255,7 +250,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to delete an observation.")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testDeletingObservation() {
         try(Response res = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1)) {
             assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
@@ -267,7 +262,7 @@ public class ObservationResourceTest {
                     .get("/observations/" + OBSERVATION1)
                     .then()
                     .statusCode(Response.Status.OK.getStatusCode())
-                    .body("simpleObservation.uri", is(OBSERVATION1));
+                    .body("Observation.@caom2:id", is(OBSERVATION1));
 
             given()
                     .header("Content-Type", "application/xml")
@@ -280,7 +275,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Test paging results, first page")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testPagingResults() {
         for (int i = 0; i < 15; i++){
             Utilities.addObservationToDatabase(COLLECTION1, "observation" + i);
@@ -299,7 +294,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Test paging results, second page")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testPagingResults2() {
         final int TOTAL = 15;
         for (int i = 0; i < TOTAL; i++){
@@ -321,7 +316,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to delete an observation that doesn't exist.")
-    @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
+    @TestSecurity(user = "testuser", roles = {"prototyping-groups/mini-src"})
     public void testDeletingNonExistingObservation() {
         given()
                 .header("Content-Type", "application/xml")
