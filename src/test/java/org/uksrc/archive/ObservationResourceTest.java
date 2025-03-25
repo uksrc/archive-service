@@ -8,6 +8,10 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
+import org.ivoa.dm.caom2.Observation;
+import org.ivoa.dm.caom2.ObservationIntentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +20,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.Utilities;
 
+import java.io.StringReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -32,23 +37,25 @@ import static org.hamcrest.CoreMatchers.is;
 public class ObservationResourceTest {
 
     //Caution with the id value if re-using.
-    private static final String XML_OBSERVATION = "<SimpleObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:SimpleObservation\">" +
-            "<collection>%s</collection>" +
-            "<intent>science</intent>" +
-            "<uri>%s</uri>" +
-            "</SimpleObservation>";
+    private static final String XML_OBSERVATION = "<caom2:Observation xmlns:caom2=\"http://www.opencadc.org/caom2/xml/v2.5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:SimpleObservation\" caom2:id=\"%s\">" +
+            "<caom2:collection>%s</caom2:collection>" +
+            "<caom2:uri>c630c66f-b06b-4fed-bc16-1d7fd32172</caom2:uri>" +
+            "<caom2:intent>science</caom2:intent>\n" +
+            "</caom2:Observation>";
 
-    private static final String XML_DERIVED_OBSERVATION = "<DerivedObservation xmlns:caom2=\"http://ivoa.net/dm/models/vo-dml/experiment/caom2\"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:DerivedObservation\">" +
-            "<collection>%s</collection>" +
-            "<intent>science</intent>" +
-            "<uri>%s</uri>" +
-            "<members>someone</members>" +
-            "</DerivedObservation>";
+    private static final String XML_DERIVED_OBSERVATION = "<caom2:Observation xmlns:caom2=\"http://www.opencadc.org/caom2/xml/v2.5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:DerivedObservation\" caom2:id=\"%s\">" +
+            "<caom2:collection>%s</caom2:collection>" +
+            "<caom2:uri>c630c66f-b06b-4fed-bc16-1d7fd32172</caom2:uri>" +
+            "<caom2:intent>science</caom2:intent>" +
+            "<caom2:members>" +
+            "    <caom2:member>someone</caom2:member>" +
+            "</caom2:members>" +
+            "</caom2:Observation>";
 
     private static final String COLLECTION1 = "e-merlin";
     private static final String COLLECTION2 = "testCollection";
-    private static final String OBSERVATION1 = URLEncoder.encode("https://observatory.org/observations/CY9004_C_001_20200721", StandardCharsets.UTF_8);
-    private static final String OBSERVATION2 = URLEncoder.encode("https://observatory.org/observations/CY9004_C_002_20200722", StandardCharsets.UTF_8);
+    private static final String OBSERVATION1 = URLEncoder.encode("c630c66f-b06b-4fed-bc16-1d7fd32161", StandardCharsets.UTF_8);
+    private static final String OBSERVATION2 = URLEncoder.encode("c630c66f-b06b-4fed-bc16-1d7fd32172", StandardCharsets.UTF_8);
 
     @Inject
     EntityManager em;
@@ -135,10 +142,10 @@ public class ObservationResourceTest {
     @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
     @ValueSource(strings = {XML_OBSERVATION, XML_DERIVED_OBSERVATION})
     public void testAddingObservation(String observation) {
-        //As the method enters twice we need to enforce different observation.uri (IDs).
+        //As the method enters twice we need to enforce different observation IDs.
         String obsId = observation.contains("DerivedObservation") ? OBSERVATION1 : OBSERVATION2;
 
-        String uniqueObservation = String.format(observation, COLLECTION1, obsId);
+        String uniqueObservation = String.format(observation, obsId, COLLECTION1);
 
         //As the /add operation returns the added observation, check the body of the response for valid values
         String res = given()
@@ -150,15 +157,8 @@ public class ObservationResourceTest {
                 .statusCode(Response.Status.CREATED.getStatusCode())// XML expectation (remove 'simpleObservation.' for JSON)
                 .extract().response().body().asString();
 
-        String searchString = "SimpleObservation.";
-        if (observation.contains("DerivedObservation")){
-            searchString = "DerivedObservation.";
-        }
-        String intent = XmlPath.from(res).getString(searchString + "intent");
-        String uri = XmlPath.from(res).getString(searchString + "uri");
-
-        assert(intent.compareTo("science") == 0);
-        assert(uri.compareTo(obsId) == 0);
+        assert(res.contains("<caom2:intent>science</caom2:intent>"));
+        assert(res.contains("caom2:id=\"" + obsId + "\""));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(junkData)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.BAD_REQUEST.getStatusCode());
     }
@@ -191,7 +191,7 @@ public class ObservationResourceTest {
                 .header("Content-Type", "application/xml")
                 .body(INCOMPLETE_XML_OBSERVATION)
                 .when()
-                .post("/observations/add")
+                .post("/observations")
                 .then()
                 .statusCode(Response.Status.BAD_REQUEST.getStatusCode());
     }
@@ -200,7 +200,7 @@ public class ObservationResourceTest {
     @DisplayName("Add an observation, update one of its values and update, check it's been updated correctly.")
     @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
     public void testUpdatingObservation() {
-        String uniqueObservation = String.format(XML_OBSERVATION, COLLECTION1, OBSERVATION2);
+        String uniqueObservation = String.format(XML_OBSERVATION, OBSERVATION2, COLLECTION1);
 
         // Add an observation
         given()
@@ -241,7 +241,7 @@ public class ObservationResourceTest {
     @DisplayName("Attempt to update a non-existent observation and check the not found status.")
     @TestSecurity(user = "testuser", roles = {"default-role-archive-service"})
     public void testUpdatingNonExistingObservation() {
-        String obs1 = String.format(XML_OBSERVATION, COLLECTION1, OBSERVATION1);
+        String obs1 = String.format(XML_OBSERVATION, OBSERVATION1, COLLECTION1);
         String updatedObservation = obs1.replace("science", "calibration");
 
         given()

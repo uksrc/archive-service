@@ -3,7 +3,6 @@ package org.uksrc.archive;
  * Created on 21/08/2024 by Paul Harrison (paul.harrison@manchester.ac.uk).
  */
 
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
@@ -33,7 +32,6 @@ import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 @Path("/observations")
-@RolesAllowed("prototyping-groups/mini-src")
 public class ObservationResource {
 
     @PersistenceContext
@@ -42,7 +40,7 @@ public class ObservationResource {
     @POST
     @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique and XML namespace/JSON type supplied.")
     @RequestBody(
-            description = "XML representation of the Observation, the uri parameter is the unique ID of the observation.",
+            description = "XML representation of the Observation.",
             required = true,
             content = {
                     @Content(
@@ -122,13 +120,13 @@ public class ObservationResource {
     }
 
     @PUT
-    @Path("/{observationId}")
+    @Path("/{id}")
     @Operation(summary = "Update an existing Observation", description = "Updates an existing observation with the supplied ID")
     @Parameter(
-            name = "observationId",
-            description = "ID of the Observation to be updated, actually the Observation.uri property",
+            name = "id",
+            description = "ID of the Observation to be updated (UUID)",
             required = true,
-            example = "https://observatory.org/observations/CY9004_C_001_20200721"
+            example = "c630c66f-b06b-4fed-bc16-1d7fd32161"
     )
     @RequestBody(
             description = "XML representation of the Observation",
@@ -210,13 +208,13 @@ public class ObservationResource {
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Transactional
-    public Response updateObservation(@PathParam("observationId") String id, Observation observation) {
+    public Response updateObservation(@PathParam("id") String id, Observation observation) {
         try {
             if(id == null || id.isEmpty()) {
                 return Responses.errorResponse("Invalid ID");
             }
-            else if (!id.equals(observation.getUri())){
-                return Responses.errorResponse("id MUST be the same as observation.uri");
+            else if (!id.equals(observation.getId())){
+                return Responses.errorResponse("id MUST be the same as observation.id");
             }
 
             //Only update IF found
@@ -225,8 +223,8 @@ public class ObservationResource {
                 //Copy all properties from the supplied observation over the existing observation.
                 //Observation.uri MUST remain the same and won't be affected.
                 BeanUtils.copyProperties(existing, observation);
-                Object specObservation = specialiseObservation(existing);
-                return Response.ok(specObservation).build();
+                Object formattedObs = Tools.formatObservation(existing);
+                return Response.ok(formattedObs).build();
             }
         } catch (Exception e) {
             return Responses.errorResponse(e);
@@ -302,14 +300,14 @@ public class ObservationResource {
     }
 
     @GET
-    @Path("/{observationId}")
-    @Operation(summary = "Retrieve an observation", description = "Returns an observation with the supplied ID, the ID is actually defined as Observation.uri.")
+    @Path("/{id}")
+    @Operation(summary = "Retrieve an observation", description = "Returns an observation with the supplied ID.")
     @Parameters({
             @Parameter(
-                    name = "observationId",
-                    description = "The id of the observation (Observation.uri)",
+                    name = "id",
+                    description = "The id of the observation (UUID)",
                     required = true,
-                    example = "https://observatory.org/observations/CY9004_C_001_20200722"
+                    example = "c630c66f-b06b-4fed-bc16-1d7fd32161"
             )
     })
     @APIResponse(
@@ -333,18 +331,18 @@ public class ObservationResource {
             description = "Internal error whilst retrieving Observations."
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    public Response getObservation(@PathParam("observationId") String observationId) {
+    public Response getObservation(@PathParam("id") String id) {
         try {
-            Observation observation = findObservation(observationId);
+            Observation observation = findObservation(id);
             if (observation != null) {
-                Object specObservation = specialiseObservation(observation);
+                Object formattedObs = Tools.formatObservation(observation);
 
                 return Response.status(Response.Status.OK)
-                        .entity(specObservation).build();
+                        .entity(formattedObs).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
                         .type(MediaType.TEXT_PLAIN)
-                        .entity("Observation with ID " + observationId + " not found").build();
+                        .entity("Observation with ID " + id + " not found").build();
             }
         } catch (Exception e) {
             return Responses.errorResponse(e);
@@ -352,14 +350,14 @@ public class ObservationResource {
     }
 
     @DELETE
-    @Path("/{observationId}")
+    @Path("/{id}")
     @Operation(summary = "Delete an existing observation")
     @Parameters({
             @Parameter(
-                    name = "observationId",
-                    description = "The id of the observation to delete (id is actually Observation.uri).",
+                    name = "id",
+                    description = "The id of the observation to delete (UUID).",
                     required = true,
-                    example = "https://observatory.org/observations/CY9004_C_001_20200722"
+                    example = "c630c66f-b06b-4fed-bc16-1d7fd32161"
             )
     })
     @APIResponse(
@@ -375,7 +373,7 @@ public class ObservationResource {
             description = "Internal error whilst deleting the observation."
     )
     @Transactional
-    public Response deleteObservation(@PathParam("observationId") String id) {
+    public Response deleteObservation(@PathParam("id") String id) {
         try {
             Observation observation = findObservation(id);
             if (observation != null) {
@@ -398,21 +396,17 @@ public class ObservationResource {
      * @return Response containing status code and added observation (if successful)
      */
     private Response submitObservation(Observation observation) {
-        if (observation.getUri() == null) {
-            return Responses.errorResponse("Observation.uri must be supplied.");
-        }
-
-        if (findObservation(observation.getUri()) != null) {
-            return Responses.errorResponse("Observation.uri " + observation.getUri() + " already exists.");
+        if (findObservation(observation.getId()) != null) {
+            return Responses.errorResponse("Observation.id " + observation.getId() + " already exists.");
         }
 
         try {
             em.persist(observation);
             em.flush();
 
-            Object specObservation = specialiseObservation(observation);
+            Object formattedObs = Tools.formatObservation(observation);
             return Response.status(Response.Status.CREATED)
-                    .entity(specObservation)
+                    .entity(formattedObs)
                     .build();
 
         } catch (Exception e) {
@@ -422,16 +416,16 @@ public class ObservationResource {
 
     /**
      * Checks to see if an observation with the supplied ID already exists
-     * @param observationId Observation.uri
+     * @param id Observation.id
      * @return The observation if found, null if not
      */
-    private Observation findObservation(String observationId) {
+    private Observation findObservation(String id) {
         TypedQuery<Observation> existsQuery = em.createQuery(
-                "SELECT o FROM Observation o WHERE o.uri = :uri", Observation.class
+                "SELECT o FROM Observation o WHERE o.id = :id", Observation.class
         );
 
         try {
-            existsQuery.setParameter("uri", observationId);
+            existsQuery.setParameter("id", id);
             return existsQuery.getSingleResult();
         } catch (NoResultException e){
             return null;
