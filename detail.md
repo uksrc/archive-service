@@ -268,6 +268,8 @@ quarkus.oidc.client-id=${OIDC_CLIENT_ID}
 quarkus.oidc.credentials.secret=${OIDC_CLIENT_SECRET}
 ```
 
+**Warning:** OIDC_CLIENT_SECRET & OIDC_CLIENT_ID are expected to set as environment variables so they don't have to appear in the application itself.
+
 Restrict the APIs with the desired group(s)
 
 Change the test group ``prototyping-groups/mini-src`` with the group your users need to be a member of.
