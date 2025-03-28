@@ -1,5 +1,6 @@
 package org.uksrc.archive;
 
+import io.quarkus.security.PermissionsAllowed;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -18,7 +19,7 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 @Path("/collections")
-@RolesAllowed("prototyping-groups/mini-src")
+@PermissionsAllowed("api.read")
 public class CollectionResource {
 
     @PersistenceContext
