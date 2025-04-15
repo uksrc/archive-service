@@ -9,5 +9,7 @@ COPY build/quarkus-app/app/ /app/app/
 COPY build/quarkus-app/quarkus/ /app/quarkus/
 
 COPY ./src/main/resources/templates/ /
+COPY src/main/config/entrypoint.sh /entrypoint.sh
 
-CMD ["java", "-jar", "quarkus-run.jar"]
+#CMD ["java", "-jar", "quarkus-run.jar"]
+ENTRYPOINT ["/entrypoint.sh"]
