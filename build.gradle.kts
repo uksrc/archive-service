@@ -53,7 +53,6 @@ dependencies {
     implementation ("uk.ac.starlink:stil:4.3.1")
 }
 
-
 tasks.withType<Test> {
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
 }
@@ -62,7 +61,9 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
 }
 
-//Generates the tapProperties.txt from the template when building.
+//Adds custom web.xml for production (allows variable injection in tap.properties)
+apply(from = "src/main/kotlin/configure-web-xml.gradle.kts")
+//Generates the tapProperties.txt from the template when building (with values from application.properties).
 apply(from = "src/main/kotlin/generateTapProperties.gradle.kts")
 
 tasks.named("build") {

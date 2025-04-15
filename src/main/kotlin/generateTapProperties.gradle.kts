@@ -50,9 +50,9 @@ tasks.register("generateTapProperties") {
         val templateContent = templatePath.readText()
 
         // Inject values from application.properties into template
-        val result = templateContent.replace("{db_url}", jdbcUrl)
-            .replace("{db_user}", username)
-            .replace("{db_password}", password)
+        val result = templateContent.replace("\${DB_URL}", jdbcUrl)
+            .replace("\${DB_USERNAME}", username)
+            .replace("\${DB_PASSWORD}", password)
 
         // Output to build folder where the Vollt servlet expects it
         val targetFile = file("src/main/resources/tap.properties")

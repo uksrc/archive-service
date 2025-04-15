@@ -2,9 +2,9 @@ provider_name = UKSRC Archive Service
 
 database_access = jdbc
 jdbc_driver = org.postgresql.Driver
-jdbc_url = {db_url}
-db_username = {db_user}
-db_password = {db_password}
+jdbc_url = ${DB_URL}
+db_username = ${DB_USERNAME}
+db_password = ${DB_PASSWORD}
 
 file_manager = local
 #Switch to linux path upon release deployment
