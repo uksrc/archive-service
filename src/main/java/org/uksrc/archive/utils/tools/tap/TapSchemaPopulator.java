@@ -30,11 +30,16 @@ public class TapSchemaPopulator {
     @PostConstruct
     public void initialize() {
         try {
+            /**
+             * When using this for production errors are generated, and the process below fails.
+             * Solved temporarily by modifications to applications.properties
+             * TODO: investigate at a later date
+             */
             //For production builds, Schema not added automatically for release builds
-            int num = entityManager.createNativeQuery("SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'TAP_SCHEMA';").getResultList().size();
+      /*      int num = entityManager.createNativeQuery("SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'TAP_SCHEMA';").getResultList().size();
             if (num == 0){
                 addTapSchema();
-            }
+            }*/
 
             List<?> result = entityManager.createNativeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").getResultList();
             List<String> newTables = result.stream()
