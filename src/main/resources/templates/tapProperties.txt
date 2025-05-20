@@ -2,14 +2,12 @@ provider_name = UKSRC Archive Service
 
 database_access = jdbc
 jdbc_driver = org.postgresql.Driver
-jdbc_url = ${DB_URL}
-db_username = ${DB_USERNAME}
-db_password = ${DB_PASSWORD}
+jdbc_url = ${quarkus.datasource.jdbc.url}
+db_username = ${quarkus.datasource.username}
+db_password = ${quarkus.datasource.password}
 
 file_manager = local
-#Switch to linux path upon release deployment
-#file_root_path = /some/linux/path
-#file_root_path = C:\\Users\\mdehssln\\Documents
+#Use correct linux path upon release deployment
 file_root_path = /tmp
 sql_translator = postgres
 metadata = db

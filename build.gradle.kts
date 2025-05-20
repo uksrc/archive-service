@@ -61,15 +61,3 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
 }
 
-//Adds custom web.xml for production (allows variable injection in tap.properties)
-apply(from = "src/main/kotlin/configure-web-xml.gradle.kts")
-//Generates the tapProperties.txt from the template when building (with values from application.properties).
-apply(from = "src/main/kotlin/generateTapProperties.gradle.kts")
-
-tasks.named("build") {
-    dependsOn("generateTapProperties")
-}
-
-tasks.named("quarkusDev") {
-    dependsOn("generateTapProperties")
-}
