@@ -36,8 +36,8 @@ public class TapPropertiesRenderer {
             String content = new String(in.readAllBytes());
             String rendered = replacePlaceholdersWithConfig(content, config);
 
-            //config folder expected to be created by k8s volumeMount
-            Path path = Paths.get("/config/tap.properties");
+            Path path = Paths.get("/deployments/config/tap.properties");
+            Files.createDirectories(path.getParent());
             Files.writeString(path, rendered);
         }
     }
