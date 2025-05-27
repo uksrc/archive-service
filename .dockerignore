@@ -3,5 +3,4 @@
 !build/*-runner.jar
 !build/lib/*
 !build/quarkus-app/*
-!src/main/config/entrypoint.sh
 !src/main/resources/templates/
