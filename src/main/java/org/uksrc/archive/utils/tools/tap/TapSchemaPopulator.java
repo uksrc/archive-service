@@ -5,10 +5,19 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.Unmarshaller;
+import org.ivoa.tap.schema.Schema;
+import org.ivoa.tap.schema.TAPType;
+import org.ivoa.tap.schema.TableType;
+import org.ivoa.tap.schema.TapschemaModel;
 import org.jboss.logging.Logger;
 
+import javax.xml.transform.stream.StreamSource;
+import java.io.InputStream;
 import java.net.URL;
-import java.util.List;
+import java.util.*;
 
 /*
 Adds any existing entities in the database to the TAP_SCHEMA (tables & columns)
@@ -82,13 +91,82 @@ public class TapSchemaPopulator {
      * Requires the import.sql to be in the resources folder
      */
     private void addTapSchema() {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        /*ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         URL resource = classLoader.getResource("import.sql");
         if (resource == null) {
             System.out.println("No import.sql found");
         }
         else {
             tapSchemaRepository.executeSQLFile("import.sql");
+        }*/
+        try {
+            TapschemaModel model = new TapschemaModel();
+            InputStream is = TapschemaModel.TAPSchema();
+            if (is != null) {
+                JAXBContext jc = model.management().contextFactory();
+                Unmarshaller unmarshaller = jc.createUnmarshaller();
+                JAXBElement<TapschemaModel> el = unmarshaller.unmarshal(new StreamSource(is), TapschemaModel.class);
+                TapschemaModel model_in = el.getValue();
+                if (model_in != null) {
+                    List<Schema> schemas = model_in.getContent(Schema.class);
+                    if (!schemas.isEmpty()) {
+                        Schema schema = schemas.get(0);
+                        String schemaName = schema.getSchema_name();
+                        if (schemaName.compareToIgnoreCase("tapschema") == 0) {
+                            tapSchemaRepository.insertTapSchema();
+                        }
+
+                        // Scan the foreign keys to determine any primary keys
+                        Map<String, Set<String>> primaryKeys = new HashMap<>();
+                        schema.getTables().forEach(table -> {
+                            // Need to infer the primary keys by evaluating foreign keys from the other tables
+                            table.getFkeys().forEach(fkey -> {
+                                String targetTable = fkey.getTarget_table().getTable_name();
+                                fkey.getColumns().forEach(column -> {
+                                    String targetColumn = column.getTarget_column().getColumn_name();
+                                    primaryKeys.computeIfAbsent(targetTable, k -> new HashSet<>()).add(targetColumn);
+                                });
+                            });
+                        });
+
+                        // Create SQL instruction for each table creation.
+                        schema.getTables().forEach(table -> {
+                           String tableName = table.getTable_name();
+                           TableType tableType = table.getTable_type();
+                           String value = tableType.value();
+
+                            StringBuilder sql = new StringBuilder();
+                            sql.append("CREATE TABLE IF NOT EXISTS \"")
+                                    .append(schemaName).append("\".\"").append(tableName).append("\" (");
+
+                   //        tapSchemaRepository.addTable(schemaName, tableName, "table", "Details of a(n) " + tableName);
+                            table.getColumns().forEach(column -> {
+                                String columnName = stripXMLPrefix(column.getColumn_name());
+                                sql.append(" \"").append(columnName).append("\" ")
+                                        .append(column.getDatatype().value()).append(",");
+                            });
+
+                            sql.append(" PRIMARY KEY(\"schema_name\"));");
+
+                            System.out.println(sql);
+                        });
+
+
+                    }
+                }
+            }
+            int stop = 8;
+            stop++;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    private  String stripXMLPrefix(String columnName) {
+        int dotIndex = columnName.indexOf('.');
+        if (dotIndex > 0) {
+            return columnName.substring(dotIndex + 1);
+        }
+        return columnName;
     }
 }

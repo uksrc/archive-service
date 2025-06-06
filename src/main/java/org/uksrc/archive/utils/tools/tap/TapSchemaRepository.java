@@ -31,6 +31,7 @@ public class TapSchemaRepository {
     @PersistenceContext
     EntityManager entityManager;
 
+    static final String createSchemaSql = "CREATE SCHEMA IF NOT EXISTS \"TAP_SCHEMA\";";
     static final String insertTableSql = "INSERT INTO \"TAP_SCHEMA\".\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
     static final String insertColumnSql = "INSERT INTO \"TAP_SCHEMA\".\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,NULL,0,1,0)";
 
@@ -48,6 +49,20 @@ public class TapSchemaRepository {
         typeMapping.put("double precision", "DOUBLE");
     }
 
+    // ---------------------------------- Methods for adding the TAP_SCHEMA model --------------------------------
+    /**
+     * Adds the required TAP_SCHEMA to the database.
+     * Hard-coded the sql to avoid any sql injection, potential to make it more generic by passing in the schema name
+     * but would require some defence.
+     */
+    @Transactional
+    public void insertTapSchema() {
+        entityManager.createNativeQuery(createSchemaSql).executeUpdate();
+    }
+
+    // CREATE TABLE IF NOT EXISTS "TAP_SCHEMA"."schemas" ("schema_name" VARCHAR, "description" VARCHAR, "utype" VARCHAR, "schema_index" INTEGER, "dbname" VARCHAR, PRIMARY KEY("schema_name"));
+
+    // ------------------------ Methods for adding custom objects to the TAP_SCHEMA ------------------------------
     /**
      * Adds a table's details to the TAP_SCHEMA in the database.
      * @param schemaName The schema that this table belongs to.
