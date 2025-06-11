@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Added to allow the submission of TAP_SCHEMA entities (for "transactional" reasons)
@@ -31,12 +32,14 @@ public class TapSchemaRepository {
     @PersistenceContext
     EntityManager entityManager;
 
-    static final String createSchemaSql = "CREATE SCHEMA IF NOT EXISTS \"TAP_SCHEMA\";";
+    static final String createSchemaSql = "CREATE SCHEMA IF NOT EXISTS \"%s\";";
     static final String insertTableSql = "INSERT INTO \"TAP_SCHEMA\".\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
     static final String insertColumnSql = "INSERT INTO \"TAP_SCHEMA\".\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,NULL,0,1,0)";
 
     //Columns that are reserved words in TAP (currently only CAOM 2.5 entries) - raised with CADC to see if a model adjustment is in order before release.
     static final Set<String> reservedWords = Set.of("coordsys", "pi", "position", "time");
+    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
+
 
     //STILTS' Taplint is case-sensitive  CompareMetadataStage.java - compatibleDataTypesOneWay(~)
     //Vollt TAP restricts data types in ADQLLib::DataType.java - DBDatatype to one of {	SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY,	CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, CIRCLE, POLYGON, REGION, UNKNOWN, UNKNOWN_NUMERIC }
@@ -56,8 +59,14 @@ public class TapSchemaRepository {
      * but would require some defence.
      */
     @Transactional
-    public void insertTapSchema() {
-        entityManager.createNativeQuery(createSchemaSql).executeUpdate();
+    @SuppressWarnings("SqlSourceToSinkFlow")            //RegEx SAFE_IDENTIFIER to defend
+    public void insertSchema(String schemaName) {
+        if (!SAFE_IDENTIFIER.matcher(schemaName).matches()) {
+            throw new IllegalArgumentException("Invalid schema name: " + schemaName);
+        }
+
+        final String sql = String.format(createSchemaSql, schemaName);
+        entityManager.createNativeQuery(sql).executeUpdate();
     }
 
     // CREATE TABLE IF NOT EXISTS "TAP_SCHEMA"."schemas" ("schema_name" VARCHAR, "description" VARCHAR, "utype" VARCHAR, "schema_index" INTEGER, "dbname" VARCHAR, PRIMARY KEY("schema_name"));

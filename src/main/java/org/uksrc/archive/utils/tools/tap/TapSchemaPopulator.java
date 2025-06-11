@@ -8,16 +8,16 @@ import jakarta.persistence.EntityManager;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.Unmarshaller;
-import org.ivoa.tap.schema.Schema;
-import org.ivoa.tap.schema.TAPType;
-import org.ivoa.tap.schema.TableType;
-import org.ivoa.tap.schema.TapschemaModel;
+import org.ivoa.tap.schema.*;
 import org.jboss.logging.Logger;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /*
 Adds any existing entities in the database to the TAP_SCHEMA (tables & columns)
@@ -34,6 +34,7 @@ public class TapSchemaPopulator {
     private static final Logger LOG = Logger.getLogger(TapSchemaPopulator.class);
 
     static final String checkTableExistsSql = "SELECT 1 FROM \"TAP_SCHEMA\".\"tables\" WHERE table_name = ?";
+    static final String SCHEMA_NAME = "TAP_SCHEMA";
 
     @SuppressWarnings("unused")
     @PostConstruct
@@ -111,10 +112,8 @@ public class TapSchemaPopulator {
                     List<Schema> schemas = model_in.getContent(Schema.class);
                     if (!schemas.isEmpty()) {
                         Schema schema = schemas.get(0);
-                        String schemaName = schema.getSchema_name();
-                        if (schemaName.compareToIgnoreCase("tapschema") == 0) {
-                            tapSchemaRepository.insertTapSchema();
-                        }
+                        String schemaName = getSchemaName(schema.getSchema_name());
+                        tapSchemaRepository.insertSchema(schemaName);
 
                         // Scan the foreign keys to determine any primary keys
                         Map<String, Set<String>> primaryKeys = new HashMap<>();
@@ -124,6 +123,7 @@ public class TapSchemaPopulator {
                                 String targetTable = fkey.getTarget_table().getTable_name();
                                 fkey.getColumns().forEach(column -> {
                                     String targetColumn = column.getTarget_column().getColumn_name();
+                                    targetColumn = stripXMLPrefix(targetColumn);
                                     primaryKeys.computeIfAbsent(targetTable, k -> new HashSet<>()).add(targetColumn);
                                 });
                             });
@@ -132,23 +132,82 @@ public class TapSchemaPopulator {
                         // Create SQL instruction for each table creation.
                         schema.getTables().forEach(table -> {
                            String tableName = table.getTable_name();
-                           TableType tableType = table.getTable_type();
-                           String value = tableType.value();
 
                             StringBuilder sql = new StringBuilder();
                             sql.append("CREATE TABLE IF NOT EXISTS \"")
                                     .append(schemaName).append("\".\"").append(tableName).append("\" (");
 
-                   //        tapSchemaRepository.addTable(schemaName, tableName, "table", "Details of a(n) " + tableName);
+                            Set<String> indexedColumns = new HashSet<>();
                             table.getColumns().forEach(column -> {
                                 String columnName = stripXMLPrefix(column.getColumn_name());
                                 sql.append(" \"").append(columnName).append("\" ")
                                         .append(column.getDatatype().value()).append(",");
+                                if (column.getIndexed()){
+                                    indexedColumns.add(columnName);
+                                }
                             });
 
-                            sql.append(" PRIMARY KEY(\"schema_name\"));");
+                            // If a table has no primary keys then assume that "indexed" signifies primary
+                            String result = String.join(", ", primaryKeys.getOrDefault(tableName, indexedColumns));
+
+                            sql.append(" PRIMARY KEY(\"").append(result).append("\"));");
 
                             System.out.println(sql);
+                        });
+
+                        // Add self-describing metadata for the TAP_SCHEMA and its contents.
+                        // 1. schema
+                        StringBuilder sql = new StringBuilder();
+                        sql.append("INSERT INTO \"").append(schemaName).append("\".\"").append("schemas").append("\" VALUES (")
+                                .append(schemaName).append(", '")
+                                .append(schema.getDescription()).append("', '")
+                                .append(schema.getUtype()).append("', ")
+                                .append(schema.getSchema_index()).append(") ")
+                                .append("ON CONFLICT (\"schema_name\") DO NOTHING;");
+
+                        // 2. tables
+                        schema.getTables().forEach(table -> {
+                            String tableName = table.getTable_name();
+
+                            StringBuilder tableSql = new StringBuilder();
+                            tableSql.append("INSERT INTO \"")
+                                    .append(schemaName).append("\".\"").append("tables").append("\" (\"schema_name\", \"table_name\", \"table_type\", \"description\", \"utype\") VALUES (")
+                                    .append(schemaName).append(", '")
+                                    .append(tableName).append("', '")
+                                    .append(table.getTable_type()).append("', '")
+                                    .append(table.getDescription()).append("', ' ")
+                                    .append(table.getUtype())
+                                    .append(") ON CONFLICT (\"table_name\") DO NOTHING;");
+
+                            // 3. Columns
+                            table.getColumns().forEach(column -> {
+                                String columnName = column.getColumn_name();
+
+                                //reflection test
+                                /*Field[] fields = Column.class.getDeclaredFields();
+                                List<Field> relevantFields = Arrays.stream(fields)
+                                        .filter(f -> !Modifier.isStatic(f.getModifiers()))
+                                        .filter(f -> !Modifier.isTransient(f.getModifiers()))
+                                        .collect(Collectors.toList());*/
+
+
+                                StringBuilder columnSql = new StringBuilder();
+                                columnSql.append("INSERT INTO \"")
+                                        .append(schemaName).append("\".\"").append("columns").append("\" VALUES ('")
+                                        .append(schemaName).append(".columns' VALUES ('").append(schemaName).append(".").append(tableName)
+                                        .append("', '").append(columnName).append("', '")
+                                        .append(column.getDescription()).append("', '")
+                                        .append(column.getUnit()).append("', '")
+                                        .append(column.getUcd()).append("', '")
+                                        .append(column.getUtype()).append("', '")
+                                        .append(column.getXtype()).append("', '")
+                                        .append(column.getDatatype()).append("', '")
+                                        .append(column.getArraysize()).append("', '")
+                                        .append(column.getPrincipal()).append("', '")
+                                        .append(column.getIndexed()).append("', '")
+                                        .append(column.getStd()).append("', '")
+                                        .append(column.getColumn_index()).append("') ON CONFLICT (\"table_name\", \"column_name\") DO NOTHING;");
+                            });
                         });
 
 
@@ -162,11 +221,21 @@ public class TapSchemaPopulator {
         }
     }
 
+    /**
+     * Utility function to remove superfluous xml prefixes on properties.
+     * @param columnName raw property string from xml
+     * @return string with prefix removed or original string if none present.
+     */
     private  String stripXMLPrefix(String columnName) {
         int dotIndex = columnName.indexOf('.');
         if (dotIndex > 0) {
             return columnName.substring(dotIndex + 1);
         }
         return columnName;
+    }
+
+    //required for lambda evaluations
+    private String getSchemaName(String schemaName){
+        return schemaName.compareToIgnoreCase("tapschema") == 0 ? "tapschema" : TapSchemaPopulator.SCHEMA_NAME;
     }
 }
