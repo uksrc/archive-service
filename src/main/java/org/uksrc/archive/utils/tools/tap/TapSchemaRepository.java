@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import org.ivoa.tap.schema.Schema;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -59,14 +60,14 @@ public class TapSchemaRepository {
      * but would require some defence.
      */
     @Transactional
-    @SuppressWarnings("SqlSourceToSinkFlow")            //RegEx SAFE_IDENTIFIER to defend
-    public void insertSchema(String schemaName) {
-        if (!SAFE_IDENTIFIER.matcher(schemaName).matches()) {
-            throw new IllegalArgumentException("Invalid schema name: " + schemaName);
-        }
+    public void insertSchema(Schema schema) {
+        entityManager.persist(schema);
 
-        final String sql = String.format(createSchemaSql, schemaName);
-        entityManager.createNativeQuery(sql).executeUpdate();
+      /*  entityManager.createNativeQuery(
+                "UPDATE TAP_SCHEMA.columns " +
+                        "SET column_name = regexp_replace(column_name, '^(column|table)\\.', '') " +
+                        "WHERE column_name ~ '^(column|table)\\.'"
+        ).executeUpdate();*/
     }
 
     // CREATE TABLE IF NOT EXISTS "TAP_SCHEMA"."schemas" ("schema_name" VARCHAR, "description" VARCHAR, "utype" VARCHAR, "schema_index" INTEGER, "dbname" VARCHAR, PRIMARY KEY("schema_name"));

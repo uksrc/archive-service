@@ -41,7 +41,7 @@ dependencies {
     implementation("fr.unistra.cds:TAPlib:2.4.3-SNAPSHOT")
     implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
 
-    implementation("org.javastro.ivoa.dm:tapschema:0.1-SNAPSHOT")
+    implementation("org.javastro.ivoa.dm:tapschema:0.1.2")
 
 
     //Model(s)

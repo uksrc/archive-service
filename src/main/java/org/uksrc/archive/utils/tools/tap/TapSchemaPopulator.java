@@ -46,7 +46,7 @@ public class TapSchemaPopulator {
                 addTapSchema();
             }
 
-            List<?> result = entityManager.createNativeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").getResultList();
+     /*     List<?> result = entityManager.createNativeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").getResultList();
             List<String> newTables = result.stream()
                     .map(Object::toString)
                     .toList();
@@ -81,7 +81,7 @@ public class TapSchemaPopulator {
                         }
                     }
                 }
-            }
+            }*/
         }catch (Exception e) {
             LOG.error("Populating TAP Schema", e);
         }
@@ -92,14 +92,6 @@ public class TapSchemaPopulator {
      * Requires the import.sql to be in the resources folder
      */
     private void addTapSchema() {
-        /*ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("import.sql");
-        if (resource == null) {
-            System.out.println("No import.sql found");
-        }
-        else {
-            tapSchemaRepository.executeSQLFile("import.sql");
-        }*/
         try {
             TapschemaModel model = new TapschemaModel();
             InputStream is = TapschemaModel.TAPSchema();
@@ -113,109 +105,26 @@ public class TapSchemaPopulator {
                     if (!schemas.isEmpty()) {
                         Schema schema = schemas.get(0);
                         String schemaName = getSchemaName(schema.getSchema_name());
-                        tapSchemaRepository.insertSchema(schemaName);
+                        schema.setSchema_name(schemaName.toUpperCase());
 
+
+                        tapSchemaRepository.insertSchema(schema);
                         // Scan the foreign keys to determine any primary keys
-                        Map<String, Set<String>> primaryKeys = new HashMap<>();
+           /*             Map<String, Set<String>> primaryKeys = new HashMap<>();
                         schema.getTables().forEach(table -> {
                             // Need to infer the primary keys by evaluating foreign keys from the other tables
                             table.getFkeys().forEach(fkey -> {
                                 String targetTable = fkey.getTarget_table().getTable_name();
                                 fkey.getColumns().forEach(column -> {
-                                    String targetColumn = column.getTarget_column().getColumn_name();
+                                    String targetColumn = column.getTarget_column().getColumn_name();+
                                     targetColumn = stripXMLPrefix(targetColumn);
                                     primaryKeys.computeIfAbsent(targetTable, k -> new HashSet<>()).add(targetColumn);
                                 });
                             });
                         });
-
-                        // Create SQL instruction for each table creation.
-                        schema.getTables().forEach(table -> {
-                           String tableName = table.getTable_name();
-
-                            StringBuilder sql = new StringBuilder();
-                            sql.append("CREATE TABLE IF NOT EXISTS \"")
-                                    .append(schemaName).append("\".\"").append(tableName).append("\" (");
-
-                            Set<String> indexedColumns = new HashSet<>();
-                            table.getColumns().forEach(column -> {
-                                String columnName = stripXMLPrefix(column.getColumn_name());
-                                sql.append(" \"").append(columnName).append("\" ")
-                                        .append(column.getDatatype().value()).append(",");
-                                if (column.getIndexed()){
-                                    indexedColumns.add(columnName);
-                                }
-                            });
-
-                            // If a table has no primary keys then assume that "indexed" signifies primary
-                            String result = String.join(", ", primaryKeys.getOrDefault(tableName, indexedColumns));
-
-                            sql.append(" PRIMARY KEY(\"").append(result).append("\"));");
-
-                            System.out.println(sql);
-                        });
-
-                        // Add self-describing metadata for the TAP_SCHEMA and its contents.
-                        // 1. schema
-                        StringBuilder sql = new StringBuilder();
-                        sql.append("INSERT INTO \"").append(schemaName).append("\".\"").append("schemas").append("\" VALUES (")
-                                .append(schemaName).append(", '")
-                                .append(schema.getDescription()).append("', '")
-                                .append(schema.getUtype()).append("', ")
-                                .append(schema.getSchema_index()).append(") ")
-                                .append("ON CONFLICT (\"schema_name\") DO NOTHING;");
-
-                        // 2. tables
-                        schema.getTables().forEach(table -> {
-                            String tableName = table.getTable_name();
-
-                            StringBuilder tableSql = new StringBuilder();
-                            tableSql.append("INSERT INTO \"")
-                                    .append(schemaName).append("\".\"").append("tables").append("\" (\"schema_name\", \"table_name\", \"table_type\", \"description\", \"utype\") VALUES (")
-                                    .append(schemaName).append(", '")
-                                    .append(tableName).append("', '")
-                                    .append(table.getTable_type()).append("', '")
-                                    .append(table.getDescription()).append("', ' ")
-                                    .append(table.getUtype())
-                                    .append(") ON CONFLICT (\"table_name\") DO NOTHING;");
-
-                            // 3. Columns
-                            table.getColumns().forEach(column -> {
-                                String columnName = column.getColumn_name();
-
-                                //reflection test
-                                /*Field[] fields = Column.class.getDeclaredFields();
-                                List<Field> relevantFields = Arrays.stream(fields)
-                                        .filter(f -> !Modifier.isStatic(f.getModifiers()))
-                                        .filter(f -> !Modifier.isTransient(f.getModifiers()))
-                                        .collect(Collectors.toList());*/
-
-
-                                StringBuilder columnSql = new StringBuilder();
-                                columnSql.append("INSERT INTO \"")
-                                        .append(schemaName).append("\".\"").append("columns").append("\" VALUES ('")
-                                        .append(schemaName).append(".columns' VALUES ('").append(schemaName).append(".").append(tableName)
-                                        .append("', '").append(columnName).append("', '")
-                                        .append(column.getDescription()).append("', '")
-                                        .append(column.getUnit()).append("', '")
-                                        .append(column.getUcd()).append("', '")
-                                        .append(column.getUtype()).append("', '")
-                                        .append(column.getXtype()).append("', '")
-                                        .append(column.getDatatype()).append("', '")
-                                        .append(column.getArraysize()).append("', '")
-                                        .append(column.getPrincipal()).append("', '")
-                                        .append(column.getIndexed()).append("', '")
-                                        .append(column.getStd()).append("', '")
-                                        .append(column.getColumn_index()).append("') ON CONFLICT (\"table_name\", \"column_name\") DO NOTHING;");
-                            });
-                        });
-
-
-                    }
+*/                    }
                 }
             }
-            int stop = 8;
-            stop++;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -236,6 +145,6 @@ public class TapSchemaPopulator {
 
     //required for lambda evaluations
     private String getSchemaName(String schemaName){
-        return schemaName.compareToIgnoreCase("tapschema") == 0 ? "tapschema" : TapSchemaPopulator.SCHEMA_NAME;
+        return schemaName.compareToIgnoreCase("tapschema") == 0 ? TapSchemaPopulator.SCHEMA_NAME : schemaName;
     }
 }
