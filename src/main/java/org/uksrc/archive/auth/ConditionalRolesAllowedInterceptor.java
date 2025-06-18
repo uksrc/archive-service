@@ -14,6 +14,13 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Replacement for the @RolesAllowed annotation that will determine which groups the caller
+ * has to be in to access the resource.
+ * Caller has to supply a bearer token and be a member of whichever group(s) is/are defined in
+ * the application.properties and added to the resource
+ * with @ConditionalRolesAllowed("<application.properties setting that resolves to the desired group>")
+ */
 @Interceptor
 @ConditionalRolesAllowed("")
 @Priority(Interceptor.Priority.APPLICATION)
