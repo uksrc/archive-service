@@ -1,16 +1,15 @@
 package org.uksrc.archive.auth;
 
+import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.ForbiddenException;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Priority;
-import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
-import jakarta.ws.rs.NotAuthorizedException;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.util.Optional;
 import java.util.Set;
@@ -26,14 +25,13 @@ public class ConditionalRolesAllowedInterceptor {
     @Inject
     Config config;
 
-    @Default
     @Inject
-    JsonWebToken jwt;
+    SecurityIdentity identity;
 
     @AroundInvoke
     public Object enforceRoles(InvocationContext ctx) throws Exception {
         if (rolesEnabled) {
-            if (jwt != null) {
+            if (identity != null && !identity.isAnonymous()) {
                 ConditionalRolesAllowed annotation = ctx.getMethod().getAnnotation(ConditionalRolesAllowed.class);
                 if (annotation == null) {
                     annotation = ctx.getMethod().getDeclaringClass().getAnnotation(ConditionalRolesAllowed.class);
@@ -47,37 +45,21 @@ public class ConditionalRolesAllowedInterceptor {
                         Set<String> requiredRoles = Set.of(rolesCsvOpt.get().split("\\s*,\\s*"));
 
                         for (String role : requiredRoles) {
-                            Set<String> groups = jwt.getGroups();
-                            if (groups != null && groups.contains(role)) {
-                                return ctx.proceed(); // Role matched
+                            if (identity.hasRole(role)) {
+                                return ctx.proceed();
                             }
                         }
                         throw new ForbiddenException("Access denied: required roles not present");
                     }
-                    else {
-                        // No restrictive roles enabled
-                        return ctx.proceed();
-                    }
-                }
-                else {
-                    // Allow access if there is no restrictive config key provided
-                    // (@see ConditionalRolesAllowed) on the resource being called.
-                    return ctx.proceed();
                 }
             }
             else {
-                throw new NotAuthorizedException("Bearer token not present");
+                throw new AuthenticationFailedException("Bearer token required");
+
             }
         }
-        else {
-            // Authorisation not enabled, allow access
-            return ctx.proceed();
-        }
 
-
-
-        // throw new ForbiddenException("Access denied: required roles not present");
-        // OR
-        // throw new NotAuthorizedException("Bearer");
+        // Catch all, no API restriction, enforcement disabled in application.properties
+        return ctx.proceed();
     }
 }

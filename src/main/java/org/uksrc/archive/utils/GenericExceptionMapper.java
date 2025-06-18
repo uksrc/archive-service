@@ -12,10 +12,14 @@ public class GenericExceptionMapper implements ExceptionMapper<Exception> {
 
     @Override
     public Response toResponse(Exception exception) {
-        log.error(exception.getCause());
+        String message = exception.getMessage();
+        if (message == null && exception.getCause() != null) {
+            message = exception.getCause().getMessage();
+        }
+        log.error(message);
 
         return Response.status(Response.Status.BAD_REQUEST)
-                .entity("Error: " + exception.getCause().getMessage())
+                .entity("Error: " + message)
                 .build();
     }
 }
