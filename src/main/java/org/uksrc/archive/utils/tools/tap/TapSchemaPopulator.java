@@ -60,7 +60,7 @@ public class TapSchemaPopulator {
             }
 
             // Add any objects that need to be visible to the TAP service
-      //      addSchemaMembers("public");
+            addSchemaMembers("public");
 
         }catch (Exception e) {
             LOG.error("Populating TAP Schema", e);
