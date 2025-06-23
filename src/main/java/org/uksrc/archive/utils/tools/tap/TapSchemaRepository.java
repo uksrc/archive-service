@@ -5,7 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-import org.ivoa.tap.schema.Schema;
+import org.ivoa.dm.tapschema.Schema;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -34,8 +34,10 @@ public class TapSchemaRepository {
     EntityManager entityManager;
 
     static final String createSchemaSql = "CREATE SCHEMA IF NOT EXISTS \"%s\";";
-    static final String insertTableSql = "INSERT INTO \"TAP_SCHEMA\".\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
-    static final String insertColumnSql = "INSERT INTO \"TAP_SCHEMA\".\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,NULL,0,1,0)";
+    static final String insertSchemaSql = "INSERT INTO tap_schema.schemas(schema_name, description, utype, schema_index) VALUES (?, ?, ?, ?)";
+    static final String insertTableSql = "INSERT INTO tap_schema.\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
+ //   static final String insertColumnSql = "INSERT INTO tap_schema.\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,NULL,0,1,0)";
+ static final String insertColumnSql = "INSERT INTO tap_schema.\"columns\"(table_name, column_name, description, datatype, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,false,true,false)";
 
     //Columns that are reserved words in TAP (currently only CAOM 2.5 entries) - raised with CADC to see if a model adjustment is in order before release.
     static final Set<String> reservedWords = Set.of("coordsys", "pi", "position", "time");
@@ -62,12 +64,24 @@ public class TapSchemaRepository {
     @Transactional
     public void insertSchema(Schema schema) {
         entityManager.persist(schema);
+    }
 
-      /*  entityManager.createNativeQuery(
-                "UPDATE TAP_SCHEMA.columns " +
-                        "SET column_name = regexp_replace(column_name, '^(column|table)\\.', '') " +
-                        "WHERE column_name ~ '^(column|table)\\.'"
-        ).executeUpdate();*/
+    /**
+     * Adds a schema details to the TAP_SCHEMA to make it visible to the TAP service.
+     * Add the schema before adding any tables/columns
+     * @param schemaName The name
+     * @param description The description
+     * @param utype utype of the schema
+     * @param schema_index The index
+     */
+    @Transactional
+    public void insertSchema(String schemaName, String description, String utype, Integer schema_index) {
+        entityManager.createNativeQuery(insertSchemaSql)
+                .setParameter(1, schemaName)
+                .setParameter(2, description)
+                .setParameter(3, utype)
+                .setParameter(4, schema_index)
+                .executeUpdate();
     }
 
     // CREATE TABLE IF NOT EXISTS "TAP_SCHEMA"."schemas" ("schema_name" VARCHAR, "description" VARCHAR, "utype" VARCHAR, "schema_index" INTEGER, "dbname" VARCHAR, PRIMARY KEY("schema_name"));
@@ -86,7 +100,7 @@ public class TapSchemaRepository {
         entityManager.createNativeQuery(insertTableSql)
                 .setParameter(1, schemaName)
                 .setParameter(2, reserved ? "\"" + tableName + "\"" : tableName)
-                .setParameter(3, tableType)
+                .setParameter(3, tableType.toUpperCase())
                 .setParameter(4, description)
                 .executeUpdate();
     }
