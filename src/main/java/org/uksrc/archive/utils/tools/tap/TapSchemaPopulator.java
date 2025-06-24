@@ -9,7 +9,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.Unmarshaller;
-import org.ivoa.dm.caom2.Caom2Model;
 import org.ivoa.dm.tapschema.ColNameKeys;
 import org.ivoa.dm.tapschema.Schema;
 import org.ivoa.dm.tapschema.TapschemaModel;
@@ -56,11 +55,10 @@ public class TapSchemaPopulator {
             }
             if (num == 0){
                 addTapSchema();
-               // entityManager."alter schema tap_schema rename to \"TAP_SCHEMA\";"
             }
 
             // Add any objects that need to be visible to the TAP service
-            addSchemaMembers("public");
+            addSchemaMembers("public", "default schema");
 
         }catch (Exception e) {
             LOG.error("Populating TAP Schema", e);
@@ -85,9 +83,6 @@ public class TapSchemaPopulator {
                     List<Schema> schemas = model_in.getContent(Schema.class);
                     if (!schemas.isEmpty()) {
                         Schema schema = schemas.get(0);
-                        String schemaName = getSchemaName(schema.getSchema_name());
-                        schema.setSchema_name(schemaName.toUpperCase());
-
                         tapSchemaRepository.insertSchema(schema);
                   }
                 }
@@ -97,9 +92,15 @@ public class TapSchemaPopulator {
         }
     }
 
-    private void addSchemaMembers(String schemaName) {
+    /**
+     * Adds details of ALL tables/columns contained within a schema to the tap_schema tables to make them visible to
+     * the TAP service.
+     * @param schemaName The name of the schema to evaluate.
+     * @param description The description of the schema (will be added to the tap service)
+     */
+    public void addSchemaMembers(String schemaName, String description) {
         //TODO move CAOM objects to their own schema (Requires library change) -currently gets anything in public which may be an issue later on.
-        tapSchemaRepository.insertSchema(schemaName, "default schema", null, null);
+        tapSchemaRepository.insertSchema(schemaName, description, null, null);
 
         List<?> result = entityManager.createNativeQuery(GET_TABLES_FOR_SCHEMA)
                 .setParameter(1, schemaName)
@@ -121,7 +122,7 @@ public class TapSchemaPopulator {
             }
 
             if (!exists) {
-                tapSchemaRepository.addTable("public", tableName, "table", "Details of a(n) " + tableName);
+                tapSchemaRepository.addTable(schemaName, tableName, "table", "Details of a(n) " + tableName);
 
                 List<?> colResults = entityManager.createNativeQuery(GET_COLUMNS_FOR_TABLE)
                         .setParameter(1, tableName)
@@ -140,23 +141,5 @@ public class TapSchemaPopulator {
                 }
             }
         }
-    }
-
-    /**
-     * Utility function to remove superfluous xml prefixes on properties.
-     * @param columnName raw property string from xml
-     * @return string with prefix removed or original string if none present.
-     */
-    private  String stripXMLPrefix(String columnName) {
-        int dotIndex = columnName.indexOf('.');
-        if (dotIndex > 0) {
-            return columnName.substring(dotIndex + 1);
-        }
-        return columnName;
-    }
-
-    //required for lambda evaluations
-    private String getSchemaName(String schemaName){
-        return schemaName.compareToIgnoreCase("tapschema") == 0 ? TapSchemaPopulator.SCHEMA_NAME : schemaName;
     }
 }
