@@ -9,6 +9,7 @@ public class Utilities {
     //Caution with the id value if re-using.
     private static final String XML_OBSERVATION = "<caom2:Observation xmlns:caom2=\"http://www.opencadc.org/caom2/xml/v2.5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:SimpleObservation\" caom2:id=\"%s\">" +
             "<caom2:collection>%s</caom2:collection>" +
+            "<caom2:uriBucket>bucket</caom2:uriBucket>" +
             "<caom2:uri>c630c66f-b06b-4fed-bc16-1d7fd32161</caom2:uri>" +
             "<caom2:intent>science</caom2:intent>\n" +
             "</caom2:Observation>";
