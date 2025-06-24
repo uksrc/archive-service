@@ -2,15 +2,10 @@ package org.uksrc.archive;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;
-import io.restassured.path.xml.XmlPath;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
-import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.ObservationIntentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +14,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.Utilities;
 
-import java.io.StringReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -272,7 +266,9 @@ public class ObservationResourceTest {
     @DisplayName("Test paging results, first page")
     public void testPagingResults() {
         for (int i = 0; i < 15; i++){
-            Utilities.addObservationToDatabase(COLLECTION1, "observation" + i);
+            try (Response res = Utilities.addObservationToDatabase(COLLECTION1, "observation" + i)){
+                assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
+            }
         }
 
         ObservationListWrapper wrapper = when()
@@ -291,7 +287,9 @@ public class ObservationResourceTest {
     public void testPagingResults2() {
         final int TOTAL = 15;
         for (int i = 0; i < TOTAL; i++){
-            Utilities.addObservationToDatabase(COLLECTION1, "observation" + i);
+            try (Response res =Utilities.addObservationToDatabase(COLLECTION1, "observation" + i)){
+                assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
+            }
         }
 
         ObservationListWrapper wrapper = when()

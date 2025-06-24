@@ -1,12 +1,6 @@
 package org.uksrc.archive.utils;
 
 import jakarta.ws.rs.core.Response;
-import jakarta.xml.bind.JAXBElement;
-import org.ivoa.dm.caom2.DerivedObservation;
-import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.SimpleObservation;
-
-import javax.xml.namespace.QName;
 
 import static io.restassured.RestAssured.given;
 
