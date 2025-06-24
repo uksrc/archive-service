@@ -34,6 +34,7 @@ public class TapSchemaPopulator {
 
     static final String CHECK_TABLE_EXISTS_SQL = "SELECT 1 FROM tap_schema.\"tables\" WHERE table_name = ?";
     static final String CHECK_TAP_DEPLOYED_SQL = "SELECT schema_name FROM tap_schema.schemas;";
+    static final String CHECK_SCHEMA_ADDED_SQL = "SELECT schema_name FROM tap_schema.schemas WHERE schema_name = ?";
     static final String GET_TABLES_FOR_SCHEMA =  "SELECT table_name FROM information_schema.tables WHERE table_schema = ?";
     static final String GET_COLUMNS_FOR_TABLE = "SELECT column_name, data_type, udt_name, character_maximum_length FROM information_schema.columns WHERE table_name = ?";
     static final String SCHEMA_NAME = "TAP_SCHEMA";
@@ -100,7 +101,13 @@ public class TapSchemaPopulator {
      */
     public void addSchemaMembers(String schemaName, String description) {
         //TODO move CAOM objects to their own schema (Requires library change) -currently gets anything in public which may be an issue later on.
-        tapSchemaRepository.insertSchema(schemaName, description, null, null);
+        int num = entityManager.createNativeQuery(CHECK_SCHEMA_ADDED_SQL)
+                .setParameter(1, schemaName)
+                .getResultList()
+                .size();
+        if (num == 0) {
+            tapSchemaRepository.insertSchema(schemaName, description, null, null);
+        }
 
         List<?> result = entityManager.createNativeQuery(GET_TABLES_FOR_SCHEMA)
                 .setParameter(1, schemaName)
