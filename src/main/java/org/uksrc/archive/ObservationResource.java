@@ -34,7 +34,6 @@ import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 @Path("/observations")
-//@RolesAllowed("prototyping-groups/mini-src")
 @ConditionalRolesAllowed("resource.roles.view")
 public class ObservationResource {
 
