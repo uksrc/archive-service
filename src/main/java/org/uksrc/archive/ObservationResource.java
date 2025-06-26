@@ -3,7 +3,6 @@ package org.uksrc.archive;
  * Created on 21/08/2024 by Paul Harrison (paul.harrison@manchester.ac.uk).
  */
 
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
