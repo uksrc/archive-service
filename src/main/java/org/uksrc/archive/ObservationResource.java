@@ -34,7 +34,6 @@ import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 @Path("/observations")
-@ConditionalRolesAllowed("resource.roles.view")
 public class ObservationResource {
 
     @PersistenceContext
@@ -117,6 +116,7 @@ public class ObservationResource {
     )
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response addObservation(Observation observation) {
         return submitObservation(observation);
@@ -210,6 +210,7 @@ public class ObservationResource {
     )
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response updateObservation(@PathParam("id") String id, Observation observation) {
         try {
@@ -280,6 +281,7 @@ public class ObservationResource {
             description = "Internal error whilst retrieving Observations or parameter error (if supplied)."
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.view")
     public Response getAllObservations(@QueryParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         //Both page and size need to be supplied OR neither
         if ((page != null) ^ (size != null)) {
@@ -334,6 +336,7 @@ public class ObservationResource {
             description = "Internal error whilst retrieving Observations."
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.view")
     public Response getObservation(@PathParam("id") String id) {
         try {
             Observation observation = findObservation(id);
@@ -375,6 +378,7 @@ public class ObservationResource {
             responseCode = "400",
             description = "Internal error whilst deleting the observation."
     )
+    @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response deleteObservation(@PathParam("id") String id) {
         try {
