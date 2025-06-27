@@ -41,11 +41,11 @@ dependencies {
     implementation("fr.unistra.cds:TAPlib:2.4.4-SNAPSHOT")
     implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
 
-    implementation("org.javastro.ivoa.dm:tapschema:0.9.0")
+    implementation("org.javastro.ivoa.dm:tapschema:0.9.1")
 
 
     //Model(s)
-    implementation("org.opencadc:CAOM:2.5.5-SNAPSHOT:quarkus")
+    implementation("org.opencadc:CAOM:2.5.6-SNAPSHOT:quarkus")
 
     //Required by Vollt
     // TAP lib upload func.

@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.Unmarshaller;
+import org.ivoa.dm.caom2.Caom2Model;
 import org.ivoa.dm.tapschema.ColNameKeys;
 import org.ivoa.dm.tapschema.Schema;
 import org.ivoa.dm.tapschema.TapschemaModel;
@@ -59,7 +60,8 @@ public class TapSchemaPopulator {
             }
 
             // Add any objects that need to be visible to the TAP service
-            addSchemaMembers("public", "default schema");
+        //    addSchemaMembers("public", "default schema");
+            addCAOMSchema();
 
         }catch (Exception e) {
             LOG.error("Populating TAP Schema", e);
@@ -68,7 +70,6 @@ public class TapSchemaPopulator {
 
     /**
      * Add the TAP Schema to the database.
-     * Requires the import.sql to be in the resources folder
      */
     private void addTapSchema() {
         try {
@@ -86,6 +87,32 @@ public class TapSchemaPopulator {
                         Schema schema = schemas.get(0);
                         tapSchemaRepository.insertSchema(schema);
                   }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Add the CAOM Schema to the database.
+     */
+    private void addCAOMSchema() {
+        try {
+            TapschemaModel model = new TapschemaModel();
+            InputStream is = Caom2Model.TAPSchema();
+            if (is != null) {
+                JAXBContext jc = model.management().contextFactory();
+                Unmarshaller unmarshaller = jc.createUnmarshaller();
+                JAXBElement<TapschemaModel> el = unmarshaller.unmarshal(new StreamSource(is), TapschemaModel.class);
+                TapschemaModel model_in = el.getValue();
+                if (model_in != null) {
+                    ColNameKeys.normalize(model_in); // note that this step is necessary before saving to the database to set up the table_name foreign keys
+                    List<Schema> schemas = model_in.getContent(Schema.class);
+                    if (!schemas.isEmpty()) {
+                        Schema schema = schemas.get(0);
+                        tapSchemaRepository.insertSchema(schema);
+                    }
                 }
             }
         } catch (Exception e) {
