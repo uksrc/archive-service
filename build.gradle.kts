@@ -43,7 +43,7 @@ dependencies {
 
 
     //Model(s)
-    implementation("org.opencadc:CAOM:2.5.4-SNAPSHOT:quarkus")
+    implementation("org.opencadc:CAOM:2.5.5-SNAPSHOT:quarkus")
 
     //Required by Vollt
     // TAP lib upload func.
