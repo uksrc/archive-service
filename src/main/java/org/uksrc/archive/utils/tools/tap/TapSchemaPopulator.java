@@ -13,6 +13,7 @@ import org.ivoa.dm.caom2.Caom2Model;
 import org.ivoa.dm.tapschema.ColNameKeys;
 import org.ivoa.dm.tapschema.Schema;
 import org.ivoa.dm.tapschema.TapschemaModel;
+import org.ivoa.vodml.VodmlModel;
 import org.jboss.logging.Logger;
 
 import javax.xml.transform.stream.StreamSource;
@@ -20,7 +21,7 @@ import java.io.InputStream;
 import java.util.*;
 
 /*
-Adds any existing entities in the database to the TAP_SCHEMA (tables & columns)
+Adds any existing entities in the database to the TAP_SCHEMA (tables and columns)
  */
 @Startup
 @ApplicationScoped
@@ -73,22 +74,8 @@ public class TapSchemaPopulator {
      */
     private void addTapSchema() {
         try {
-            TapschemaModel model = new TapschemaModel();
             InputStream is = TapschemaModel.TAPSchema();
-            if (is != null) {
-                JAXBContext jc = model.management().contextFactory();
-                Unmarshaller unmarshaller = jc.createUnmarshaller();
-                JAXBElement<TapschemaModel> el = unmarshaller.unmarshal(new StreamSource(is), TapschemaModel.class);
-                TapschemaModel model_in = el.getValue();
-                if (model_in != null) {
-                    ColNameKeys.normalize(model_in);
-                    List<Schema> schemas = model_in.getContent(Schema.class);
-                    if (!schemas.isEmpty()) {
-                        Schema schema = schemas.get(0);
-                        tapSchemaRepository.insertSchema(schema);
-                  }
-                }
-            }
+            addModel(is);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -99,24 +86,33 @@ public class TapSchemaPopulator {
      */
     private void addCAOMSchema() {
         try {
-            TapschemaModel model = new TapschemaModel();
             InputStream is = Caom2Model.TAPSchema();
-            if (is != null) {
-                JAXBContext jc = model.management().contextFactory();
-                Unmarshaller unmarshaller = jc.createUnmarshaller();
-                JAXBElement<TapschemaModel> el = unmarshaller.unmarshal(new StreamSource(is), TapschemaModel.class);
-                TapschemaModel model_in = el.getValue();
-                if (model_in != null) {
-                    ColNameKeys.normalize(model_in); // note that this step is necessary before saving to the database to set up the table_name foreign keys
-                    List<Schema> schemas = model_in.getContent(Schema.class);
-                    if (!schemas.isEmpty()) {
-                        Schema schema = schemas.get(0);
-                        tapSchemaRepository.insertSchema(schema);
-                    }
-                }
-            }
+            addModel(is);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Adds the supplied model to the database.
+     * @param is An input stream that contains the model
+     * @throws jakarta.xml.bind.JAXBException for errors caused whilst parsing the model
+     */
+    private void addModel( InputStream is) throws jakarta.xml.bind.JAXBException {
+        if (is != null) {
+            TapschemaModel model = new TapschemaModel();
+            JAXBContext jc = model.management().contextFactory();
+            Unmarshaller unmarshaller = jc.createUnmarshaller();
+            JAXBElement<TapschemaModel> el = unmarshaller.unmarshal(new StreamSource(is), TapschemaModel.class);
+            TapschemaModel model_in = el.getValue();
+            if (model_in != null) {
+                ColNameKeys.normalize(model_in);
+                List<Schema> schemas = model_in.getContent(Schema.class);
+                if (!schemas.isEmpty()) {
+                    Schema schema = schemas.get(0);
+                    tapSchemaRepository.insertSchema(schema);
+              }
+            }
         }
     }
 
