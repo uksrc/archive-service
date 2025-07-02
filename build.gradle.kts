@@ -35,6 +35,7 @@ dependencies {
     implementation("org.javastro:jaxbjpa-utils:0.2.3")
     implementation("io.quarkus:quarkus-agroal")
     implementation("commons-beanutils:commons-beanutils:1.9.4")
+    implementation("io.quarkus:quarkus-kubernetes-config")
 
     //Vollt TAP
     implementation("fr.unistra.cds:ADQLlib:2.0-SNAPSHOT")
