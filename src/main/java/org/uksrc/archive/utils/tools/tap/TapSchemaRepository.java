@@ -34,10 +34,10 @@ public class TapSchemaRepository {
     EntityManager entityManager;
 
     static final String createSchemaSql = "CREATE SCHEMA IF NOT EXISTS \"%s\";";
-    static final String insertSchemaSql = "INSERT INTO tap_schema.schemas(schema_name, description, utype, schema_index) VALUES (?, ?, ?, ?)";
-    static final String insertTableSql = "INSERT INTO tap_schema.\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
+    static final String insertSchemaSql = "INSERT INTO TAP_SCHEMA.schemas(schema_name, description, utype, schema_index) VALUES (?, ?, ?, ?)";
+    static final String insertTableSql = "INSERT INTO TAP_SCHEMA.\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
  //   static final String insertColumnSql = "INSERT INTO tap_schema.\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,NULL,0,1,0)";
- static final String insertColumnSql = "INSERT INTO tap_schema.\"columns\"(table_name, column_name, description, datatype, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,false,true,false)";
+ static final String insertColumnSql = "INSERT INTO TAP_SCHEMA.\"columns\"(table_name, column_name, description, datatype, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,false,true,false)";
 
     //Columns that are reserved words in TAP (currently only CAOM 2.5 entries) - raised with CADC to see if a model adjustment is in order before release.
     static final Set<String> reservedWords = Set.of("coordsys", "pi", "position", "time");

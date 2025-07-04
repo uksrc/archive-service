@@ -1,3 +1,4 @@
+
 plugins {
     java
     id("io.quarkus")
@@ -38,10 +39,10 @@ dependencies {
 
     //Vollt TAP
     implementation("fr.unistra.cds:ADQLlib:2.0-SNAPSHOT")
-    implementation("fr.unistra.cds:TAPlib:2.4.4-SNAPSHOT")
+    implementation("fr.unistra.cds:TAPlib:2.4.3-SNAPSHOT")
     implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
 
-    implementation("org.javastro.ivoa.dm:tapschema:0.9.1")
+    implementation("org.javastro.ivoa.dm:tapschema:0.9.4")
 
 
     //Model(s)
@@ -63,3 +64,14 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
 }
 
+/*apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
+
+tasks.named("build") {
+    dependsOn("generateVolltWebXml")
+}
+
+tasks.named("quarkusDev") {
+    dependsOn("generateVolltWebXml")
+}
+
+*/
