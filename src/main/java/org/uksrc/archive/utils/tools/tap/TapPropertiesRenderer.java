@@ -1,10 +1,14 @@
 package org.uksrc.archive.utils.tools.tap;
 
 import io.quarkus.runtime.Startup;
+import io.quarkus.runtime.StartupEvent;
+import io.quarkus.runtime.configuration.ConfigUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -12,6 +16,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,8 +30,20 @@ import java.util.regex.Pattern;
 @ApplicationScoped
 public class TapPropertiesRenderer {
 
+    @ConfigProperty(name = "vollt.tap.config.path")
+    String outputPath;
+
     @PostConstruct
     public void renderTemplate() throws IOException {
+        System.out.println("Application is starting...");
+
+        String rootPath = "";
+        List<String> activeProfiles = ConfigUtils.getProfiles();
+        String primaryProfile = activeProfiles.isEmpty() ? null : activeProfiles.get(0);
+        if (primaryProfile != null && !primaryProfile.equals("prod")) {
+            rootPath = System.getProperty("java.io.tmpdir");
+        }
+
         var config = ConfigProvider.getConfig();
 
         try (InputStream in = getClass().getResourceAsStream("/templates/tapProperties.txt")) {
@@ -35,7 +52,7 @@ public class TapPropertiesRenderer {
             String content = new String(in.readAllBytes());
             String rendered = replacePlaceholdersWithConfig(content, config);
 
-            Path path = Paths.get("/deployments/config/tap.properties");
+            Path path = Paths.get(rootPath, outputPath, "tap.properties");
             Files.createDirectories(path.getParent());
             Files.writeString(path, rendered);
         }
