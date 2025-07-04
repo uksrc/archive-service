@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 /**
  * TapPropertiesRenderer
- * Will replace the variable placeholders in the tap.properties template (tapProperties.txt) with
+ * Will replace the variable placeholders in the tap.properties template (tap.properties.template) with
  * values from application.properties.
  * The intention here is to pick up the environment variables pass in at runtime.
  */
@@ -46,8 +46,8 @@ public class TapPropertiesRenderer {
 
         var config = ConfigProvider.getConfig();
 
-        try (InputStream in = getClass().getResourceAsStream("/templates/tapProperties.txt")) {
-            if (in == null) throw new FileNotFoundException("/tapProperties.txt not found");
+        try (InputStream in = getClass().getResourceAsStream("/templates/tap.properties.template")) {
+            if (in == null) throw new FileNotFoundException("/tap.properties.template not found");
 
             String content = new String(in.readAllBytes());
             String rendered = replacePlaceholdersWithConfig(content, config);
