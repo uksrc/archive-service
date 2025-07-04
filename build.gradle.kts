@@ -64,7 +64,7 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
 }
 
-/*apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
+apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
 
 tasks.named("build") {
     dependsOn("generateVolltWebXml")
@@ -74,4 +74,4 @@ tasks.named("quarkusDev") {
     dependsOn("generateVolltWebXml")
 }
 
-*/
+

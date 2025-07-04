@@ -7,7 +7,7 @@
         <servlet-class>tap.config.ConfigurableTAPServlet</servlet-class>
         <init-param>
             <param-name>tapconf</param-name>
-            <param-value>C:\Users\mdehssln\AppData\Local\Temp\tmp\tap.properties</param-value>
+            <param-value>${tapconf}</param-value>
         </init-param>
     </servlet>
     <servlet-mapping>
