@@ -22,7 +22,7 @@ public class LoginResource {
     @ConfigProperty(name = "quarkus.oidc.auth-server-url")
     String tokenServerUrl;
 
-    @ConfigProperty(name = "OIDC_CLIENT_ID")
+    @ConfigProperty(name = "quarkus.oidc.client-id")
     String clientId;
 
     @GET

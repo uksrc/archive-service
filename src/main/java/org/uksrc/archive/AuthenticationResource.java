@@ -40,10 +40,10 @@ public class AuthenticationResource {
     @ConfigProperty(name = "quarkus.oidc.auth-server-url")
     String tokenServerUrl;
 
-    @ConfigProperty(name = "OIDC_CLIENT_ID")
+    @ConfigProperty(name = "quarkus.oidc.client-id")
     String clientId;
 
-    @ConfigProperty(name = "OIDC_CLIENT_SECRET")
+    @ConfigProperty(name = "quarkus.oidc.credentials.secret")
     String clientSecret;
 
     @ConfigProperty(name = "authentication.callback")
