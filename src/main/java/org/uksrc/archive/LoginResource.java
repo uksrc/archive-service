@@ -15,7 +15,7 @@ import java.util.Random;
  * a bearer token).
  */
 @Path("/")
-@IfBuildProfile("dev")
+//IfBuildProfile("dev")
 public class LoginResource {
     //"<tokenServerUrl>/logout" if logging out is required for testing.
 

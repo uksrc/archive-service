@@ -34,7 +34,7 @@ import java.nio.charset.StandardCharsets;
  * &audience=authn-api&scope=openid+profile+offline_access&state=<STATE>
  */
 @Path("/auth-callback")
-@IfBuildProfile(anyOf = {"dev", "test"})
+//IfBuildProfile(anyOf = {"dev", "test"})
 public class AuthenticationResource {
 
     @ConfigProperty(name = "quarkus.oidc.auth-server-url")
