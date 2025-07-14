@@ -3,14 +3,11 @@ package org.uksrc.archive.utils.tools;
 import jakarta.persistence.TypedQuery;
 import jakarta.ws.rs.core.Response;
 import jakarta.xml.bind.JAXBElement;
-import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.SimpleObservation;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.responses.Responses;
 
 import javax.xml.namespace.QName;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 

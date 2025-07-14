@@ -5,11 +5,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import org.ivoa.dm.tapschema.Schema;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Added to allow the submission of TAP_SCHEMA entities (for "transactional" reasons)
@@ -31,11 +33,16 @@ public class TapSchemaRepository {
     @PersistenceContext
     EntityManager entityManager;
 
-    static final String insertTableSql = "INSERT INTO \"TAP_SCHEMA\".\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
-    static final String insertColumnSql = "INSERT INTO \"TAP_SCHEMA\".\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,NULL,0,1,0)";
+    static final String createSchemaSql = "CREATE SCHEMA IF NOT EXISTS \"%s\";";
+    static final String insertSchemaSql = "INSERT INTO TAP_SCHEMA.schemas(schema_name, description, utype, schema_index) VALUES (?, ?, ?, ?)";
+    static final String insertTableSql = "INSERT INTO TAP_SCHEMA.\"tables\"(schema_name, table_name, table_type, description) VALUES (?, ?, ?, ?)";
+ //   static final String insertColumnSql = "INSERT INTO tap_schema.\"columns\"(table_name, column_name, description, datatype, size, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,NULL,0,1,0)";
+ static final String insertColumnSql = "INSERT INTO TAP_SCHEMA.\"columns\"(table_name, column_name, description, datatype, arraysize, unit, ucd, principal, std, indexed) VALUES(?,?,?,?,?,NULL,NULL,false,true,false)";
 
     //Columns that are reserved words in TAP (currently only CAOM 2.5 entries) - raised with CADC to see if a model adjustment is in order before release.
     static final Set<String> reservedWords = Set.of("coordsys", "pi", "position", "time");
+    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
+
 
     //STILTS' Taplint is case-sensitive  CompareMetadataStage.java - compatibleDataTypesOneWay(~)
     //Vollt TAP restricts data types in ADQLLib::DataType.java - DBDatatype to one of {	SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY,	CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, CIRCLE, POLYGON, REGION, UNKNOWN, UNKNOWN_NUMERIC }
@@ -48,6 +55,38 @@ public class TapSchemaRepository {
         typeMapping.put("double precision", "DOUBLE");
     }
 
+    // ---------------------------------- Methods for adding the TAP_SCHEMA model --------------------------------
+    /**
+     * Adds the required TAP_SCHEMA to the database.
+     * Hard-coded the sql to avoid any sql injection, potential to make it more generic by passing in the schema name
+     * but would require some defence.
+     */
+    @Transactional
+    public void insertSchema(Schema schema) {
+        entityManager.persist(schema);
+    }
+
+    /**
+     * Adds a schema details to the TAP_SCHEMA to make it visible to the TAP service.
+     * Add the schema before adding any tables/columns
+     * @param schemaName The name
+     * @param description The description
+     * @param utype utype of the schema
+     * @param schema_index The index
+     */
+    @Transactional
+    public void insertSchema(String schemaName, String description, String utype, Integer schema_index) {
+        entityManager.createNativeQuery(insertSchemaSql)
+                .setParameter(1, schemaName)
+                .setParameter(2, description)
+                .setParameter(3, utype)
+                .setParameter(4, schema_index)
+                .executeUpdate();
+    }
+
+    // CREATE TABLE IF NOT EXISTS "TAP_SCHEMA"."schemas" ("schema_name" VARCHAR, "description" VARCHAR, "utype" VARCHAR, "schema_index" INTEGER, "dbname" VARCHAR, PRIMARY KEY("schema_name"));
+
+    // ------------------------ Methods for adding custom objects to the TAP_SCHEMA ------------------------------
     /**
      * Adds a table's details to the TAP_SCHEMA in the database.
      * @param schemaName The schema that this table belongs to.
@@ -61,7 +100,7 @@ public class TapSchemaRepository {
         entityManager.createNativeQuery(insertTableSql)
                 .setParameter(1, schemaName)
                 .setParameter(2, reserved ? "\"" + tableName + "\"" : tableName)
-                .setParameter(3, tableType)
+                .setParameter(3, tableType.toUpperCase())
                 .setParameter(4, description)
                 .executeUpdate();
     }

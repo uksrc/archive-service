@@ -2,15 +2,10 @@ package org.uksrc.archive;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;
-import io.restassured.path.xml.XmlPath;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
-import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.ObservationIntentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +14,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.Utilities;
 
-import java.io.StringReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -38,12 +32,14 @@ public class ObservationResourceTest {
     //Caution with the id value if re-using.
     private static final String XML_OBSERVATION = "<caom2:Observation xmlns:caom2=\"http://www.opencadc.org/caom2/xml/v2.5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:SimpleObservation\" caom2:id=\"%s\">" +
             "<caom2:collection>%s</caom2:collection>" +
+            "<caom2:uriBucket>bucket</caom2:uriBucket>" +
             "<caom2:uri>c630c66f-b06b-4fed-bc16-1d7fd32172</caom2:uri>" +
             "<caom2:intent>science</caom2:intent>\n" +
             "</caom2:Observation>";
 
     private static final String XML_DERIVED_OBSERVATION = "<caom2:Observation xmlns:caom2=\"http://www.opencadc.org/caom2/xml/v2.5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:DerivedObservation\" caom2:id=\"%s\">" +
             "<caom2:collection>%s</caom2:collection>" +
+            "<caom2:uriBucket>bucket</caom2:uriBucket>" +
             "<caom2:uri>c630c66f-b06b-4fed-bc16-1d7fd32172</caom2:uri>" +
             "<caom2:intent>science</caom2:intent>" +
             "<caom2:members>" +
@@ -272,7 +268,9 @@ public class ObservationResourceTest {
     @DisplayName("Test paging results, first page")
     public void testPagingResults() {
         for (int i = 0; i < 15; i++){
-            Utilities.addObservationToDatabase(COLLECTION1, "observation" + i);
+            try (Response res = Utilities.addObservationToDatabase(COLLECTION1, "observation" + i)){
+                assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
+            }
         }
 
         ObservationListWrapper wrapper = when()
@@ -291,7 +289,9 @@ public class ObservationResourceTest {
     public void testPagingResults2() {
         final int TOTAL = 15;
         for (int i = 0; i < TOTAL; i++){
-            Utilities.addObservationToDatabase(COLLECTION1, "observation" + i);
+            try (Response res =Utilities.addObservationToDatabase(COLLECTION1, "observation" + i)){
+                assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
+            }
         }
 
         ObservationListWrapper wrapper = when()

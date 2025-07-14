@@ -5,6 +5,10 @@
         <display-name>tap</display-name>
         <servlet-name>ArchiveTAP</servlet-name>
         <servlet-class>tap.config.ConfigurableTAPServlet</servlet-class>
+        <init-param>
+            <param-name>tapconf</param-name>
+            <param-value>${tapconf}</param-value>
+        </init-param>
     </servlet>
     <servlet-mapping>
         <servlet-name>ArchiveTAP</servlet-name>
