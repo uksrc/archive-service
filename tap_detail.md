@@ -23,7 +23,7 @@ minikube service archive-service --url
 ### <a id="tap_properties"></a>TAP Properties
 The Vollt service requires a file called tap.properties to be available at runtime, this supplies properties such as the URL of the database.
 
-There is a template located at ``/src/main/resource/templates/tapProperties.txt`` which contains the required properties including some variabled ones. The variabled properties will be injected at build-time with values from the ``application.properties`` file. Once updated the generated ``tap.properties`` file will be deployed to ``/src/main/resources`` where it can be accessed by the Vollt service at run-time. 
+There is a template located at ``/src/main/resource/templates/tap.properties.template`` which contains the required properties including some variabled ones. The variabled properties will be injected at build-time with values from the ``application.properties`` file. Once updated the generated ``tap.properties`` file will be deployed to ``/src/main/resources`` where it can be accessed by the Vollt service at run-time. 
 
 Depedendent on the operating system that is being deployed on (mainly testing), the following property will need to be changed to the correct folder path:
 ``file_root_path = /some/linux/path`` This is where user data will be stored (such as generated VOTable output files). 

@@ -51,11 +51,15 @@ public class CollectionResourceTest {
     @TestSecurity(user = "testuser", roles = {TEST_ROLE})
     public void testRetrievingCollectionIds() {
         for (int i = 1; i < 6; i++){
-            Utilities.addObservationToDatabase(Utilities.COLLECTION1, Utilities.OBSERVATION1 + i);
+            try (Response res = Utilities.addObservationToDatabase(Utilities.COLLECTION1, Utilities.OBSERVATION1 + i)){
+                assert(res.getStatus() == Response.Status.CREATED.getStatusCode());
+            }
         }
 
         for (int i = 6; i < 13; i++){
-            Utilities.addObservationToDatabase(Utilities.COLLECTION2, Utilities.OBSERVATION2 + i);
+            try (Response res =Utilities.addObservationToDatabase(Utilities.COLLECTION2, Utilities.OBSERVATION2 + i)){
+                assert(res.getStatus() == Response.Status.CREATED.getStatusCode());
+            }
         }
 
         String collections = when()

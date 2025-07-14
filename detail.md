@@ -239,7 +239,8 @@ This displays the default [Vollt](http://cdsportal.u-strasbg.fr/taptuto/gettings
 along with a textbox to run experimental queries.
 
 ### Deployment Settings
-Update ``resources/templates/tapProperties.txt`` as required.
+Update ``resources/templates/tap.properties.template`` as required. Any properties can be 'imported' from application.properties
+if required using ${value}
 
 One setting that may need changing is ``file_root_path`` it should resolve to a local folder (Windows requires full path too)
 
