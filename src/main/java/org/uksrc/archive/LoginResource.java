@@ -14,7 +14,7 @@ import java.util.Random;
  * Example of the login process, will call the AuthenticationResource method once logged in (which will request
  * a bearer token).
  */
-@Path("/")
+@Path("")
 //IfBuildProfile("dev")
 public class LoginResource {
     //"<tokenServerUrl>/logout" if logging out is required for testing.
