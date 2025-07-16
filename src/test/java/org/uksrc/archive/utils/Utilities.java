@@ -13,7 +13,7 @@ public class Utilities {
     public static final String COLLECTION1 = "e-merlin";
     public static final String COLLECTION2 = "testCollection";
     public static final String OBSERVATION1 = "c630c66f-b06b-4fed-bc16-1d7fd321";
-    public static final String OBSERVATION2 = "c630c66f-b06b-4fed-bc16-1d7fd321";
+    public static final String OBSERVATION2 = "c630c66f-b06b-4fed-bc16-2e4df256";
 
     // Used in testing only, must conform to the @RolesAllowed setting in the APIs
     public static final String TEST_READER_ROLE = "UKSRC/archive-service/viewer";
