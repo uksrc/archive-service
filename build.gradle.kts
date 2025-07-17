@@ -73,12 +73,6 @@ tasks.withType<JavaCompile> {
 
 apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
 
-tasks.named("build") {
+tasks.named("processResources") {
     dependsOn("generateVolltWebXml")
 }
-
-tasks.named("quarkusDev") {
-    dependsOn("generateVolltWebXml")
-}
-
-
