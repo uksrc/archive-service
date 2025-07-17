@@ -16,7 +16,7 @@ tasks.register("generateVolltWebXml") {
         val templateContent = templatePath.readText()
 
         // Inject values from application.properties into template
-        val tapConfPath = Paths.get(propertyValue, "tap.properties").toString()
+        val tapConfPath = Paths.get(propertyValue, "tap.properties").toString().replace("\\", "/")
         val result = templateContent.replace("\${tapconf}", tapConfPath)
 
         // Output to folder where the Vollt servlet expects it
@@ -75,6 +75,10 @@ fun propertyValue(pathProperty: String) : String {
     else if (pathProperty().startsWith("%dev") || pathProperty.startsWith("vollt")){
         pathValue = System.getProperty("java.io.tmpdir") + pathValue
         pathValue = Paths.get(pathValue).normalize().toString()
+    } else if (pathProperty.startsWith("%prod")) {
+        // Prod:
+        pathValue = Paths.get(pathValue).normalize().toString().replace("\\", "/")
     }
+
     return pathValue
 }

@@ -25,6 +25,9 @@ public class LoginResource {
     @ConfigProperty(name = "quarkus.oidc.client-id")
     String clientId;
 
+    @ConfigProperty(name = "authentication.callback")
+    String authCallbackURI;
+
     @GET
     @Operation(summary = "Displays a test login page.", description = "Displays a simple login page that will redirect to the OIDC login process. Intended for testing only.")
     @Produces(MediaType.TEXT_HTML)
@@ -47,12 +50,12 @@ public class LoginResource {
                         const url = "%s/authorize" +
                             "?response_type=code" +
                             "&client_id=%s" +
-                            "&redirect_uri=" + encodeURIComponent(window.location.origin + "/auth-callback") +
+                            "&redirect_uri=" + encodeURIComponent("%s") +
                             "&audience=authn-api" +
                             "&scope=openid+profile+offline_access" +
                             "&state=" + "%s";
                             window.location.href = url;
                    }
-                </script>""", tokenServerUrl, clientId, state);
+                </script>""", tokenServerUrl, clientId, authCallbackURI ,state);
     }
 }
