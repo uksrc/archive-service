@@ -3,6 +3,7 @@
 1. [Example resources](#examples)
 2. [Submission and retrieval endpoints (REST APIs)](#endpoints)
 3. [Tap service](#tapservice)
+4. [Authentication](#authentication)
 
 
 ------------------------------------------------------------------------------------------
@@ -320,3 +321,25 @@ Change the test group ``prototyping-groups/mini-src`` with the group your users 
 Location of CADC's test cases.
 
 https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data
+
+<a id="authentication"></a>
+## Authentication
+
+A demonstration login page is supplied that will step through the OIDC approval steps at <host>/archive which is the root of the application.
+This is disabled for production by default but can be enabled by disabling the *IfBuildProfile("dev")* settings in both LoginResource.java and AuthenticationResource.java 
+
+#### application.properties values
+
+Build-time settings only.
+
+- *security.roles.enabled*: Security can be disabled (with a rebuild, intended for dev builds)
+
+
+- *quarkus.oidc.auth-server-url*: the URI of the OIDC service
+- *authentication.callback*: *redirectURI* to recieve the bearer token(s)
+- *quarkus.oidc.client-id*: The client ID of the client registered at *quarkus.oidc.auth-server-url*
+- *quarkus.oidc.credentials.secret*: The client secret of the client registered at *quarkus.oidc.auth-server-url*
+
+
+- *resource.roles.view*: If *security.roles.enabled enabled* then these are the *quarkus.oidc.auth-server-url* groups that the user has to be a member of to **view/read** data endpoints.
+- *resource.roles.edit*: If *security.roles.enabled enabled* then these are the *quarkus.oidc.auth-server-url* groups that the user has to be a member of to **view/edit** data endpoints.
