@@ -343,3 +343,13 @@ Build-time settings only.
 
 - *resource.roles.view*: If *security.roles.enabled enabled* then these are the *quarkus.oidc.auth-server-url* groups that the user has to be a member of to **view/read** data endpoints.
 - *resource.roles.edit*: If *security.roles.enabled enabled* then these are the *quarkus.oidc.auth-server-url* groups that the user has to be a member of to **view/edit** data endpoints.
+
+#### Environment variables
+
+The following env vars are required to allow the IAM process to succeed.
+
+- *OIDC_SERVER_URL*: The URL of the IAM service
+- *OIDC_CLIENT_ID*: OIDC client ID of your registered client. Required for DEV builds.
+- *OIDC_CLIENT_SECRET*: OIDC client secret of your registered client. Required for DEV builds.
+
+- *OIDC_AUTH_CALLBACK*: URI of the service that handles authentication callbacks.
