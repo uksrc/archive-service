@@ -28,18 +28,16 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
     @ConfigProperty(name = "quarkus.oidc.client-id", defaultValue = "")
     String expectedClientId;
 
-    private static final Logger LOG = Logger.getLogger(TokenValidatorAugmentor.class);
+    @ConfigProperty(name = "security.roles.enabled", defaultValue = "false")
+    boolean securityEnabled;
 
-    @Override
-    public int priority() {
-        return SecurityIdentityAugmentor.super.priority();
-    }
+    private static final Logger LOG = Logger.getLogger(TokenValidatorAugmentor.class);
 
     @Override
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context) {
         //Skip checking in test due to using dummy tokens
         String profile = ConfigProvider.getConfig().getOptionalValue("quarkus.profile", String.class).orElse("prod");
-        if ("test".equals(profile)) {
+        if ("test".equals(profile) && !securityEnabled) {
             return Uni.createFrom().item(identity);
         }
 
@@ -85,5 +83,10 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
             LOG.warn("Failed to decode JWT token claims", e);
             return Optional.empty();
         }
+    }
+
+    @Override
+    public int priority() {
+        return SecurityIdentityAugmentor.super.priority();
     }
 }
