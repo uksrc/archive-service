@@ -37,7 +37,7 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context) {
         //Skip checking in test due to using dummy tokens
         String profile = ConfigProvider.getConfig().getOptionalValue("quarkus.profile", String.class).orElse("prod");
-        if ("test".equals(profile) && !securityEnabled) {
+        if ("test".equals(profile) || !securityEnabled) {
             return Uni.createFrom().item(identity);
         }
 
