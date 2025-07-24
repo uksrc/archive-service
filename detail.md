@@ -314,7 +314,7 @@ Change the test group ``prototyping-groups/mini-src`` with the group your users 
 4. Use the bearer token to make a request
 
     ```shell
-    curl.exe "http://localhost:8080/observations" -H "Authorization: Bearer <INSERT BEARER TOKEN>"
+    curl.exe "http://localhost:8080/archive/observations" -H "Authorization: Bearer <INSERT BEARER TOKEN>"
     ```
    
 #### Test Cases

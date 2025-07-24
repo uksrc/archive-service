@@ -9,6 +9,8 @@ import jakarta.enterprise.event.Observes;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
+import org.uksrc.archive.AuthenticationResource;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -33,9 +35,11 @@ public class TapPropertiesRenderer {
     @ConfigProperty(name = "vollt.tap.config.path")
     String outputPath;
 
+    private static final Logger LOG = Logger.getLogger(TapPropertiesRenderer.class);
+
     @PostConstruct
     public void renderTemplate() throws IOException {
-        System.out.println("Application is starting...");
+        LOG.info("TAP properties rendering started...");
 
         String rootPath = "";
         List<String> activeProfiles = ConfigUtils.getProfiles();
@@ -55,6 +59,8 @@ public class TapPropertiesRenderer {
             Path path = Paths.get(rootPath, outputPath, "tap.properties");
             Files.createDirectories(path.getParent());
             Files.writeString(path, rendered);
+
+            LOG.info("TAP properties saved to " + path.toString());
         }
     }
 
