@@ -35,28 +35,24 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
 
     @Override
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context) {
-        //Skip checking in test due to using dummy tokens
-        String profile = ConfigProvider.getConfig().getOptionalValue("quarkus.profile", String.class).orElse("prod");
-        if ("test".equals(profile) || !securityEnabled || identity.isAnonymous()) {
-            return Uni.createFrom().item(identity);
-        }
+        if (validationRequired(identity)) {
+            Optional<TokenCredential> tokenCredentialOpt = identity.getCredentials().stream()
+                    .filter(cred -> cred instanceof TokenCredential)
+                    .map(cred -> (TokenCredential) cred)
+                    .findFirst();
 
-        Optional<TokenCredential> tokenCredentialOpt = identity.getCredentials().stream()
-                .filter(cred -> cred instanceof TokenCredential)
-                .map(cred -> (TokenCredential) cred)
-                .findFirst();
+            if (tokenCredentialOpt.isEmpty()) {
+                throw new ForbiddenException("Access denied: no access token credential found");
+            }
 
-        if (tokenCredentialOpt.isEmpty()) {
-            throw new ForbiddenException("Access denied: no access token credential found");
-        }
+            String token = tokenCredentialOpt.get().getToken();
+            String clientId = extractClaim(token)
+                    .orElseThrow(() -> new ForbiddenException("Access denied: client_id not present in token"));
 
-        String token = tokenCredentialOpt.get().getToken();
-        String clientId = extractClaim(token)
-                .orElseThrow(() -> new ForbiddenException("Access denied: client_id not present in token"));
-
-        if (!expectedClientId.equals(clientId)) {
-            LOG.warnf("Invalid client_id: %s", clientId);
-            throw new ForbiddenException("Access denied: incorrect client_id in token");
+            if (expectedClientId.compareToIgnoreCase(clientId) != 0) {
+                LOG.warnf("Invalid client_id: %s", clientId);
+                throw new ForbiddenException("Access denied: incorrect client_id in token");
+            }
         }
 
         return Uni.createFrom().item(identity);
@@ -83,6 +79,17 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
             LOG.warn("Failed to decode JWT token claims", e);
             return Optional.empty();
         }
+    }
+
+    /**
+     * Determine if the token validation is required based on certain circumstances.
+     * @param identity The identity of the caller
+     * @return true if token validation is required.
+     */
+    private boolean validationRequired(SecurityIdentity identity){
+        String profile = ConfigProvider.getConfig().getOptionalValue("quarkus.profile", String.class).orElse("prod");
+
+        return securityEnabled && !"test".equalsIgnoreCase(profile) && !identity.isAnonymous();
     }
 
     @Override
