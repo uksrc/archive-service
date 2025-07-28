@@ -36,6 +36,7 @@ dependencies {
     implementation("org.javastro:jaxbjpa-utils:0.2.3")
     implementation("io.quarkus:quarkus-agroal")
     implementation("commons-beanutils:commons-beanutils:1.9.4")
+    implementation("io.quarkus:quarkus-kubernetes-config")
 
     //Vollt TAP
     implementation("fr.unistra.cds:ADQLlib:2.0-SNAPSHOT")
@@ -54,6 +55,12 @@ dependencies {
     implementation("org.apache.commons:commons-fileupload2-jakarta-servlet6:2.0.0-M2")
 
     implementation ("uk.ac.starlink:stil:4.3.1")
+
+    //Identity Management
+    implementation("io.quarkus:quarkus-oidc")
+
+    testImplementation("io.quarkus:quarkus-test-security")
+
 }
 
 tasks.withType<Test> {
@@ -66,12 +73,6 @@ tasks.withType<JavaCompile> {
 
 apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
 
-tasks.named("build") {
+tasks.named("processResources") {
     dependsOn("generateVolltWebXml")
 }
-
-tasks.named("quarkusDev") {
-    dependsOn("generateVolltWebXml")
-}
-
-

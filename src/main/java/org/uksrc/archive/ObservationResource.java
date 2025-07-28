@@ -3,10 +3,14 @@ package org.uksrc.archive;
  * Created on 21/08/2024 by Paul Harrison (paul.harrison@manchester.ac.uk).
  */
 
-import jakarta.persistence.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.beanutils.BeanUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -21,8 +25,11 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.SimpleObservation;
+import org.uksrc.archive.auth.ConditionalRolesAllowed;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
+
+import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 @Path("/observations")
@@ -108,6 +115,7 @@ public class ObservationResource {
     )
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response addObservation(Observation observation) {
         return submitObservation(observation);
@@ -201,6 +209,7 @@ public class ObservationResource {
     )
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response updateObservation(@PathParam("id") String id, Observation observation) {
         try {
@@ -271,6 +280,7 @@ public class ObservationResource {
             description = "Internal error whilst retrieving Observations or parameter error (if supplied)."
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.view")
     public Response getAllObservations(@QueryParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         //Both page and size need to be supplied OR neither
         if ((page != null) ^ (size != null)) {
@@ -325,6 +335,7 @@ public class ObservationResource {
             description = "Internal error whilst retrieving Observations."
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.view")
     public Response getObservation(@PathParam("id") String id) {
         try {
             Observation observation = findObservation(id);
@@ -366,6 +377,7 @@ public class ObservationResource {
             responseCode = "400",
             description = "Internal error whilst deleting the observation."
     )
+    @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response deleteObservation(@PathParam("id") String id) {
         try {
@@ -424,5 +436,25 @@ public class ObservationResource {
         } catch (NoResultException e){
             return null;
         }
+    }
+
+    /**
+     * Forces the specialisation of a specific type of Observation.
+     * Converts the name to Pascal-case suitable for XML responses.
+     * @param observation The single observation to rename
+     * @return A JAXBElement of either SimpleObservation or DerivedObservation
+     */
+    private Object specialiseObservation(Observation observation) {
+        Object entity = null;
+        if (observation instanceof SimpleObservation) {
+            entity = new JAXBElement<>(
+                    new QName("SimpleObservation"), SimpleObservation.class, (SimpleObservation) observation
+            );
+        } else if (observation instanceof DerivedObservation) {
+            entity = new JAXBElement<>(
+                    new QName("DerivedObservation"), DerivedObservation.class, (DerivedObservation) observation
+            );
+        }
+        return entity;
     }
 }

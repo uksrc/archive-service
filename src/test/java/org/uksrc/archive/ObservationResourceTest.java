@@ -1,25 +1,29 @@
 package org.uksrc.archive;
 
+import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.common.mapper.TypeRef;
+import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
+import jakarta.xml.bind.JAXBElement;
+import org.ivoa.dm.caom2.Observation;
+import org.ivoa.dm.caom2.ObservationIntentType;
+import org.ivoa.dm.caom2.SimpleObservation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
-import org.uksrc.archive.utils.Utilities;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.uksrc.archive.utils.Utilities.*;
 
 /**
  * Test class for the Observation class
@@ -29,31 +33,11 @@ import static org.hamcrest.CoreMatchers.is;
 @QuarkusTest
 public class ObservationResourceTest {
 
-    //Caution with the id value if re-using.
-    private static final String XML_OBSERVATION = "<caom2:Observation xmlns:caom2=\"http://www.opencadc.org/caom2/xml/v2.5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:SimpleObservation\" caom2:id=\"%s\">" +
-            "<caom2:collection>%s</caom2:collection>" +
-            "<caom2:uriBucket>bucket</caom2:uriBucket>" +
-            "<caom2:uri>c630c66f-b06b-4fed-bc16-1d7fd32172</caom2:uri>" +
-            "<caom2:intent>science</caom2:intent>\n" +
-            "</caom2:Observation>";
-
-    private static final String XML_DERIVED_OBSERVATION = "<caom2:Observation xmlns:caom2=\"http://www.opencadc.org/caom2/xml/v2.5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"caom2:DerivedObservation\" caom2:id=\"%s\">" +
-            "<caom2:collection>%s</caom2:collection>" +
-            "<caom2:uriBucket>bucket</caom2:uriBucket>" +
-            "<caom2:uri>c630c66f-b06b-4fed-bc16-1d7fd32172</caom2:uri>" +
-            "<caom2:intent>science</caom2:intent>" +
-            "<caom2:members>" +
-            "    <caom2:member>someone</caom2:member>" +
-            "</caom2:members>" +
-            "</caom2:Observation>";
-
-    private static final String COLLECTION1 = "e-merlin";
-    private static final String COLLECTION2 = "testCollection";
-    private static final String OBSERVATION1 = URLEncoder.encode("c630c66f-b06b-4fed-bc16-1d7fd32161", StandardCharsets.UTF_8);
-    private static final String OBSERVATION2 = URLEncoder.encode("c630c66f-b06b-4fed-bc16-1d7fd32172", StandardCharsets.UTF_8);
-
     @Inject
     EntityManager em;
+
+    @Inject
+    ObservationResource observationResource;
 
     @BeforeEach
     @Transactional
@@ -64,257 +48,231 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Check that and empty database returns a robust response.")
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE})
     public void testGettingObservations() {
-        // Wrapper required for de-serialisation of List<Observation>
-        ObservationListWrapper wrapper = when()
-                .get("/observations/")
-                .then()
-                .statusCode(Response.Status.OK.getStatusCode())
-                .extract()
-                .as(new TypeRef<>() {
-                });
+        try (Response res = observationResource.getAllObservations(null, null, null)) {
+            assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
 
-        assert(wrapper.getObservations().isEmpty());
+            ObservationListWrapper wrapper = (ObservationListWrapper) res.getEntity();
+            assert(wrapper.getObservations().isEmpty());
+        }
     }
 
     @Test
     @DisplayName("Add two observation and check two are returned.")
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testGettingObservationsNonEmpty() {
-        try(Response res1 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1);
-            Response res2 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION2)) {
-            assert (res1.getStatus() == Response.Status.CREATED.getStatusCode() &&
-                    res2.getStatus() == Response.Status.CREATED.getStatusCode());
+        Observation obs1 = createSimpleObservation(OBSERVATION1, COLLECTION1);
+        Observation obs2 = createSimpleObservation(OBSERVATION2, COLLECTION1);
 
-            ObservationListWrapper wrapper = when()
-                    .get("/observations/")
-                    .then()
-                    .statusCode(Response.Status.OK.getStatusCode())
-                    .extract()
-                    .as(new TypeRef<>() {
-                    });
+        try(Response res1 = observationResource.addObservation(obs1);
+            Response res2 = observationResource.addObservation(obs2)) {
+            assertEquals (Response.Status.CREATED.getStatusCode(), res1.getStatus());
+            assertEquals (Response.Status.CREATED.getStatusCode(), res2.getStatus());
 
-            assert (wrapper.getObservations().size() == 2);
+            Response obsRes = observationResource.getAllObservations(null, null, null);
+            assertEquals (Response.Status.OK.getStatusCode(), obsRes.getStatus());
+
+            ObservationListWrapper wrapper = (ObservationListWrapper) obsRes.getEntity();
+            List<Observation> observations = wrapper.getObservations();
+            assertEquals(2, observations.size());
         }
     }
 
     @Test
     @DisplayName("Get observations via collection Id")
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testGettingObservationsViaCollectionId() {
-        try(Response res1 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1);
-            Response res2 = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION2)) {
-            assert (res1.getStatus() == Response.Status.CREATED.getStatusCode() &&
-                    res2.getStatus() == Response.Status.CREATED.getStatusCode());
+        Observation obs1 = createSimpleObservation(OBSERVATION1, COLLECTION1);
+        Observation obs2 = createSimpleObservation(OBSERVATION2, COLLECTION1);
+
+        try(Response res1 = observationResource.addObservation(obs1);
+            Response res2 = observationResource.addObservation(obs2)) {
+            assertEquals (Response.Status.CREATED.getStatusCode(), res1.getStatus());
+            assertEquals (Response.Status.CREATED.getStatusCode(), res2.getStatus());
 
             //Both previously added observations should be returned
-            ObservationListWrapper wrapper = when()
-                    .get("/observations?collectionId=" + COLLECTION1)
-                    .then()
-                    .statusCode(Response.Status.OK.getStatusCode())
-                    .extract()
-                    .as(new TypeRef<>() {
-                    });
+            Response obsRes = observationResource.getAllObservations(COLLECTION1, null, null);
+            assertEquals (obsRes.getStatus(), Response.Status.OK.getStatusCode());
 
-            assert (wrapper.getObservations().size() == 2);
+            ObservationListWrapper wrapper = (ObservationListWrapper) obsRes.getEntity();
+            assertEquals(2, wrapper.getObservations().size());
 
-            //Neither of the previously added observations should be returned
-            wrapper = when()
-                    .get("/observations?collectionId=" + COLLECTION2)
-                    .then()
-                    .statusCode(Response.Status.OK.getStatusCode())
-                    .extract()
-                    .as(new TypeRef<>() {
-                    });
+            //Neither of the previously added observations should be returned (ONLY collection1 exists)
+            obsRes = observationResource.getAllObservations(COLLECTION2, null, null);
+            assertEquals (obsRes.getStatus(), Response.Status.OK.getStatusCode());
 
+            wrapper = (ObservationListWrapper) obsRes.getEntity();
             assert (wrapper.getObservations().isEmpty());
         }
     }
 
     @ParameterizedTest
     @DisplayName("Add an observation and check that part of the response body matches.")
-    @ValueSource(strings = {XML_OBSERVATION, XML_DERIVED_OBSERVATION})
+    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
+    @ValueSource(strings = {"simple", "derived"})
     public void testAddingObservation(String observation) {
-        //As the method enters twice we need to enforce different observation IDs.
-        String obsId = observation.contains("DerivedObservation") ? OBSERVATION1 : OBSERVATION2;
+        //As the method enters twice, we need to enforce different observation IDs.
+        Observation obs = switch (observation.toLowerCase()) {
+            case "simple" -> createSimpleObservation(OBSERVATION1, COLLECTION1);
+            case "derived" -> createDerivedObservation(OBSERVATION2, COLLECTION1);
+            default -> throw new IllegalArgumentException("Unsupported observation type: " + observation);
+        };
 
-        String uniqueObservation = String.format(observation, obsId, COLLECTION1);
+        try (Response res = observationResource.addObservation(obs)) {
+            assertEquals(res.getStatus(), Response.Status.CREATED.getStatusCode());
 
-        //As the /add operation returns the added observation, check the body of the response for valid values
-        String res = given()
-                .header("Content-Type", "application/xml")
-                .body(uniqueObservation)
-                .when()
-                .post("/observations")
-                .then()
-                .statusCode(Response.Status.CREATED.getStatusCode())// XML expectation (remove 'simpleObservation.' for JSON)
-                .extract().response().body().asString();
+            //Check the responce to see if the caller receives the added observation.
+            JAXBElement<?> jaxbElement = (JAXBElement<?>) res.getEntity();
+            Observation responseObs = (Observation) jaxbElement.getValue();
 
-        assert(res.contains("<caom2:intent>science</caom2:intent>"));
-        assert(res.contains("caom2:id=\"" + obsId + "\""));
-    }
-
-    @Test
-    @DisplayName("Attempt to add some data that doesn't comply with model.")
-    public void testAddingJunkObservation() {
-        final String junkData = "doesn't conform with XML model for Observation";
-
-        given()
-                .header("Content-Type", "application/xml")
-                .body(junkData)
-                .when()
-                .post("/observations")
-                .then()
-                .statusCode(Response.Status.BAD_REQUEST.getStatusCode());
+            assert(responseObs.getId().equals(obs.getId()));
+            assert(responseObs.getIntent() == ObservationIntentType.SCIENCE);
+        }
     }
 
     @Test
     @DisplayName("Attempt to add an Observation with a MUST property missing.")
+    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
     public void testAddingIncompleteObservation() {
-        final String INCOMPLETE_XML_OBSERVATION = "<observation>" +
-                "<id>444</id>" +
-                "<collection>e-merlin</collection>" +
-             //   "<intent>science</intent>" +      //deliberately excluded
-                "<uri>auri</uri>" +
-                "</observation>";
+        SimpleObservation obs = new SimpleObservation();
+        obs.setId(UUID.randomUUID().toString());
+        obs.setUri("a_uri");
+        obs.setCollection(COLLECTION1);
 
-        given()
-                .header("Content-Type", "application/xml")
-                .body(INCOMPLETE_XML_OBSERVATION)
-                .when()
-                .post("/observations")
-                .then()
-                .statusCode(Response.Status.BAD_REQUEST.getStatusCode());
+        try (Response res = observationResource.addObservation(obs)) {
+            assertEquals(res.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+        }
     }
 
     @Test
     @DisplayName("Add an observation, update one of its values and update, check it's been updated correctly.")
+    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
     public void testUpdatingObservation() {
-        String uniqueObservation = String.format(XML_OBSERVATION, OBSERVATION2, COLLECTION1);
+        Observation observation = createSimpleObservation(OBSERVATION2, COLLECTION1);
 
-        // Add an observation
-        given()
-                .header("Content-Type", "application/xml")
-                .body(uniqueObservation)
-                .when()
-                .post("/observations")
-                .then()
-                .statusCode(Response.Status.CREATED.getStatusCode())
-                .extract()
-                .as(new TypeRef<>() {});
+        try (Response res = observationResource.addObservation(observation)) {
+            assertEquals(res.getStatus(), Response.Status.CREATED.getStatusCode());
+        }
 
         // Update it with a different value
-        String updatedObservation = uniqueObservation.replace("science", "calibration");
-        given()
-                .header("Content-Type", "application/xml")
-                .body(updatedObservation)
-                .when()
-                .put(("/observations/" + OBSERVATION2))
-                .then()
-                .statusCode(Response.Status.OK.getStatusCode())
-                .body("simpleObservation.uri", is(OBSERVATION2))
-                .body("simpleObservation.intent", is("calibration"));
+        observation.setIntent(ObservationIntentType.CALIBRATION);
+
+        try (Response res = observationResource.updateObservation(OBSERVATION2, observation)) {
+            assertEquals(res.getStatus(), Response.Status.OK.getStatusCode());
+
+            JAXBElement<?> jaxbElement = (JAXBElement<?>) res.getEntity();
+            Observation updatedObservation = (Observation) jaxbElement.getValue();
+
+            assertEquals(OBSERVATION2, updatedObservation.getId());
+            assertEquals(ObservationIntentType.CALIBRATION, updatedObservation.getIntent());
+        }
 
         // For completeness, we need to check that the actual entry is updated
-        given()
-                .header("Content-Type", "application/xml")
-                .body(uniqueObservation)
-                .when()
-                .get("/observations/" + OBSERVATION2)
-                .then()
-                .statusCode(Response.Status.OK.getStatusCode())
-                .body("simpleObservation.uri", is(OBSERVATION2))   // XML expectation (remove 'simpleObservation.' for JSON)
-                .body("simpleObservation.intent", is("calibration"));
+        try (Response res = observationResource.getObservation(OBSERVATION2)) {
+            assertEquals(res.getStatus(), Response.Status.OK.getStatusCode());
+
+            JAXBElement<?> jaxbElement = (JAXBElement<?>) res.getEntity();
+            Observation updatedObservation = (Observation) jaxbElement.getValue();
+
+            assertEquals(OBSERVATION2, updatedObservation.getId());
+            assertEquals(ObservationIntentType.CALIBRATION, updatedObservation.getIntent());
+        }
     }
 
     @Test
     @DisplayName("Attempt to update a non-existent observation and check the not found status.")
+    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
     public void testUpdatingNonExistingObservation() {
-        String obs1 = String.format(XML_OBSERVATION, OBSERVATION1, COLLECTION1);
-        String updatedObservation = obs1.replace("science", "calibration");
+        Observation observation = createSimpleObservation(OBSERVATION2, COLLECTION1);
+        observation.setIntent(ObservationIntentType.CALIBRATION);
 
-        given()
-                .header("Content-Type", "application/xml")
-                .body(updatedObservation)
-                .when()
-                .put("/observations/" + OBSERVATION1)
-                .then()
-                .statusCode(Response.Status.NOT_FOUND.getStatusCode());
+        try (Response res = observationResource.updateObservation(OBSERVATION2, observation)) {
+            assertEquals(res.getStatus(), Response.Status.NOT_FOUND.getStatusCode());
+        }
     }
 
     @Test
     @DisplayName("Attempt to delete an observation.")
+    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
     public void testDeletingObservation() {
-        try(Response res = Utilities.addObservationToDatabase(COLLECTION1, OBSERVATION1)) {
-            assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
+        Observation observation = createSimpleObservation(OBSERVATION1, COLLECTION1);
 
-            // Check it exists
-            given()
-                    .header("Content-Type", "application/xml")
-                    .when()
-                    .get("/observations/" + OBSERVATION1)
-                    .then()
-                    .statusCode(Response.Status.OK.getStatusCode())
-                    .body("simpleObservation.uri", is(OBSERVATION1));
+        try (Response res = observationResource.addObservation(observation)) {
+            assertEquals(res.getStatus(), Response.Status.CREATED.getStatusCode());
+        }
 
-            given()
-                    .header("Content-Type", "application/xml")
-                    .when()
-                    .delete(("/observations/" + OBSERVATION1))
-                    .then()
-                    .statusCode(Response.Status.NO_CONTENT.getStatusCode());
+        // Check it exists
+        try (Response obsRes = observationResource.getObservation(OBSERVATION1)) {
+            JAXBElement<?> jaxbElement = (JAXBElement<?>) obsRes.getEntity();
+
+            Observation updatedObservation = (Observation) jaxbElement.getValue();
+            assertEquals(obsRes.getStatus(), Response.Status.OK.getStatusCode());
+            assertEquals(OBSERVATION1, updatedObservation.getId());
+        }
+
+        // Delete it
+        try (Response res = observationResource.deleteObservation(OBSERVATION1)) {
+            assertEquals(res.getStatus(), Response.Status.NO_CONTENT.getStatusCode());
         }
     }
 
     @Test
     @DisplayName("Test paging results, first page")
+    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
     public void testPagingResults() {
         for (int i = 0; i < 15; i++){
-            try (Response res = Utilities.addObservationToDatabase(COLLECTION1, "observation" + i)){
+            Observation observation = createSimpleObservation(OBSERVATION1 + i, COLLECTION1);
+            try (Response res = observationResource.addObservation(observation)) {
                 assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
             }
         }
 
-        ObservationListWrapper wrapper = when()
-                .get("/observations?page=0&size=10")
-                .then()
-                .statusCode(Response.Status.OK.getStatusCode())
-                .extract()
-                .as(new TypeRef<>() {
-                });
+        try (Response res = observationResource.getAllObservations(null, 0, 10)) {
+            assertEquals(res.getStatus(), Response.Status.OK.getStatusCode());
 
-        assert(wrapper.getObservations().size() == 10);
+            ObservationListWrapper wrapper = (ObservationListWrapper) res.getEntity();
+            assertEquals(10, wrapper.getObservations().size());
+        }
     }
+
 
     @Test
     @DisplayName("Test paging results, second page")
+    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
     public void testPagingResults2() {
-        final int TOTAL = 15;
-        for (int i = 0; i < TOTAL; i++){
-            try (Response res =Utilities.addObservationToDatabase(COLLECTION1, "observation" + i)){
+        for (int i = 0; i < 15; i++){
+            Observation observation = createSimpleObservation(OBSERVATION1 + i, COLLECTION1);
+            try (Response res = observationResource.addObservation(observation)) {
                 assert (res.getStatus() == Response.Status.CREATED.getStatusCode());
             }
         }
 
-        ObservationListWrapper wrapper = when()
-                .get("/observations?page=1&size=10")
-                .then()
-                .statusCode(Response.Status.OK.getStatusCode())
-                .extract()
-                .as(new TypeRef<>() {
-                });
+        try (Response res = observationResource.getAllObservations(null, 1, 10)) {
+            assertEquals(res.getStatus(), Response.Status.OK.getStatusCode());
 
-        //As 15 were added, only five should be returned for the second page (0-indexed)
-        final int size = wrapper.getObservations().size();
-        assert(size == 5);
+            ObservationListWrapper wrapper = (ObservationListWrapper) res.getEntity();
+            assertEquals(5, wrapper.getObservations().size());
+        }
     }
 
     @Test
     @DisplayName("Attempt to delete an observation that doesn't exist.")
+    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
     public void testDeletingNonExistingObservation() {
-        given()
-                .header("Content-Type", "application/xml")
-                .when()
-                .delete(("/observations/" + "9876"))
-                .then()
-                .statusCode(Response.Status.NOT_FOUND.getStatusCode());
+        try (Response res = observationResource.deleteObservation(OBSERVATION1)) {
+            assertEquals(res.getStatus(), Response.Status.NOT_FOUND.getStatusCode());
+        }
+    }
+
+    @Test
+    @DisplayName("Attempt to access a protected resource without rights")
+    public void testAccessResourceWithoutRights() {
+        Observation observation = createSimpleObservation(OBSERVATION1, COLLECTION1);
+
+        // Expected response
+        assertThrows(AuthenticationFailedException.class, () -> {
+            observationResource.addObservation(observation);
+        });
     }
 }
