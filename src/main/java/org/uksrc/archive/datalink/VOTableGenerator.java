@@ -33,7 +33,9 @@ public class VOTableGenerator {
             Element tableData = doc.createElement("TABLEDATA");
 
             // Add rows (one for each Artifact initially)
-
+            VOTableRow row = new VOTableRow.Builder("ID1", "auxiliary")
+                    .accessUrl("https://achive.org/files/ID1/plane1/artifact1").build();
+            addRow(doc, tableData, row);
 
             dataEl.appendChild(tableData);
 
@@ -46,16 +48,17 @@ public class VOTableGenerator {
         }
     }
 
-    private void addRow(Document doc, Element tableData, String id, String accessUrl, String description){
+    //TODO handle null values
+    private void addRow(Document doc, Element tableData, VOTableRow row) {
         Element tr = doc.createElement("TR");
-        addCell(doc, tr, id);        //ID (potentially something simlar to -> ivo://your.org/obs/<observation-id>/<plane-id>/<artifact-id> so that Plane info isn't lost)
-        addCell(doc, tr, accessUrl); //access_url (maybe - https://achive-service.org/files/{observation.uri}/{plane.id}/{artifact.id})
-        addCell(doc, tr, null); //service_def (if defining a service for cut-outs etc that require params)
-        addCell(doc, tr, null); //error_message (identifer not found etc.)
-        addCell(doc, tr, description); //description (Artifact.descriptionId -> ArtifactDescription.description)
-        addCell(doc, tr, null); //semantics (Artifact.productType)
-        addCell(doc, tr, null); //content_type (Artifact.contentType)
-        addCell(doc, tr, null); //content_length (Artifact.contentLength)
+        addCell(doc, tr, row.getId());        //ID (potentially something simlar to -> ivo://your.org/obs/<observation-id>/<plane-id>/<artifact-id> so that Plane info isn't lost)
+        addCell(doc, tr, row.getAccessUrl()); //access_url (maybe - https://achive-service.org/files/{observation.uri}/{plane.id}/{artifact.id})
+        addCell(doc, tr, row.getServiceDef()); //service_def (if defining a service for cut-outs etc that require params)
+        addCell(doc, tr, row.getErrorMessage()); //error_message (identifer not found etc.)
+        addCell(doc, tr, row.getDescription()); //description (Artifact.descriptionId -> ArtifactDescription.description)
+        addCell(doc, tr, row.getSemantics()); //semantics (Artifact.productType)
+        addCell(doc, tr, row.getContentType()); //content_type (Artifact.contentType)
+        addCell(doc, tr, row.getContentLength().toString()); //content_length (Artifact.contentLength)
 
         tableData.appendChild(tr);
     }
