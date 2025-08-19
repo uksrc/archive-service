@@ -1,6 +1,8 @@
 package org.uksrc.archive.datalink;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.StreamingOutput;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -8,10 +10,10 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.File;
 import java.io.InputStream;
 
 @ApplicationScoped
@@ -19,11 +21,9 @@ public class VOTableGenerator {
 
     private static final String TEMPLATE = "/templates/datalink/votable-template.xml";
 
-    public void createDocument(){
+    public StreamingOutput createDocument(){
         try {
             Document doc = readTemplate();
-
-            Element root = doc.getDocumentElement();
 
             // Find <DATA> element
             NodeList dataNodes = doc.getElementsByTagName("DATA");
@@ -36,20 +36,32 @@ public class VOTableGenerator {
             VOTableRow row = new VOTableRow.Builder("ID1", "auxiliary")
                     .accessUrl("https://achive.org/files/ID1/plane1/artifact1").build();
             addRow(doc, tableData, row);
+            VOTableRow row2 = new VOTableRow.Builder("ID2", "auxiliary")
+                    .accessUrl("https://achive.org/files/ID1/plane1/artifact2").build();
+            addRow(doc, tableData, row2);
 
             dataEl.appendChild(tableData);
 
-            Transformer tf = TransformerFactory.newInstance().newTransformer();
-            tf.setOutputProperty(OutputKeys.INDENT, "yes");
-            tf.transform(new DOMSource(doc), new StreamResult(new File("output.xml")));
+            return out -> {
+                try {
+                    Transformer tf = TransformerFactory.newInstance().newTransformer();
+                    tf.setOutputProperty(OutputKeys.INDENT, "yes");
+
+                    tf.transform(new DOMSource(doc), new StreamResult(out));
+                } catch (TransformerException e){
+                    throw new WebApplicationException("Error streaming VOTable", e);
+                }
+            };
         } catch (Exception e){
             //TODO
             e.printStackTrace();
         }
+        return null;
     }
 
-    //TODO handle null values
+
     private void addRow(Document doc, Element tableData, VOTableRow row) {
+        // Ordering MUST match the table definition in the votable-template.xml
         Element tr = doc.createElement("TR");
         addCell(doc, tr, row.getId());        //ID (potentially something simlar to -> ivo://your.org/obs/<observation-id>/<plane-id>/<artifact-id> so that Plane info isn't lost)
         addCell(doc, tr, row.getAccessUrl()); //access_url (maybe - https://achive-service.org/files/{observation.uri}/{plane.id}/{artifact.id})
@@ -58,7 +70,9 @@ public class VOTableGenerator {
         addCell(doc, tr, row.getDescription()); //description (Artifact.descriptionId -> ArtifactDescription.description)
         addCell(doc, tr, row.getSemantics()); //semantics (Artifact.productType)
         addCell(doc, tr, row.getContentType()); //content_type (Artifact.contentType)
-        addCell(doc, tr, row.getContentLength().toString()); //content_length (Artifact.contentLength)
+
+        Long length = row.getContentLength();
+        addCell(doc, tr, length != null ? length.toString() : null); //content_length (Artifact.contentLength)
 
         tableData.appendChild(tr);
     }
@@ -85,7 +99,9 @@ public class VOTableGenerator {
             dbf.setNamespaceAware(true);
             var db = dbf.newDocumentBuilder();
 
-            return db.parse(is);
+            Document doc = db.parse(is);
+            doc.getDocumentElement().normalize();
+            return doc;
         } catch (Exception e) {
             throw new RuntimeException("Failed to load VOTable template", e);
         }
