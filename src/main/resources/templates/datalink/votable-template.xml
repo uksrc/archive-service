@@ -10,7 +10,6 @@
             <FIELD name="content_type" ucd="meta.code.mime" arraysize="*" datatype="char"/>
             <FIELD name="content_length" unit="byte" ucd="phys.size;meta.file" datatype="long"/>
             <DATA>
-                <!-- Add TableData as required -->
             </DATA>
         </TABLE>
     </RESOURCE>
