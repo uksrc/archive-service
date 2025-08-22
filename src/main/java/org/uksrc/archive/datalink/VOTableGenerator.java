@@ -15,6 +15,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 
 @ApplicationScoped
 public class VOTableGenerator {
@@ -33,12 +34,15 @@ public class VOTableGenerator {
             Element tableData = doc.createElement("TABLEDATA");
 
             // Add rows (one for each Artifact initially)
-            VOTableRow row = new VOTableRow.Builder("ID1", "auxiliary")
-                    .accessUrl("https://achive.org/files/ID1/plane1/artifact1").build();
-            addRow(doc, tableData, row);
-            VOTableRow row2 = new VOTableRow.Builder("ID2", "auxiliary")
-                    .accessUrl("https://achive.org/files/ID1/plane1/artifact2").build();
-            addRow(doc, tableData, row2);
+            Element tr = doc.createElement("TR");
+            ArchiveTableRow row = new ArchiveTableRow("ID2", "auxiliary", "https://achive.org/files/artifact2.id", null, null, "plane1");
+            addRow(doc, tr, row);
+            tableData.appendChild(tr);
+
+            tr = doc.createElement("TR");
+            DataLinkRow row2 = new DataLinkRow("ID2", "auxiliary", "https://achive.org/files/artifact2.id", null, null);
+            addRow(doc, tr, row2);
+            tableData.appendChild(tr);
 
             dataEl.appendChild(tableData);
 
@@ -59,30 +63,26 @@ public class VOTableGenerator {
         return null;
     }
 
+    /**
+     * Adds a Document row to the supplied parent containing details from the supplied DataLink row.
+     * @param doc The Document model itself
+     * @param parent The parent element
+     * @param row The data to display
+     * @throws Exception if the getter cannot be found (for a property in the Datalink row).
+     */
+    private void addRow(Document doc, Element parent, DataLinkRow row) throws Exception {
+        for (String fieldName : row.getFieldOrder()) {
+            String getterName = "get" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
 
-    private void addRow(Document doc, Element tableData, VOTableRow row) {
-        // Ordering MUST match the table definition in the votable-template.xml
-        Element tr = doc.createElement("TR");
-        addCell(doc, tr, row.getId());        //ID (potentially something simlar to -> ivo://your.org/obs/<observation-id>/<plane-id>/<artifact-id> so that Plane info isn't lost)
-        addCell(doc, tr, row.getAccessUrl()); //access_url (maybe - https://achive-service.org/files/{observation.uri}/{plane.id}/{artifact.id})
-        addCell(doc, tr, row.getServiceDef()); //service_def (if defining a service for cut-outs etc that require params)
-        addCell(doc, tr, row.getErrorMessage()); //error_message (identifer not found etc.)
-        addCell(doc, tr, row.getDescription()); //description (Artifact.descriptionId -> ArtifactDescription.description)
-        addCell(doc, tr, row.getSemantics()); //semantics (Artifact.productType)
-        addCell(doc, tr, row.getContentType()); //content_type (Artifact.contentType)
+            Method getter = row.getClass().getMethod(getterName);
+            Object val = getter.invoke(row);
 
-        Long length = row.getContentLength();
-        addCell(doc, tr, length != null ? length.toString() : null); //content_length (Artifact.contentLength)
-
-        tableData.appendChild(tr);
-    }
-
-    private void addCell(Document doc, Element tr, String text){
-        Element td = doc.createElement("TD");
-        if (text != null) {
-            td.setTextContent(text);
+            Element td = doc.createElement("TD");
+            if (val != null) {
+                td.setTextContent(val.toString());
+            }
+            parent.appendChild(td);
         }
-        tr.appendChild(td);
     }
 
     /**

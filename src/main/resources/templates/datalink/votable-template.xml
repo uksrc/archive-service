@@ -9,6 +9,8 @@
             <FIELD name="semantics" ucd="meta.code" arraysize="*" datatype="char"/>
             <FIELD name="content_type" ucd="meta.code.mime" arraysize="*" datatype="char"/>
             <FIELD name="content_length" unit="byte" ucd="phys.size;meta.file" datatype="long"/>
+            <!-- Custom Keys -->
+            <FIELD name="plane_id" datatype="char" arraysize="*" ucd="meta.id;meta.id.assoc"/>
             <DATA>
             </DATA>
         </TABLE>
