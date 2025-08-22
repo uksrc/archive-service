@@ -1,8 +1,11 @@
 package org.uksrc.archive.datalink;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.ivoa.dm.caom2.Artifact;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -16,9 +19,13 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.List;
 
 @ApplicationScoped
 public class VOTableGenerator {
+
+    @PersistenceContext
+    protected EntityManager em;
 
     private static final String TEMPLATE = "/templates/datalink/votable-template.xml";
 
@@ -33,16 +40,21 @@ public class VOTableGenerator {
             // Create new <TABLEDATA>
             Element tableData = doc.createElement("TABLEDATA");
 
-            // Add rows (one for each Artifact initially)
-            Element tr = doc.createElement("TR");
-            ArchiveTableRow row = new ArchiveTableRow("ID2", "auxiliary", "https://achive.org/files/artifact2.id", null, null, "plane1");
-            addRow(doc, tr, row);
-            tableData.appendChild(tr);
+            List<ArtifactDetails> obsArtifacts = findArtifactsForObservation("2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1");
 
-            tr = doc.createElement("TR");
-            DataLinkRow row2 = new DataLinkRow("ID2", "auxiliary", "https://achive.org/files/artifact2.id", null, null);
-            addRow(doc, tr, row2);
-            tableData.appendChild(tr);
+            // Add rows (one for each Artifact initially)
+            for (ArtifactDetails details : obsArtifacts) {
+                Element tr = doc.createElement("TR");
+                Artifact artifact = details.artifact();
+                ArchiveTableRow row = new ArchiveTableRow(artifact.getId(), artifact.getProductType(), artifact.getUri(), null, null, details.planeId());
+                row.setContentType(artifact.getContentType());
+                row.setContentLength(Long.valueOf(artifact.getContentLength()));
+                if (artifact.getDescriptionID() != null) {
+                    row.setDescription(details.description());
+                }
+                addRow(doc, tr, row);
+                tableData.appendChild(tr);
+            }
 
             dataEl.appendChild(tableData);
 
@@ -105,5 +117,22 @@ public class VOTableGenerator {
         } catch (Exception e) {
             throw new RuntimeException("Failed to load VOTable template", e);
         }
+    }
+
+    /**
+     * Get all the artifacts for the given observation ID.
+     * @param observationId The ID of the observation to return all the observations for.
+     * @return A List of objects that contain Artifact details along with which Plane they belong to.
+     */
+    public List<ArtifactDetails> findArtifactsForObservation(String observationId) {
+        return em.createQuery(
+                        "SELECT new org.uksrc.archive.datalink.ArtifactDetails(p.id, a, ad.description) " +
+                                "FROM Observation o " +
+                                "JOIN o.planes p " +
+                                "JOIN p.artifacts a " +
+                                "LEFT JOIN ArtifactDescription ad ON ad.uri = a.descriptionID " +
+                                "WHERE o.id = :obsId", ArtifactDetails.class)
+                .setParameter("obsId", observationId)
+                .getResultList();
     }
 }
