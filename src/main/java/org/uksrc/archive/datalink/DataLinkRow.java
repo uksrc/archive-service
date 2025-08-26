@@ -1,8 +1,6 @@
 package org.uksrc.archive.datalink;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -25,13 +23,14 @@ public class DataLinkRow extends VOTableRow {
     protected String linkAuth;
     protected String linkAuthorized;
 
-    //
-    private static final List<String> FIELD_ORDER = Arrays.asList(
+    //The list of properties that SHOULD be displayed and added in the order that matches the table header.
+    protected static final List<String> FIELD_ORDER = Arrays.asList(
             "id", "accessUrl", "serviceDef", "errorMessage",
             "description", "semantics", "contentType", "contentLength"
     );
 
-    private static final List<String> OPTIONAL_FIELD_ORDER = Arrays.asList(
+    //The list of properties that MAY be displayed if they are required and added in the order that matches the table header.
+    protected static final List<String> OPTIONAL_FIELD_ORDER = Arrays.asList(
             "contentQualifier", "localSemantics", "linkAuth", "linkAuthorized"
     );
 
@@ -71,23 +70,34 @@ public class DataLinkRow extends VOTableRow {
     public String getContentType() { return contentType; }
     public Long getContentLength() { return contentLength; }
 
-    public String getContent_qualifier() { return contentQualifier; }
-    public String getLocal_semantics() { return localSemantics; }
-    public String getLink_auth() { return linkAuth; }
-    public String getLink_authorized() { return linkAuthorized; }
+    public String getContentQualifier() { return contentQualifier; }
+    public String getLocalSemantics() { return localSemantics; }
+    public String getLinkAuth() { return linkAuth; }
+    public String getLinkAuthorized() { return linkAuthorized; }
 
     // Setters for non-mandatory values
     public void setDescription(String description) { this.description = description; }
     public void setContentType(String contentType) { this.contentType = contentType; }
     public void setContentLength(Long contentLength) { this.contentLength = contentLength; }
 
-    public void setContent_qualifier(String content_qualifier) { this.contentQualifier = content_qualifier; }
-    public void setLocal_semantics(String localSemantics) { this.localSemantics = localSemantics; }
-    public void setLink_auth(String linkAuth) { this.linkAuth = linkAuth; }
-    public void setLink_authorized(String linkAuthorized) { this.linkAuthorized = linkAuthorized; }
+    public void setContentQualifier(String content_qualifier) { this.contentQualifier = content_qualifier; }
+    public void setLocalSemantics(String localSemantics) { this.localSemantics = localSemantics; }
+    public void setLinkAuth(String linkAuth) { this.linkAuth = linkAuth; }
+    public void setLinkAuthorized(String linkAuthorized) { this.linkAuthorized = linkAuthorized; }
 
-    public List<String> getFieldOrder(){
+    @Override
+    public List<String> getFieldOrder() {
         return FIELD_ORDER;
+    }
+
+    @Override
+    public List<String> getOptionalFieldOrder() {
+        return OPTIONAL_FIELD_ORDER;
+    }
+
+    @Override
+    public List<String> getCustomFieldOrder() {
+        return List.of();
     }
 }
 
