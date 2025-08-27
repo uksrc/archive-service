@@ -12,6 +12,10 @@ import jakarta.ws.rs.core.StreamingOutput;
 import org.ivoa.dm.caom2.Artifact;
 import org.uksrc.archive.datalink.VOTableGenerator;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+
 @Path("/datalink")
 public class DataLinkResource {
 
@@ -38,16 +42,35 @@ public class DataLinkResource {
     public Response getResource(@PathParam("artifactId") String id){
         Artifact art = findArtifact(id);
         if(art != null){
+            //NOTE: Uri() assumed to be a fixed/resolvable fileUrl until defined differently
             String fileUri = art.getUri();
-            //TODO stream file
-        }
 
-        return Response.status(Response.Status.NOT_FOUND)
-                .type(MediaType.TEXT_PLAIN)
-                .entity("Resource not found")
-                .build();
+            //Stream file
+            StreamingOutput stream = output -> {
+                try (InputStream is = new URL(fileUri).openStream();
+                     OutputStream os = output) {
+                    is.transferTo(os);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to stream file", e);
+                }
+            };
+
+            return Response.ok(stream)
+                    .header("Content-Disposition", "attachment; filename=\"image.png\"")
+                    .build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .type(MediaType.TEXT_PLAIN)
+                    .entity("Resource not found")
+                    .build();
+        }
     }
 
+    /**
+     * Search for an artifact with a given ID
+     * @param id The ID of the artifact to find (Entity.id)
+     * @return The artifact or null if not found.
+     */
     private Artifact findArtifact(String id) {
         TypedQuery<Artifact> existsQuery = em.createQuery(
                 "SELECT a FROM Artifact a WHERE a.id = :id", Artifact.class
