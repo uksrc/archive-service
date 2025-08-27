@@ -30,7 +30,7 @@ public class VOTableGenerator {
 
     private static final String TEMPLATE = "/templates/datalink/votable-template.xml";
 
-    public StreamingOutput createDocument(){
+    public StreamingOutput createDocument(String observationId){
         try {
             Document doc = readTemplate();
 
@@ -53,7 +53,7 @@ public class VOTableGenerator {
             // Create new <TABLEDATA>
             Element tableData = doc.createElement("TABLEDATA");
 
-            List<ArtifactDetails> obsArtifacts = findArtifactsForObservation("2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1");
+            List<ArtifactDetails> obsArtifacts = findArtifactsForObservation(observationId);
 
             // Add rows (one for each Artifact initially)
             for (ArtifactDetails details : obsArtifacts) {
