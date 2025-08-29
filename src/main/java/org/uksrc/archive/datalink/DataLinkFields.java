@@ -3,6 +3,10 @@ package org.uksrc.archive.datalink;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Details each of the FIELDs used for a DataLink XML table including custom
+ * FIELDs for this service.
+ */
 public class DataLinkFields {
     private static final Map<String, FieldDetails> defs = new HashMap<>();
 
@@ -22,7 +26,10 @@ public class DataLinkFields {
         defs.put("linkAuth", new FieldDetails("link_auth", "meta.code", "char", "*", null));
         defs.put("linkAuthorized", new FieldDetails("link_authorized", "meta.code", "boolean", null, null));
 
-        // Custom fields for the Archive Service
+        // Custom fields for this service
+
+        // Model used contains resources at Observation->Plane->Artifact, plane_id is intended to be a way to determine
+        // an individual resource's location within the model
         defs.put("planeId", new FieldDetails("plane_id", "meta.id;meta.id.assoc", "char", "*", null));
     }
 

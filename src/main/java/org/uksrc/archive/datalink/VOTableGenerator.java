@@ -6,21 +6,21 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.StreamingOutput;
 import org.ivoa.dm.caom2.Artifact;
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
 
 @ApplicationScoped
@@ -35,36 +35,26 @@ public class VOTableGenerator {
         try {
             Document doc = createVOTableDoc();
 
+            //<RESOURCE>
             NodeList dataNodes = doc.getElementsByTagName("RESOURCE");
             Element resEl = (Element) dataNodes.item(0);
+            //<TABLE>
             Element table = doc.createElement("TABLE");
             resEl.appendChild(table);
 
-            ArtifactTableRow structure = new ArtifactTableRow(null, null, null, "TEST", null, null);
-            buildTableFields(doc, table, FieldOrder.getAllFieldsOrder());
+            buildTableFields(doc, table, FieldOrder.FIELD_ORDER);
+            buildTableFields(doc, table, FieldOrder.OPTIONAL_FIELD_ORDER); //TODO are all required for our service?
+            Comment comment = doc.createComment("Custom properties for this service");
+            table.appendChild(comment);
 
-            // Create new <TABLEDATA>
+            buildTableFields(doc, table, FieldOrder.CUSTOM_FIELD_ORDER);
+
+            // <DATA>
             Element dataEl = doc.createElement("DATA");
             table.appendChild(dataEl);
-            Element tableData = doc.createElement("TABLEDATA");
 
-            List<ArtifactDetails> obsArtifacts = findArtifactsForObservation(observationId);
-
-            // Add rows (one for each Artifact initially)
-            for (ArtifactDetails details : obsArtifacts) {
-                Element tr = doc.createElement("TR");
-                Artifact artifact = details.artifact();
-                ArtifactTableRow row = new ArtifactTableRow(artifact.getId(), artifact.getProductType(), artifact.getUri(), null, null, details.planeId());
-                row.setContentType(artifact.getContentType());
-                row.setContentLength(Long.valueOf(artifact.getContentLength()));
-                if (artifact.getDescriptionID() != null) {
-                    row.setDescription(details.description());
-                }
-                addRow(doc, tr, row, true);
-                tableData.appendChild(tr);
-            }
-
-            dataEl.appendChild(tableData);
+            // <TABLEDATA>
+            addResources(doc, dataEl, observationId);
 
             return out -> {
                 try {
@@ -123,35 +113,13 @@ public class VOTableGenerator {
     }
 
     /**
-     * Reads the template file and creates a document that can be added to.
-     * @return Document that reflects the template's contents
-     */
-    private Document readTemplate() {
-        try (InputStream is = getClass().getResourceAsStream(TEMPLATE)) {
-            if (is == null) {
-                throw new IllegalStateException("Template not found: " + TEMPLATE);
-            }
-
-            var dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            var db = dbf.newDocumentBuilder();
-
-            Document doc = db.parse(is);
-            doc.getDocumentElement().normalize();
-            return doc;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load VOTable template", e);
-        }
-    }
-
-    /**
      * Get all the artifacts for the given observation ID.
      * @param observationId The ID of the observation to return all the observations for.
      * @return A List of objects that contain Artifact details along with which Plane they belong to.
      */
     private List<ArtifactDetails> findArtifactsForObservation(String observationId) {
         return em.createQuery(
-                        "SELECT new org.uksrc.archive.datalink.ArtifactDetails(p.id, a, ad.description) " +
+                        "SELECT new org.uksrc.archive.datalink.ArtifactDetails(a, p.id, ad.description) " +
                                 "FROM Observation o " +
                                 "JOIN o.planes p " +
                                 "JOIN p.artifacts a " +
@@ -162,33 +130,11 @@ public class VOTableGenerator {
     }
 
     /**
-     * Returns details of optionalFields, only displayed if required.
-     * TODO - determine best approach to enable/disable (link option probably on by default anyway)
-     * @return A List of FieldDetails, that can be added to the output if required.
+     * Creates the header structure of the XML Document.
+     * @return Document that contains the basic structure.
+     * @throws ParserConfigurationException if the Document cannot be created.
      */
-    /*private List<FieldDetails> optionalFields(){
-        List<FieldDetails> fieldDetails = new ArrayList<>();
-        fieldDetails.add(new FieldDetails("content_qualifier", "meta.code.qual", "char", "*", null));
-        fieldDetails.add(new FieldDetails("local_semantics", "meta.code", "char", "*", null));
-        fieldDetails.add(new FieldDetails("link_auth", "meta.code.auth", "char", "*", null));
-        fieldDetails.add(new FieldDetails("link_authorized",  "meta.code.auth;meta.status", "char", "*", null));
-
-        return fieldDetails;
-    }*/
-
-    /**
-     * Add any custom fields that are required for the Archive Service, these are specialised fields that are not
-     * required by standard DataLink outputs.
-     * @return A List of FieldDetails containing information about a custom field.
-     */
-    private List<FieldDetails> customFields(){
-        List<FieldDetails> fieldDetails = new ArrayList<>();
-        fieldDetails.add(new FieldDetails("plane_id", "meta.id;meta.id.assoc", "char", "*", null));
-
-        return fieldDetails;
-    }
-
-    private Document createVOTableDoc() throws Exception {
+    private Document createVOTableDoc() throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -209,15 +155,52 @@ public class VOTableGenerator {
         return doc;
     }
 
-    private void buildTableFields(Document doc, Element tableEl, List<String> fieldOrder) {
+    /**
+     * Adds the FIELDs to the TABLE that define the TABLEDATA columns.
+     * @param doc The XML Document that is being constructed.
+     * @param tableEl The TABLE element to add to.
+     * @param fieldOrder The order in which to add fields (to enforce table rows matching)
+     */
+    private void buildTableFields(Document doc, Element tableEl, List<String> fieldOrder) throws Exception {
         for (String fieldKey : fieldOrder) {
             FieldDetails def = DataLinkFields.get(fieldKey);
             if (def != null) {
                 addField(doc, tableEl, def);
             } else {
-                // Optional: warn or throw if a field is missing from registry
+                throw new Exception("DataLinkField " + fieldKey + " not found");
             }
         }
     }
 
+    /**
+     * Adds resource(s) to the table for the Observation supplied.
+     * @param doc XML Document to add the data to.
+     * @param parent The Parent element in the XML
+     * @param observationId The Observation.id to extract the resources from.
+     */
+    private void addResources(Document doc, Element parent, String observationId){
+        Element tableData = doc.createElement("TABLEDATA");
+
+        List<ArtifactDetails> obsArtifacts = findArtifactsForObservation(observationId);
+
+        // Add rows (one for each Artifact initially)
+        for (ArtifactDetails details : obsArtifacts) {
+            Element tr = doc.createElement("TR");
+            Artifact artifact = details.artifact();
+            ArtifactTableRow row = new ArtifactTableRow(artifact.getId(), artifact.getProductType(), artifact.getUri(), null, null, details.planeId());
+            row.setContentType(artifact.getContentType());
+            row.setContentLength(Long.valueOf(artifact.getContentLength()));
+            if (artifact.getDescriptionID() != null) {
+                row.setDescription(details.description());
+            }
+            try {
+                addRow(doc, tr, row, true);
+            } catch (Exception e) {
+                //TODO - log? stop?
+                throw new RuntimeException(e);
+            }
+            tableData.appendChild(tr);
+        }
+        parent.appendChild(tableData);
+    }
 }
