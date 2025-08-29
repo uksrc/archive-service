@@ -6,7 +6,4 @@ import java.util.List;
  * Root level row for a VOTable
  */
 public abstract class VOTableRow {
-    public abstract List<String> getFieldOrder();
-    public abstract List<String> getOptionalFieldOrder();
-    public abstract List<String> getCustomFieldOrder();
 }

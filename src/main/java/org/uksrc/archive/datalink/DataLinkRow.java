@@ -23,17 +23,6 @@ public class DataLinkRow extends VOTableRow {
     protected String linkAuth;
     protected String linkAuthorized;
 
-    //The list of properties that SHOULD be displayed and added in the order that matches the table header.
-    protected static final List<String> FIELD_ORDER = Arrays.asList(
-            "id", "accessUrl", "serviceDef", "errorMessage",
-            "description", "semantics", "contentType", "contentLength"
-    );
-
-    //The list of properties that MAY be displayed if they are required and added in the order that matches the table header.
-    protected static final List<String> OPTIONAL_FIELD_ORDER = Arrays.asList(
-            "contentQualifier", "localSemantics", "linkAuth", "linkAuthorized"
-    );
-
     /**
      * Creates a DataLinkRow with mandatory properties, only one of accessUrl, serviceDef or errorMessage is required, and the other
      * two can be omitted.
@@ -84,20 +73,5 @@ public class DataLinkRow extends VOTableRow {
     public void setLocalSemantics(String localSemantics) { this.localSemantics = localSemantics; }
     public void setLinkAuth(String linkAuth) { this.linkAuth = linkAuth; }
     public void setLinkAuthorized(String linkAuthorized) { this.linkAuthorized = linkAuthorized; }
-
-    @Override
-    public List<String> getFieldOrder() {
-        return FIELD_ORDER;
-    }
-
-    @Override
-    public List<String> getOptionalFieldOrder() {
-        return OPTIONAL_FIELD_ORDER;
-    }
-
-    @Override
-    public List<String> getCustomFieldOrder() {
-        return List.of();
-    }
 }
 

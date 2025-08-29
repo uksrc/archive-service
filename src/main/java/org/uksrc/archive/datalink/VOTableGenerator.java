@@ -10,6 +10,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -32,25 +33,19 @@ public class VOTableGenerator {
 
     public StreamingOutput createDocument(String observationId){
         try {
-            Document doc = readTemplate();
+            Document doc = createVOTableDoc();
 
-            // Find <TABLE> element to add optional and custom fields to.
-            NodeList tableNodes = doc.getElementsByTagName("TABLE");
-            Element tableEl = (Element) tableNodes.item(0);
+            NodeList dataNodes = doc.getElementsByTagName("RESOURCE");
+            Element resEl = (Element) dataNodes.item(0);
+            Element table = doc.createElement("TABLE");
+            resEl.appendChild(table);
 
-            // Find <DATA> element to add Artifacts info to
-            NodeList dataNodes = doc.getElementsByTagName("DATA");
-            Element dataEl = (Element) dataNodes.item(0);
-
-            for (FieldDetails details : optionalFields()){
-                addField(doc, tableEl, dataEl, details);
-            }
-
-            for (FieldDetails details : customFields()){
-                addField(doc, tableEl, dataEl, details);
-            }
+            ArtifactTableRow structure = new ArtifactTableRow(null, null, null, "TEST", null, null);
+            buildTableFields(doc, table, FieldOrder.getAllFieldsOrder());
 
             // Create new <TABLEDATA>
+            Element dataEl = doc.createElement("DATA");
+            table.appendChild(dataEl);
             Element tableData = doc.createElement("TABLEDATA");
 
             List<ArtifactDetails> obsArtifacts = findArtifactsForObservation(observationId);
@@ -97,11 +92,7 @@ public class VOTableGenerator {
      * @throws Exception if the getter cannot be found (for a property in the Datalink row).
      */
     private void addRow(Document doc, Element parent, DataLinkRow row, boolean incOptional) throws Exception {
-        ArrayList<String> displayable = new ArrayList<>(row.getFieldOrder());
-        if (incOptional) {
-            displayable.addAll(row.getOptionalFieldOrder());
-        }
-        displayable.addAll(row.getCustomFieldOrder());
+        List<String> displayable = FieldOrder.getAllFieldsOrder();
         for (String fieldName : displayable) {
             String getterName = "get" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
 
@@ -120,16 +111,15 @@ public class VOTableGenerator {
      * Adds a field to the table header, allows for optional and custom fields.
      * @param doc The Document model itself
      * @param tableEl The DOM table element
-     * @param dataEl The DOM Data element (as fields need to be placed above this element)
      * @param fieldDetails The actual data to add to the field.
      */
-    private void addField(Document doc, Element tableEl, Element dataEl, FieldDetails fieldDetails) {
+    private void addField(Document doc, Element tableEl, FieldDetails fieldDetails) {
         Element newField = doc.createElement("FIELD");
         newField.setAttribute("name", fieldDetails.name());
         newField.setAttribute("datatype", fieldDetails.dataType());
         newField.setAttribute("arraysize", fieldDetails.arraySize());
         newField.setAttribute("ucd",  fieldDetails.ucd());
-        tableEl.insertBefore(newField, dataEl);
+        tableEl.appendChild(newField);
     }
 
     /**
@@ -176,7 +166,7 @@ public class VOTableGenerator {
      * TODO - determine best approach to enable/disable (link option probably on by default anyway)
      * @return A List of FieldDetails, that can be added to the output if required.
      */
-    private List<FieldDetails> optionalFields(){
+    /*private List<FieldDetails> optionalFields(){
         List<FieldDetails> fieldDetails = new ArrayList<>();
         fieldDetails.add(new FieldDetails("content_qualifier", "meta.code.qual", "char", "*", null));
         fieldDetails.add(new FieldDetails("local_semantics", "meta.code", "char", "*", null));
@@ -184,7 +174,7 @@ public class VOTableGenerator {
         fieldDetails.add(new FieldDetails("link_authorized",  "meta.code.auth;meta.status", "char", "*", null));
 
         return fieldDetails;
-    }
+    }*/
 
     /**
      * Add any custom fields that are required for the Archive Service, these are specialised fields that are not
@@ -197,4 +187,37 @@ public class VOTableGenerator {
 
         return fieldDetails;
     }
+
+    private Document createVOTableDoc() throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.newDocument();
+
+        // Root <VOTABLE> element
+        Element votable = doc.createElementNS("http://www.ivoa.net/xml/VOTable/v1.3", "VOTABLE");
+        votable.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+        votable.setAttribute("xmlns:stc", "http://www.ivoa.net/xml/STC/v1.30");
+        votable.setAttribute("version", "1.3");
+        doc.appendChild(votable);
+
+        // <RESOURCE> element
+        Element resource = doc.createElement("RESOURCE");
+        resource.setAttribute("type", "results");
+        votable.appendChild(resource);
+
+        return doc;
+    }
+
+    private void buildTableFields(Document doc, Element tableEl, List<String> fieldOrder) {
+        for (String fieldKey : fieldOrder) {
+            FieldDetails def = DataLinkFields.get(fieldKey);
+            if (def != null) {
+                addField(doc, tableEl, def);
+            } else {
+                // Optional: warn or throw if a field is missing from registry
+            }
+        }
+    }
+
 }

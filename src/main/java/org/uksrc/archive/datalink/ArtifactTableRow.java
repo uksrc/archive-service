@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class ArtifactTableRow extends DataLinkRow {
 
-    private final String planeId;
+    private final String planeId;           // Which plane this resource belongs to
 
     /**
      * Creates a ArtifactTableRow with mandatory properties, only one of accessUrl, serviceDef or errorMessage is required, and the other
@@ -27,14 +27,5 @@ public class ArtifactTableRow extends DataLinkRow {
     }
 
     public String getPlaneId() { return planeId; }
-
-    /**
-     * List of table row properties to add to the end of the standard set for domain-specific values.
-     * @return An ordered list of strings for properties that this object makes available.
-     */
-    @Override
-    public List<String> getCustomFieldOrder() {
-        return List.of("planeId");
-    }
 }
 

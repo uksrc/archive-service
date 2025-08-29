@@ -42,7 +42,7 @@ public class DataLinkResource {
     public Response getResource(@PathParam("artifactId") String id){
         Artifact art = findArtifact(id);
         if(art != null){
-            //NOTE: Uri() assumed to be a fixed/resolvable fileUrl until defined differently
+            //NOTE: Uri() assumed to be a fixed/resolvable fileUrl (or https) until defined differently
             String fileUri = art.getUri();
 
             //Stream file
