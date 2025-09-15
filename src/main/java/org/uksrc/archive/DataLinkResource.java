@@ -34,9 +34,6 @@ public class DataLinkResource {
     @Path("/links")
     @Produces(MediaType.APPLICATION_XML)
     public Response getDataLinkedObject(@QueryParam("ID") String id){
-        //TODO match ID with database object
-
-        //"2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1"
         StreamingOutput out = voTableGenerator.createDocument(id);
         return Response.ok(out).build();
     }

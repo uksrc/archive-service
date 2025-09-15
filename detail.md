@@ -259,7 +259,8 @@ Caution: Some of the TapLint tests seem to assume TAP 1.1 compliance and Vollt i
 - [TAP 1.0](https://www.ivoa.net/documents/TAP/20100327/REC-TAP-1.0.html)
 - [TAP 1.1](https://www.ivoa.net/documents/TAP/20190927/REC-TAP-1.1.html)
 
-### Authentication
+<a id="authentication"></a>
+## Authentication
 Using a OIDC controller, APIs are restricted to a specific group.
 
 Update the application.properties as required (example below uses environment variables for the client ID and secret).
@@ -316,17 +317,10 @@ Change the test group ``prototyping-groups/mini-src`` with the group your users 
     ```shell
     curl.exe "http://localhost:8080/archive/observations" -H "Authorization: Bearer <INSERT BEARER TOKEN>"
     ```
-   
-#### Test Cases
-Location of CADC's test cases.
 
-https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data
-
-<a id="authentication"></a>
-## Authentication
-
+### Log in Page
 A demonstration login page is supplied that will step through the OIDC approval steps at <host>/archive which is the root of the application.
-This is disabled for production by default but can be enabled by disabling the *IfBuildProfile("dev")* settings in both LoginResource.java and AuthenticationResource.java 
+This is disabled for production by default but can be enabled by disabling the *IfBuildProfile("dev")* settings in both LoginResource.java and AuthenticationResource.java
 
 #### application.properties values
 
@@ -336,7 +330,7 @@ Build-time settings only.
 
 
 - *quarkus.oidc.auth-server-url*: the URI of the OIDC service
-- *authentication.callback*: *redirectURI* to recieve the bearer token(s)
+- *authentication.callback*: *redirectURI* to receive the bearer token(s)
 - *quarkus.oidc.client-id*: The client ID of the client registered at *quarkus.oidc.auth-server-url*
 - *quarkus.oidc.credentials.secret*: The client secret of the client registered at *quarkus.oidc.auth-server-url*
 
@@ -353,3 +347,63 @@ The following env vars are required to allow the IAM process to succeed.
 - *OIDC_CLIENT_SECRET*: OIDC client secret of your registered client. Required for DEV builds.
 
 - *OIDC_AUTH_CALLBACK*: URI of the service that handles authentication callbacks.
+
+## DataLink
+
+Retrieve a DataLink object for a specific Artifact.
+
+```shell
+<HOST>/archive/datalink/links?ID={Artifact.id}
+```
+
+Returns a VOTable that lists the resources available.
+```shell
+<VOTABLE xmlns:stc="http://www.ivoa.net/xml/STC/v1.30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ivoa.net/xml/VOTable/v1.3" version="1.3">
+  <RESOURCE type="results">
+    <TABLE>
+      <FIELD arraysize="*" datatype="char" name="ID" ucd="meta.id;meta.main"/>
+      <FIELD arraysize="*" datatype="char" name="access_url" ucd="meta.ref.url"/>
+      <FIELD arraysize="*" datatype="char" name="service_def" ucd="meta.ref"/>
+      <FIELD arraysize="*" datatype="char" name="error_message" ucd="meta.code.error"/>
+      <FIELD arraysize="*" datatype="char" name="description" ucd="meta.note"/>
+      <FIELD arraysize="*" datatype="char" name="semantics" ucd="meta.code"/>
+      <FIELD arraysize="*" datatype="char" name="content_type" ucd="meta.code.mime"/>
+      <FIELD arraysize="" datatype="long" name="content_length" ucd="phys.size;meta.file"/>
+      <FIELD arraysize="*" datatype="char" name="content_qualifier" ucd="meta.code.class"/>
+      <FIELD arraysize="*" datatype="char" name="local_semantics" ucd="meta.code"/>
+      <FIELD arraysize="*" datatype="char" name="link_auth" ucd="meta.code"/>
+      <FIELD arraysize="" datatype="boolean" name="link_authorized" ucd="meta.code"/>
+      <!-- Custom properties for this service -->
+      <FIELD arraysize="*" datatype="char" name="plane_id" ucd="meta.id;meta.id.assoc"/>
+      <DATA>
+        <TABLEDATA>
+          <TR>
+            <TD>55e4160d-033f-4fae-9c47-93ec1f3b8643</TD>
+            <TD>http://localhost:8080/archive/datalink/resource/55e4160d-033f-4fae-9c47-93ec1f3b8643</TD>
+            <TD/>
+            <TD/>
+            <TD/>
+            <TD>auxiliary</TD>
+            <TD>image/png</TD>
+            <TD>264960</TD>
+            <TD/>
+            <TD/>
+            <TD/>
+            <TD/>
+            <TD>05974947-4872-4169-8240-c31f235232fd</TD>
+          </TR>
+        </TABLEDATA>
+      </DATA>
+    </TABLE>
+  </RESOURCE>
+</VOTABLE>
+```
+
+This gives the access_url to resolve the resource associated with the supplied Artifact.id value as shown by value http://localhost:8080/archive/datalink/resource/55e4160d-033f-4fae-9c47-93ec1f3b8643 above.
+
+Note: The /archive/datalink/resource API determines the actual Artifact.uri via the supplied Artifact.id value.
+
+## Test Cases
+Location of CADC's test cases.
+
+https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data
