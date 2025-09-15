@@ -59,6 +59,9 @@ dependencies {
     //Identity Management
     implementation("io.quarkus:quarkus-oidc")
 
+    //Datalink
+    implementation("org.apache.tika:tika-core:3.2.2")
+
     testImplementation("io.quarkus:quarkus-test-security")
 
 }

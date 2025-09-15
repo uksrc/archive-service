@@ -9,7 +9,10 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.ivoa.dm.caom2.Artifact;
+import org.jboss.logging.Logger;
 import org.uksrc.archive.datalink.VOTableGenerator;
 
 import java.io.InputStream;
@@ -24,6 +27,8 @@ public class DataLinkResource {
 
     @PersistenceContext
     protected EntityManager em;
+
+    Logger logger = Logger.getLogger(DataLinkResource.class);
 
     @GET
     @Path("/links")
@@ -55,8 +60,18 @@ public class DataLinkResource {
                 }
             };
 
+            String filename = id;
+            try {
+                String ext = MimeTypes.getDefaultMimeTypes()
+                        .forName(art.getContentType())
+                        .getExtension();
+                filename = filename + ext;
+            } catch (MimeTypeException e) {
+                logger.error("DataLink:Failed to determine mimetype", e);
+            }
+
             return Response.ok(stream)
-                    .header("Content-Disposition", "attachment; filename=\"image.png\"")
+                    .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                     .build();
         } else {
             return Response.status(Response.Status.NOT_FOUND)
