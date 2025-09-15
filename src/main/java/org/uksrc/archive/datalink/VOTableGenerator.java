@@ -7,6 +7,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.StreamingOutput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.ivoa.dm.caom2.Artifact;
+import org.ivoa.dm.caom2.Observation;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -56,7 +57,13 @@ public class VOTableGenerator {
             table.appendChild(dataEl);
 
             // <TABLEDATA>
-            addResources(doc, dataEl, observationId);
+            Observation obs = em.find(Observation.class, observationId);
+            if (obs != null) {
+                addResources(doc, dataEl, observationId);
+            }
+            else {
+                addError(doc, dataEl, observationId);
+            }
 
             return out -> {
                 try {
@@ -205,6 +212,21 @@ public class VOTableGenerator {
             }
             tableData.appendChild(tr);
         }
+        parent.appendChild(tableData);
+    }
+
+    private void addError(Document doc, Element parent, String observationId){
+        Element tableData = doc.createElement("TABLEDATA");
+        ArtifactTableRow row = new ArtifactTableRow(observationId, null, null, null, "NotFound: supplied ID not recognised", null);
+        Element tr = doc.createElement("TR");
+        try {
+            addRow(doc, tr, row, true);
+        } catch (Exception e) {
+            //TODO - log? stop?
+            throw new RuntimeException(e);
+        }
+        tableData.appendChild(tr);
+
         parent.appendChild(tableData);
     }
 }
