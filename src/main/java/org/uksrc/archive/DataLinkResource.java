@@ -37,7 +37,7 @@ public class DataLinkResource {
     }
 
     @GET
-    @Path("/files/{artifactId}")
+    @Path("/resource/{artifactId}")
     @Produces(MediaType.APPLICATION_XML)
     public Response getResource(@PathParam("artifactId") String id){
         Artifact art = findArtifact(id);

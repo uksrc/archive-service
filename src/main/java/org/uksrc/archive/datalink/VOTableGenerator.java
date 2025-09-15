@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.ivoa.dm.caom2.Artifact;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
@@ -29,7 +30,8 @@ public class VOTableGenerator {
     @PersistenceContext
     protected EntityManager em;
 
-    private static final String TEMPLATE = "/templates/datalink/votable-template.xml";
+    @ConfigProperty(name = "datalink.service.hostpath")
+    String hostpath;
 
     public StreamingOutput createDocument(String observationId){
         try {
@@ -187,7 +189,9 @@ public class VOTableGenerator {
         for (ArtifactDetails details : obsArtifacts) {
             Element tr = doc.createElement("TR");
             Artifact artifact = details.artifact();
-            ArtifactTableRow row = new ArtifactTableRow(artifact.getId(), artifact.getProductType(), artifact.getUri(), null, null, details.planeId());
+            //Resolvable URI to the actual resource
+            String accessUrl = hostpath + "/" + artifact.getId();
+            ArtifactTableRow row = new ArtifactTableRow(artifact.getId(), artifact.getProductType(), accessUrl, null, null, details.planeId());
             row.setContentType(artifact.getContentType());
             row.setContentLength(Long.valueOf(artifact.getContentLength()));
             if (artifact.getDescriptionID() != null) {
