@@ -34,6 +34,18 @@ public class VOTableGenerator {
     @ConfigProperty(name = "datalink.service.hostpath")
     String hostpath;
 
+    /**
+     * Types of errors supported by IVOA DataLink
+     *  @see <a href="https://www.ivoa.net/documents/DataLink/20231215/REC-DataLink-1.1.html#tth_sEc3.4">...</a>
+     */
+    enum ErrorType {
+        NotFoundFault,
+        UsageFault,
+        TransientFault,
+        FatalFault,
+        DefaultFault
+    }
+
     public StreamingOutput createDocument(String observationId){
         try {
             Document doc = createVOTableDoc();
@@ -62,7 +74,7 @@ public class VOTableGenerator {
                 addResources(doc, dataEl, observationId);
             }
             else {
-                addError(doc, dataEl, observationId);
+                addError(doc, dataEl, observationId, ErrorType.NotFoundFault, "supplied ID not recognised");
             }
 
             return out -> {
@@ -215,9 +227,17 @@ public class VOTableGenerator {
         parent.appendChild(tableData);
     }
 
-    private void addError(Document doc, Element parent, String observationId){
+    /**
+     * Outputs an error message
+     * @param doc XML Document to add the data to.
+     * @param parent The Parent element in the XML
+     * @param observationId The Observation.id that is currently being requested.
+     * @param type The IVOA error type @see ErrorType
+     * @param message The human-readable error message
+     */
+    private void addError(Document doc, Element parent, String observationId, ErrorType type, String message){
         Element tableData = doc.createElement("TABLEDATA");
-        ArtifactTableRow row = new ArtifactTableRow(observationId, null, null, null, "NotFound: supplied ID not recognised", null);
+        ArtifactTableRow row = new ArtifactTableRow(observationId, null, null, null, type.toString() + ": " + message, null);
         Element tr = doc.createElement("TR");
         try {
             addRow(doc, tr, row, true);
