@@ -209,12 +209,21 @@ public class VOTableGenerator {
             Element tr = doc.createElement("TR");
             Artifact artifact = details.artifact();
             //Resolvable URI to the actual resource
-            String accessUrl = hostpath + "/" + artifact.getId();
-            ArtifactTableRow row = new ArtifactTableRow(artifact.getId(), artifact.getProductType(), accessUrl, null, null, details.planeId());
-            row.setContentType(artifact.getContentType());
-            row.setContentLength(Long.valueOf(artifact.getContentLength()));
-            if (artifact.getDescriptionID() != null) {
-                row.setDescription(details.description());
+            ArtifactTableRow row = null;
+            //Only output a valid access_url if all the component parts are there.
+            if (notBlank(hostpath) && artifact != null && notBlank(artifact.getId()) &&
+                    notBlank(artifact.getUri())) {
+                String accessUrl = hostpath + "/" + artifact.getId();
+                row = new ArtifactTableRow(artifact.getId(), artifact.getProductType(), accessUrl, null, null, details.planeId());
+                row.setContentType(artifact.getContentType());
+                row.setContentLength(Long.valueOf(artifact.getContentLength()));
+                if (artifact.getDescriptionID() != null) {
+                    row.setDescription(details.description());
+                }
+            }
+            else {
+                String id = artifact != null  ? artifact.getId() : "";
+                row = new ArtifactTableRow(id, null, null, null, ErrorType.FatalFault + ": unable to construct access_url for this resource", details.planeId());
             }
             try {
                 addRow(doc, tr, row, true);
@@ -248,5 +257,9 @@ public class VOTableGenerator {
         tableData.appendChild(tr);
 
         parent.appendChild(tableData);
+    }
+
+    private boolean notBlank(String s) {
+        return s != null && !s.isBlank();
     }
 }
