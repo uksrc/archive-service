@@ -35,7 +35,13 @@ public class DataLinkResource {
     @Produces(MediaType.APPLICATION_XML)
     public Response getDataLinkedObject(@QueryParam("ID") String id){
         StreamingOutput out = voTableGenerator.createDocument(id);
-        return Response.ok(out).build();
+        if (out != null) {
+            return Response.ok(out).build();
+        }
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("Error, could not construct DataLink VOTable")
+                .type(MediaType.TEXT_PLAIN)
+                .build();
     }
 
     @GET
