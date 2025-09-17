@@ -63,13 +63,15 @@ public class VOTableGenerator {
 
             // <TABLEDATA>
             Observation obs = em.find(Observation.class, observationId);
+            Element tableData = doc.createElement("TABLEDATA");
             if (obs != null) {
                 List<ArtifactDetails> artifacts = findArtifactsForObservation(observationId);
-                xmlGenerator.addResources(doc, dataEl, hostpath, artifacts);
+                xmlGenerator.addResources(doc, tableData, hostpath, artifacts);
             }
             else {
-                xmlGenerator.addError(doc, dataEl, observationId, VOTableXMLWriter.ErrorType.NotFoundFault, "supplied ID not recognised");
+                xmlGenerator.addError(doc, tableData, observationId, VOTableXMLWriter.ErrorType.NotFoundFault, "supplied ID not recognised");
             }
+            dataEl.appendChild(tableData);
 
             return out -> {
                 try {

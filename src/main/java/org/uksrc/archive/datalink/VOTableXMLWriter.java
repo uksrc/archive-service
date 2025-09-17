@@ -10,6 +10,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.lang.reflect.Method;
 import java.util.List;
 
+/**
+ * All the functionality required to construct the VOTable required for a DataLink object.
+ * Document->Fields->Resources (or error)
+ * @see <a href="../../../../../../../detail.md">details.md</a> for an example structure.
+ */
 public class VOTableXMLWriter {
 
     /**
@@ -76,8 +81,6 @@ public class VOTableXMLWriter {
      * @param resources The list of resources to add to the form.
      */
     public void addResources(Document doc, Element parent, String hostPath, List<ArtifactDetails> resources){
-        Element tableData = doc.createElement("TABLEDATA");
-
         // Add rows (one for each Artifact initially)
         for (ArtifactDetails details : resources) {
             Element tr = doc.createElement("TR");
@@ -105,9 +108,8 @@ public class VOTableXMLWriter {
                 //TODO - log? stop?
                 throw new RuntimeException(e);
             }
-            tableData.appendChild(tr);
+            parent.appendChild(tr);
         }
-        parent.appendChild(tableData);
     }
 
     /**
@@ -119,7 +121,6 @@ public class VOTableXMLWriter {
      * @param message The human-readable error message
      */
     public void addError(Document doc, Element parent, String observationId, ErrorType type, String message){
-        Element tableData = doc.createElement("TABLEDATA");
         ArtifactTableRow row = new ArtifactTableRow(observationId, null, null, null, type.toString() + ": " + message, null);
         Element tr = doc.createElement("TR");
         try {
@@ -128,9 +129,7 @@ public class VOTableXMLWriter {
             //TODO - log? stop?
             throw new RuntimeException(e);
         }
-        tableData.appendChild(tr);
-
-        parent.appendChild(tableData);
+        parent.appendChild(tr);
     }
 
     /**
