@@ -33,7 +33,7 @@ public class DataLinkResource {
     @GET
     @Path("/links")
     @Produces(MediaType.APPLICATION_XML)
-    public Response getDataLinkedObject(@QueryParam("ID") String id){
+    public Response getDataLinkObject(@QueryParam("ID") String id){
         StreamingOutput out = voTableGenerator.createDocument(id);
         if (out != null) {
             return Response.ok(out).build();
