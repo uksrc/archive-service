@@ -36,6 +36,8 @@ public class ObservationResourceTest {
     @Inject
     ObservationResource observationResource;
 
+    static final String nonResolvableArtifactUri = "uri:TS8004_C_001_20190801_avg_uvplt_a_1331+3030.png";
+
     @BeforeEach
     @Transactional
     public void clearDatabase() {
@@ -280,7 +282,7 @@ public class ObservationResourceTest {
     @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testGettingArtifactObservation() {
         //One plane with one artifact
-        Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1);
+        Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1, nonResolvableArtifactUri);
 
         try(Response res1 = observationResource.addObservation(obs1)) {
             assertEquals (Response.Status.CREATED.getStatusCode(), res1.getStatus());

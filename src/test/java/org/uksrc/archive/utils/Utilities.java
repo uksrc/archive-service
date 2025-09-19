@@ -56,15 +56,16 @@ public class Utilities {
      * Creates an observation with a single plane and a single artifact.
      * @param observationId identifier for the individual observation
      * @param collectionId identifier for the collection to add this observation to.
+     * @param artifactUri uri of a resource (resolvable or not depending on the test in question)
      * @return An Observation with a single Artifact
      */
-    public static Observation createArtifactObservation(String observationId, String collectionId) {
+    public static Observation createArtifactObservation(String observationId, String collectionId, String artifactUri) {
         Observation obs = createSimpleObservation(observationId, collectionId);
 
         List<Artifact> artifacts = new ArrayList<>();
         Artifact artifact = new Artifact();
         artifact.setId("2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1");
-        artifact.setUri("uri:TS8004_C_001_20190801_avg_uvplt_a_1331+3030.png");
+        artifact.setUri(artifactUri);
         artifact.setUriBucket("8ea");
         artifact.setProductType("auxiliary");
         artifact.setReleaseType(ReleaseType.DATA);

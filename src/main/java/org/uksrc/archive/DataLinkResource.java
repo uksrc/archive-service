@@ -15,9 +15,11 @@ import org.ivoa.dm.caom2.Artifact;
 import org.jboss.logging.Logger;
 import org.uksrc.archive.datalink.VOTableGenerator;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.net.URLConnection;
 
 @Path("/datalink")
 public class DataLinkResource {
@@ -53,6 +55,20 @@ public class DataLinkResource {
             //NOTE: Uri() assumed to be a fixed/resolvable fileUrl (or https) until defined differently
             String fileUri = art.getUri();
 
+            URLConnection conn = null;
+            try {
+                //Check the resource actually exists
+                URL url = new URL(fileUri);
+                conn = url.openConnection();
+                conn.connect();
+            } catch (IOException e) {
+                logger.error("DataLink: unable to resolve Artifact URI" + fileUri, e);
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MediaType.TEXT_PLAIN)
+                        .entity("Associated resource not found for " + id)
+                        .build();
+            }
+
             //Stream file
             StreamingOutput stream = output -> {
                 try (InputStream is = new URL(fileUri).openStream();
@@ -79,7 +95,7 @@ public class DataLinkResource {
         } else {
             return Response.status(Response.Status.NOT_FOUND)
                     .type(MediaType.TEXT_PLAIN)
-                    .entity("Resource not found")
+                    .entity("Artifact " + id + " not found")
                     .build();
         }
     }

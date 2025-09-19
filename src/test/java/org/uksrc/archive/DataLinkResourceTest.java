@@ -7,28 +7,22 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
-import org.ivoa.dm.caom2.Artifact;
 import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.Plane;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.uksrc.archive.utils.ObservationListWrapper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.uksrc.archive.utils.Utilities.*;
@@ -47,6 +41,8 @@ public class DataLinkResourceTest {
     @Inject
     DataLinkResource dataLinkResource;
 
+    static final String nonResolvableArtifactUri = "uri:TS8004_C_001_20190801_avg_uvplt_a_1331+3030.png";
+
     @BeforeEach
     @Transactional
     public void clearDatabase() {
@@ -59,8 +55,8 @@ public class DataLinkResourceTest {
     @Test
     @DisplayName("Add an observation with a single artifact and check the response is the same.")
     @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
-    public void testGettingArtifactObservation2() {
-        Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1);
+    public void testGettingArtifactObservation() {
+        Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1, nonResolvableArtifactUri);
 
         try(Response res1 = observationResource.addObservation(obs1)) {
             assertEquals(Response.Status.CREATED.getStatusCode(), res1.getStatus());
@@ -84,22 +80,80 @@ public class DataLinkResourceTest {
             NodeList tableDataList = doc.getElementsByTagNameNS(ns, "TABLEDATA");
             assertNotEquals(0, tableDataList.getLength());
 
+            //Find the 1st row in the TABLEDATA element
             Element tableData = (Element) tableDataList.item(0);
             NodeList rows = tableData.getElementsByTagNameNS(ns, "TR");
             assertNotEquals(0, rows.getLength());
 
+            //Query nominated cells in the row to compare input/output values for an Artifact.
             Element row = (Element) rows.item(0);
             NodeList cells = row.getElementsByTagNameNS(ns, "TD");
             assert(cells.getLength() > 6);
 
+            //NOTE: values need to be the same as in the object created in Utilities.createArtifactObservation()
             String value = cells.item(0).getTextContent();
-            assertEquals(value, "2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1");
+            assertEquals("2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1", value);
 
             value = cells.item(6).getTextContent();
             assertEquals("image/png", value);
 
         } catch (IOException | SAXException | ParserConfigurationException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    @DisplayName("Test getting a resource that is missing from the file system.")
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    public void testRetrievingMissingResource() {
+        Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1, nonResolvableArtifactUri);
+        try(Response res1 = observationResource.addObservation(obs1)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), res1.getStatus());
+
+            Response res = dataLinkResource.getResource("2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1");
+            assertEquals(Response.Status.NOT_FOUND.getStatusCode(), res.getStatus());
+
+            String errorMessage = res.readEntity(String.class);
+            assert(errorMessage.contains("Associated resource not found for"));
+        }
+    }
+
+    @Test
+    @DisplayName("Test getting a resource from an Artifact that doesn't exist.")
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    public void testRetrievingMissingArtifact() {
+        Response res = dataLinkResource.getResource("2cf99e88-90e1-4fe8-a502-1111111111");
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), res.getStatus());
+
+        String errorMessage = res.readEntity(String.class);
+        assert(errorMessage.contains("not found"));
+    }
+
+    @Test
+    @DisplayName("Test resolving a local file")
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    public void testResolvingLocalFile() {
+        //Create a temp file on the system for testing
+        Path tempFile = null;
+        try {
+            tempFile = Files.createTempFile("test-file", ".txt");
+            Files.writeString(tempFile, "Some dummy data");
+            String fileUri = tempFile.toUri().toString();
+
+            Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1, fileUri);
+            try(Response res1 = observationResource.addObservation(obs1)) {
+                assertEquals(Response.Status.CREATED.getStatusCode(), res1.getStatus());
+
+                Response res = dataLinkResource.getResource("2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1");
+                assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                ((StreamingOutput) res.getEntity()).write(out);
+
+                assertEquals("Some dummy data", out.toString(StandardCharsets.UTF_8));
+            }
+        } catch (IOException e) {
+            assert(false);
         }
     }
 }
