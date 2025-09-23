@@ -13,6 +13,7 @@ import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.ivoa.dm.caom2.Artifact;
 import org.jboss.logging.Logger;
+import org.uksrc.archive.auth.ConditionalRolesAllowed;
 import org.uksrc.archive.datalink.VOTableGenerator;
 
 import java.io.IOException;
@@ -49,6 +50,7 @@ public class DataLinkResource {
     @GET
     @Path("/resource/{artifactId}")
     @Produces(MediaType.APPLICATION_XML)
+    @ConditionalRolesAllowed("resource.roles.view")
     public Response getResource(@PathParam("artifactId") String id){
         Artifact art = findArtifact(id);
         if(art != null){

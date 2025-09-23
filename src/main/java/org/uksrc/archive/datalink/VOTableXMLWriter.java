@@ -1,6 +1,7 @@
 package org.uksrc.archive.datalink;
 
 import org.ivoa.dm.caom2.Artifact;
+import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -17,6 +18,8 @@ import java.util.List;
  */
 public class VOTableXMLWriter {
 
+    Logger logger;
+
     /**
      * Types of errors supported by IVOA DataLink
      *  @see <a href="https://www.ivoa.net/documents/DataLink/20231215/REC-DataLink-1.1.html#tth_sEc3.4">...</a>
@@ -27,6 +30,10 @@ public class VOTableXMLWriter {
         TransientFault,
         FatalFault,
         DefaultFault
+    }
+
+    public VOTableXMLWriter() {
+        logger = Logger.getLogger(VOTableXMLWriter.class);
     }
 
     /**
@@ -97,6 +104,8 @@ public class VOTableXMLWriter {
                 if (artifact.getDescriptionID() != null) {
                     row.setDescription(details.description());
                 }
+                row.setLinkAuth("true");        //ALL resources require IAM access
+                row.setLinkAuthorized("false"); //Adjust if we decide to receive current user's permissions
             }
             else {
                 String id = artifact != null  ? artifact.getId() : "";
@@ -105,8 +114,7 @@ public class VOTableXMLWriter {
             try {
                 addRow(doc, tr, row);
             } catch (Exception e) {
-                //TODO - log? stop?
-                throw new RuntimeException(e);
+                logger.error("DataLink: Error whilst attempting to construct resource row for Artifact ID = " + (artifact != null ? artifact.getId() : "{missing}"), e);
             }
             parent.appendChild(tr);
         }
@@ -126,8 +134,7 @@ public class VOTableXMLWriter {
         try {
             addRow(doc, tr, row);
         } catch (Exception e) {
-            //TODO - log? stop?
-            throw new RuntimeException(e);
+            logger.error("DataLink: Error whilst attempting to construct an error row for message: " + message, e);
         }
         parent.appendChild(tr);
     }

@@ -48,7 +48,7 @@ Details of the functionality of the archive-service endpoints.
 #### Retrieving observations
 
 <details>
- <summary><code>GET</code> <code><b>/observations</b></code> <code>(Returns either all of the observations OR a paginated subset if optional page and size parameters supplied)</code></summary>
+ <summary><code>GET</code> <code><b>/archive/observations</b></code> <code>(Returns either all of the observations OR a paginated subset if optional page and size parameters supplied)</code></summary>
 
 ##### Parameters
 
@@ -70,13 +70,13 @@ Details of the functionality of the archive-service endpoints.
 ##### Example cURL
 
 > ```
->  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/observations'
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/archive/observations'
 > ```
 
 </details>
 
 <details>
- <summary><code>GET</code> <code><b>/observations/{observationId}</b></code> <code>(Returns an Observation with the supplied ID, if found)</code></summary>
+ <summary><code>GET</code> <code><b>/archive/observations/{observationId}</b></code> <code>(Returns an Observation with the supplied ID, if found)</code></summary>
 
 ##### Parameters
 
@@ -96,7 +96,7 @@ Details of the functionality of the archive-service endpoints.
 ##### Example cURL
 
 > ```
->  curl -X 'GET' 'http://localhost:8080/observations/23456' -H 'accept: application/xml'
+>  curl -X 'GET' 'http://localhost:8080/archive/observations/23456' -H 'accept: application/xml'
 > ```
 
 </details>
@@ -108,7 +108,7 @@ Details of the functionality of the archive-service endpoints.
 #### Adding new Observations
 
 <details>
- <summary><code>POST</code> <code><b>/observations</b></code> <code>(Add a new observation)</code></summary>
+ <summary><code>POST</code> <code><b>/archive/observations</b></code> <code>(Add a new observation)</code></summary>
 
 ##### Responses
 
@@ -120,13 +120,13 @@ Details of the functionality of the archive-service endpoints.
 ##### Example XML cURL
 
 > ```
->  curl -X 'POST' -H 'Content-Type: application/xml' -H 'accept: application/xml' --data "@observation2.json" http://localhost:8080/observations
+>  curl -X 'POST' -H 'Content-Type: application/xml' -H 'accept: application/xml' --data "@observation2.json" http://localhost:8080/archive/observations
 > ```
 
 ##### Example JSON cURL
 with JSON response also
 > ```
->  curl -X 'POST' -H 'Content-Type: application/json' -H 'accept: application/json' --data "@observation2.json" http://localhost:8080/observations
+>  curl -X 'POST' -H 'Content-Type: application/json' -H 'accept: application/json' --data "@observation2.json" http://localhost:8080/archive/observations
 > ```
 </details>
 
@@ -135,7 +135,7 @@ with JSON response also
 #### Updating observations
 
 <details>
- <summary><code>UPDATE</code> <code><b>/observations/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
+ <summary><code>UPDATE</code> <code><b>/archive/observations/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
 
 ##### Parameters
 
@@ -155,7 +155,7 @@ with JSON response also
 ##### Example cURL
 
 > ```
->  curl -X 'PUT' -H 'Content-Type: application/xml' -H 'Accept: application/xml' -T observation2.xml http://localhost:8080/observations/988
+>  curl -X 'PUT' -H 'Content-Type: application/xml' -H 'Accept: application/xml' -T observation2.xml http://localhost:8080/archive/observations/988
 > ```
 
 </details>
@@ -165,7 +165,7 @@ with JSON response also
 #### Deleting Observations
 
 <details>
- <summary><code>DELETE</code> <code><b>/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
+ <summary><code>DELETE</code> <code><b>/archive/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
 
 ##### Parameters
 
@@ -185,7 +185,7 @@ with JSON response also
 ##### Example cURL
 
 > ```
->  curl -X 'DELETE' 'http://localhost:8080/observations/delete/123' -H 'accept: */*'
+>  curl -X 'DELETE' 'http://localhost:8080/archive/observations/delete/123' -H 'accept: */*'
 > ```
 
 </details>  
@@ -195,7 +195,7 @@ with JSON response also
 #### Retrieving collections
 
 <details>
- <summary><code>GET</code> <code><b>/collections</b></code> <code>(Returns the names of all the collections as a TSV (Tab Separated List))</code></summary>
+ <summary><code>GET</code> <code><b>/archive/collections</b></code> <code>(Returns the names of all the collections as a TSV (Tab Separated List))</code></summary>
 
 ##### Responses
 
@@ -208,12 +208,42 @@ with JSON response also
 ##### Example cURL
 
 > ```
->  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/collections'
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/archive/collections'
 > ```
 
 </details>
 
 ------------------------------------------------------------------------------------------
+
+#### Retrieving dataLink
+
+<details>
+ <summary><code>GET</code> <code><b>/archive/datalink/links</b></code> <code>(Returns the DataLink object for the observation supplied)</code></summary>
+
+##### Parameters
+
+> | name |  type     | data type | description                                                         |
+> |------|-----------|-----------|---------------------------------------------------------------------|
+> | ID   |  required | String    | The unique identifier of a specific Observation (Simple or Derived) |
+> 
+##### Responses
+
+> | http code | content-type | response                      |
+> |-----------|--------------|-------------------------------|
+> | `200`     | `text/plain` | `Returned successfully`       |
+> | `500`     | `text/plain` | `{"code":"500","message":"Error, could not construct DataLink VOTable"}` |
+
+
+##### Example cURL
+
+> ```
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/archive/datalink/links?ID=2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1'
+> ```
+
+</details>
+
+------------------------------------------------------------------------------------------
+
 <a id="tapservice"></a>
 ## Tap Service
 
@@ -388,8 +418,8 @@ Returns a VOTable that lists the resources available.
             <TD>264960</TD>
             <TD/>
             <TD/>
-            <TD/>
-            <TD/>
+            <TD>true</TD>                                       <!-- ALL resources require authentication -->
+            <TD>false</TD>                                      <!-- Needs updating when the WebUI can send current users -->
             <TD>05974947-4872-4169-8240-c31f235232fd</TD>
           </TR>
         </TABLEDATA>
@@ -401,7 +431,9 @@ Returns a VOTable that lists the resources available.
 
 This gives the access_url to resolve the resource associated with the supplied Artifact.id value as shown by value http://localhost:8080/archive/datalink/resource/55e4160d-033f-4fae-9c47-93ec1f3b8643 above.
 
-Note: The /archive/datalink/resource API determines the actual Artifact.uri via the supplied Artifact.id value.
+Note: The /archive/datalink/resource API determines the actual Artifact.uri via the supplied Artifact.id value. Currently expected to be a file/http url to a fixed location.
+
+The link_authorized property value needs updating once there's a mechanism in place to send the current user's status.
 
 ## Test Cases
 Location of CADC's test cases.
