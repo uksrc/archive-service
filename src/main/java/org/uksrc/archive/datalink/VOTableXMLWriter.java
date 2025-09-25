@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class VOTableXMLWriter {
 
-    Logger logger;
+    final Logger logger;
 
     /**
      * Types of errors supported by IVOA DataLink

@@ -439,7 +439,7 @@ public class ObservationResource {
     }
 
     /**
-     * Forces the specialisation of a specific type of Observation.
+     * Enforces the specialization of certain Observation types.
      * Converts the name to Pascal-case suitable for XML responses.
      * @param observation The single observation to rename
      * @return A JAXBElement of either SimpleObservation or DerivedObservation

@@ -20,6 +20,9 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.util.List;
 
+/**
+ * Utility to generate a Document that represents a DataLink VOTable.
+ */
 @ApplicationScoped
 public class VOTableGenerator {
 
@@ -29,8 +32,8 @@ public class VOTableGenerator {
     @ConfigProperty(name = "datalink.service.hostpath")
     String hostpath;
 
-    Logger logger;
-    VOTableXMLWriter xmlGenerator;
+    final Logger logger;
+    final VOTableXMLWriter xmlGenerator;
 
 
     public VOTableGenerator() {

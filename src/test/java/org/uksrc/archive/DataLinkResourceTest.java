@@ -26,8 +26,6 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.uksrc.archive.utils.Utilities.*;
-import static org.uksrc.archive.utils.Utilities.COLLECTION1;
-import static org.uksrc.archive.utils.Utilities.OBSERVATION1;
 
 @QuarkusTest
 public class DataLinkResourceTest {
@@ -134,9 +132,8 @@ public class DataLinkResourceTest {
     @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testResolvingLocalFile() {
         //Create a temp file on the system for testing
-        Path tempFile = null;
         try {
-            tempFile = Files.createTempFile("test-file", ".txt");
+            Path tempFile = Files.createTempFile("test-file", ".txt");
             Files.writeString(tempFile, "Some dummy data");
             String fileUri = tempFile.toUri().toString();
 

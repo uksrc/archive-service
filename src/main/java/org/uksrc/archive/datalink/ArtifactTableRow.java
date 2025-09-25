@@ -1,8 +1,5 @@
 package org.uksrc.archive.datalink;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Specialisation of the DataLinkRow (VOTable row) that adds in custom properties for use
  * in the Archive Service.

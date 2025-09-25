@@ -272,9 +272,7 @@ public class ObservationResourceTest {
         Observation observation = createSimpleObservation(OBSERVATION1, COLLECTION1);
 
         // Expected response
-        assertThrows(AuthenticationFailedException.class, () -> {
-            observationResource.addObservation(observation);
-        });
+        assertThrows(AuthenticationFailedException.class, () -> observationResource.addObservation(observation));
     }
 
     @Test

@@ -1,7 +1,5 @@
 package org.uksrc.archive.utils;
 
-import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypes;
 import org.ivoa.dm.caom2.*;
 
 import java.util.ArrayList;

@@ -1,9 +1,10 @@
 # archive-service
 
 1. [Example resources](#examples)
-2. [Submission and retrieval endpoints (REST APIs)](#endpoints)
-3. [Tap service](#tapservice)
+2. [Submission and retrieval endpoints (REST APIs)](#rest-api-details)
+3. [Tap service](#tap-service)
 4. [Authentication](#authentication)
+5. [DataLink](#datalink)
 
 
 ------------------------------------------------------------------------------------------
@@ -41,7 +42,6 @@ Namespace details must conform with the current vo-dml model used.
 </DerivedObservation>
 ```
 ------------------------------------------------------------------------------------------
-<a id="endpoints"></a>
 ### REST API details
 Details of the functionality of the archive-service endpoints.
 
@@ -226,13 +226,14 @@ with JSON response also
 > |------|-----------|-----------|---------------------------------------------------------------------|
 > | ID   |  required | String    | The unique identifier of a specific Observation (Simple or Derived) |
 > 
+
 ##### Responses
 
-> | http code | content-type | response                      |
-> |-----------|--------------|-------------------------------|
-> | `200`     | `text/plain` | `Returned successfully`       |
+> | http code | content-type | response                                                                 |
+> |-----------|--------------|--------------------------------------------------------------------------|
+> | `200`     | `text/plain` | `Returned successfully`                                                  |
 > | `500`     | `text/plain` | `{"code":"500","message":"Error, could not construct DataLink VOTable"}` |
-
+>
 
 ##### Example cURL
 
@@ -244,17 +245,16 @@ with JSON response also
 
 ------------------------------------------------------------------------------------------
 
-<a id="tapservice"></a>
-## Tap Service
+### Tap Service
 
-### TAP SCHEMA setup
+#### TAP SCHEMA setup
 
 The TAP schema is currently added to the database with the import.sql file which runs automatically on startup and adds the required tables to the database.
 This is followed by a bean (TapSchemaPopulator) that will read the database and add each type (Observation etc.) to the generated TAP schema entries.
 
 TODO: Generate a VO-DML/XSD model definition so that the TAP schema entries can be auto-added in the same way as the CAOM library.
 
-### TAP service usage
+#### TAP service usage
 
 Navigate to the <host>/tap endpoint (http://localhost:8080/tap for example), the host is the root of the archive-service.
 
@@ -269,7 +269,7 @@ This displays the default [Vollt](http://cdsportal.u-strasbg.fr/taptuto/gettings
 
 along with a textbox to run experimental queries.
 
-### Deployment Settings
+#### Deployment Settings
 Update ``resources/templates/tap.properties.template`` as required. Any properties can be 'imported' from application.properties
 if required using ${value}
 
@@ -277,7 +277,7 @@ One setting that may need changing is ``file_root_path`` it should resolve to a 
 
 ``file_root_path = /some/linux/path``
 
-### Testing
+#### Testing
 Using [Stilts TapLint utility](https://www.star.bris.ac.uk/mbt/stilts/sun256/taplint.html), any issues can be highlighted.
 ```
 java -jar .\stilts.jar taplint interface=tap1.0 tapurl=http://localhost:8080/tap 
@@ -289,13 +289,12 @@ Caution: Some of the TapLint tests seem to assume TAP 1.1 compliance and Vollt i
 - [TAP 1.0](https://www.ivoa.net/documents/TAP/20100327/REC-TAP-1.0.html)
 - [TAP 1.1](https://www.ivoa.net/documents/TAP/20190927/REC-TAP-1.1.html)
 
-<a id="authentication"></a>
-## Authentication
+### Authentication
 Using a OIDC controller, APIs are restricted to a specific group.
 
 Update the application.properties as required (example below uses environment variables for the client ID and secret).
 The ID and secret are available from the client registered on your auth-server.
-```xml
+```shell
 quarkus.oidc.auth-server-url=https://your-oidc-service.url
 quarkus.oidc.client-id=${OIDC_CLIENT_ID}
 quarkus.oidc.credentials.secret=${OIDC_CLIENT_SECRET}
@@ -306,23 +305,23 @@ quarkus.oidc.credentials.secret=${OIDC_CLIENT_SECRET}
 Restrict the APIs with the desired group(s)
 
 Change the test group ``prototyping-groups/mini-src`` with the group your users need to be a member of.
-```java
+```shell
 @RolesAllowed("prototyping-groups/mini-src")
 ```
 
 #### Getting a token
-1. Retrieve an authentication code
-    ```shell
+1. **Retrieve an authentication code**  
+
+   ```shell
     curl "https://ska-iam.stfc.ac.uk/authorize?response_type=code&client_id=${OIDC_CLIENT_ID}&redirect_uri=http://localhost:8080/auth-callback&audience=authn-api&scope=openid+profile+offline_access&state=yQRL_ZdyAgTLv1H2sXI6w-THqDcqvlM3ulAlyfhB"
     ```
-
+   
    - The ``redirect_uri`` has to be a service that receives two strings (code & state)
    - The ``state`` value is a string that represents this task and can be used to validate in the ``redirect_uri`` method.
    - Will redirect to the OIDC login screen of your provider via a web browser (unlikely to work when running curl from the command line)
 
-
-2. Handle the response
-
+2. **Handle the response**
+    
     Create a method that follows this signature in the language that you are using.
     ```java
     // Running in http://localhost:8080/auth-callback for the above curl request
@@ -331,24 +330,22 @@ Change the test group ``prototyping-groups/mini-src`` with the group your users 
         // Handle auth code and state as required
     }
     ```
-  
- 
-3. Generate a bearer token
-
+   
+3. **Generate a bearer token**
+   
     ```shell
     curl -X POST https://ska-iam.stfc.ac.uk/token -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=authorization_code" -d "code=<YOUR_AUTH_CODE>" -d  "client_id=${OIDC_CLIENT_ID}" -d "client_secret=${OIDC_CLIENT_SECRET}" -d  "redirect_uri=http://localhost:8080/auth-callback"
     ```
-   
+      
     This should then return a JSON object that contains various values including the required ``access_token``. The access token can then be used as the bearer token when trying to access the Archive Service's APIs.
 
-
-4. Use the bearer token to make a request
-
+4. **Use the bearer token to make a request**
+   
     ```shell
     curl.exe "http://localhost:8080/archive/observations" -H "Authorization: Bearer <INSERT BEARER TOKEN>"
     ```
-
-### Log in Page
+   
+#### Login Page
 A demonstration login page is supplied that will step through the OIDC approval steps at <host>/archive which is the root of the application.
 This is disabled for production by default but can be enabled by disabling the *IfBuildProfile("dev")* settings in both LoginResource.java and AuthenticationResource.java
 
@@ -378,7 +375,7 @@ The following env vars are required to allow the IAM process to succeed.
 
 - *OIDC_AUTH_CALLBACK*: URI of the service that handles authentication callbacks.
 
-## DataLink
+### DataLink
 
 Retrieve a DataLink object for a specific Artifact.
 

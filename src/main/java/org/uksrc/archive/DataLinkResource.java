@@ -39,7 +39,7 @@ public class DataLinkResource {
     @PersistenceContext
     protected EntityManager em;
 
-    Logger logger = Logger.getLogger(DataLinkResource.class);
+    final Logger logger = Logger.getLogger(DataLinkResource.class);
 
     @GET
     @Path("/links")
@@ -185,10 +185,9 @@ public class DataLinkResource {
      * @return true if found
      */
     private boolean resourceExists(String uri) {
-        URLConnection conn = null;
         try {
             URL url = new URL(uri);
-            conn = url.openConnection();
+            URLConnection conn = url.openConnection();
             conn.connect();
         } catch (IOException e) {
             logger.error("DataLink: unable to resolve Artifact URI " + uri, e);
