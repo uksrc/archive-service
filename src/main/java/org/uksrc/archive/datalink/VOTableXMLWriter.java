@@ -95,17 +95,8 @@ public class VOTableXMLWriter {
             //Resolvable URI to the actual resource
             ArtifactTableRow row;
             //Only output a valid access_url if all the component parts are there.
-            if (notBlank(hostPath) && artifact != null && notBlank(artifact.getId()) &&
-                    notBlank(artifact.getUri())) {
-                String accessUrl = hostPath + "/" + artifact.getId();
-                row = new ArtifactTableRow(artifact.getId(), artifact.getProductType(), accessUrl, null, null, details.planeId());
-                row.setContentType(artifact.getContentType());
-                row.setContentLength(Long.valueOf(artifact.getContentLength()));
-                if (artifact.getDescriptionID() != null) {
-                    row.setDescription(details.description());
-                }
-                row.setLinkAuth("true");        //ALL resources require IAM access
-                row.setLinkAuthorized("false"); //Adjust if we decide to receive current user's permissions
+            if (isValidArtifact(hostPath, artifact)) {
+                row = createArtifactTableRow(hostPath, details);
             }
             else {
                 String id = artifact != null  ? artifact.getId() : "";
@@ -178,6 +169,28 @@ public class VOTableXMLWriter {
     }
 
     /**
+     * Create a Document table row for an Artifact
+     * @param hostPath The hostpath of the service deployment
+     * @param artifactDetails Actual details of the Artifact
+     * @return ArtifactTableRow for adding to a document via addRow(~)
+     */
+    private ArtifactTableRow createArtifactTableRow(String hostPath, ArtifactDetails artifactDetails) {
+        Artifact artifact = artifactDetails.artifact();
+        String accessUrl = hostPath + "/" + artifact.getId();
+
+        ArtifactTableRow row = new ArtifactTableRow(artifact.getId(), artifact.getProductType(), accessUrl, null, null, artifactDetails.planeId());
+        row.setContentType(artifact.getContentType());
+        row.setContentLength(Long.valueOf(artifact.getContentLength()));
+        if (artifact.getDescriptionID() != null) {
+            row.setDescription(artifactDetails.description());
+        }
+        row.setLinkAuth("true");        //ALL resources require IAM access
+        row.setLinkAuthorized("false"); //Adjust if we decide to receive current user's permissions
+
+        return row;
+    }
+
+    /**
      * Checks if a String is either null or empty
      * @param s String to check
      * @return true if neither null nor empty.
@@ -185,4 +198,18 @@ public class VOTableXMLWriter {
     private boolean notBlank(String s) {
         return s != null && !s.isBlank();
     }
+
+    /**
+     * Checks the validity of an Artifact before adding it to the Document
+     * @param hostPath expected output path of the service/resource
+     * @param artifact The Artifact to test
+     * @return true if suitable to add the Document
+     */
+    private boolean isValidArtifact(String hostPath, Artifact artifact) {
+        return notBlank(hostPath)
+                && artifact != null
+                && notBlank(artifact.getId())
+                && notBlank(artifact.getUri());
+    }
+
 }
