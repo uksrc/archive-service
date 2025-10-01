@@ -62,6 +62,11 @@ dependencies {
     //Datalink
     implementation("org.apache.tika:tika-core:3.2.2")
 
+    //UserAgent evaluation
+    implementation("nl.basjes.parse.useragent:yauaa:7.31.0")
+    implementation("org.apache.logging.log4j:log4j-api:2.25.2")
+    implementation("org.apache.logging.log4j:log4j-core:2.23.1")
+
     testImplementation("io.quarkus:quarkus-test-security")
 
 }

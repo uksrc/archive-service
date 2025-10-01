@@ -60,8 +60,7 @@ public class DataLinkResourceTest {
             assertEquals(Response.Status.CREATED.getStatusCode(), res1.getStatus());
 
             Response res = dataLinkResource.getDataLinkObject(OBSERVATION1,
-                    "stilts-test-client/1.0",
-                    "application/x-votable+xml;content=datalink");
+                    "stilts-test-client/1.0");
             assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
 
             StreamingOutput so = (StreamingOutput) res.getEntity();

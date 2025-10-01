@@ -10,6 +10,8 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import nl.basjes.parse.useragent.UserAgent;
+import nl.basjes.parse.useragent.UserAgentAnalyzer;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -38,12 +40,13 @@ public class DataLinkResource {
     @Inject
     VOTableGenerator voTableGenerator;
 
+    @Inject
+    UserAgentAnalyzer userAgentAnalyzer;
+
     @PersistenceContext
     protected EntityManager em;
 
     private final Logger logger = Logger.getLogger(DataLinkResource.class);
-
-    private static final String CANONICAL_CT = "application/x-votable+xml;content=datalink";
 
     @GET
     @Path("/links")
@@ -71,26 +74,24 @@ public class DataLinkResource {
             description = "Internal error whilst retrieving Observation (or parameter error (if supplied))."
     )
     public Response getDataLinkObject(@QueryParam("ID") String id,
-                                      @HeaderParam("User-Agent") String userAgent,
-                                      @HeaderParam("Accept") String accept) {
+                                      @HeaderParam("User-Agent") String userAgent) {
         StreamingOutput out = voTableGenerator.createDocument(id);
-        if (out == null) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Could not construct DataLink VOTable")
-                    .type(MediaType.TEXT_PLAIN)
-                    .build();
+        if (out != null) {
+            if (userAgent != null && isBrowser(userAgent)) {
+                return Response.ok(out, MediaType.APPLICATION_XML).build();
+            }
+            else {
+                //Force correct header for VOTable
+                return Response.ok(out)
+                        .header(HttpHeaders.CONTENT_TYPE, "application/x-votable+xml;content=datalink")
+                        .build();
+            }
         }
 
-        // If the request looks like it's from a VO client (stilts, TOPCAT, etc.)
-        if ((accept != null && accept.contains("application/x-votable+xml"))
-                || (userAgent != null && userAgent.toLowerCase().contains("stilts"))) {
-            return Response.ok(out)
-                    .header(HttpHeaders.CONTENT_TYPE, "application/x-votable+xml;content=datalink")
-                    .build();
-        }
-
-        // Otherwise (browser debugging)
-        return Response.ok(out, MediaType.APPLICATION_XML).build();
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("Could not construct DataLink VOTable")
+                .type(MediaType.TEXT_PLAIN)
+                .build();
     }
 
     @GET
@@ -221,5 +222,16 @@ public class DataLinkResource {
                 .type(MediaType.TEXT_PLAIN)
                 .entity(message)
                 .build();
+    }
+
+    /**
+     * Evaluation on accept header to help determine if we send raw XML or VOTable XML (for VO Tools)
+     * @param userAgent The user agent associated with the request
+     * @return true if user agent is a known browser type.
+     */
+    private boolean isBrowser(String userAgent){
+        UserAgent agent = userAgentAnalyzer.parse(userAgent);
+        String agentClass = agent.getValue("AgentClass");
+        return "Browser".equalsIgnoreCase(agentClass);
     }
 }
