@@ -39,7 +39,7 @@ public class DataLinkResourceTest {
     @Inject
     DataLinkResource dataLinkResource;
 
-    static final String nonResolvableArtifactUri = "uri:TS8004_C_001_20190801_avg_uvplt_a_1331+3030.png";
+    static final String nonResolvableArtifactUri = "file:///imaginaryFolder/imaginaryFile.png";
 
     @BeforeEach
     @Transactional
@@ -59,7 +59,9 @@ public class DataLinkResourceTest {
         try(Response res1 = observationResource.addObservation(obs1)) {
             assertEquals(Response.Status.CREATED.getStatusCode(), res1.getStatus());
 
-            Response res = dataLinkResource.getDataLinkObject(OBSERVATION1);
+            Response res = dataLinkResource.getDataLinkObject(OBSERVATION1,
+                    "stilts-test-client/1.0",
+                    "application/x-votable+xml;content=datalink");
             assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
 
             StreamingOutput so = (StreamingOutput) res.getEntity();

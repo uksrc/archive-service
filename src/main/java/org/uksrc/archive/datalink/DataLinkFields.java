@@ -21,8 +21,8 @@ public class DataLinkFields {
         defs.put("contentLength", new FieldDetails("content_length", "phys.size;meta.file", "long", null, "byte"));
 
         // Optional fields
-        defs.put("contentQualifier", new FieldDetails("content_qualifier", "meta.code.class", "char", "*", null));
-        defs.put("localSemantics", new FieldDetails("local_semantics", "meta.code", "char", "*", null));
+        defs.put("contentQualifier", new FieldDetails("content_qualifier", null, "char", "*", null));
+        defs.put("localSemantics", new FieldDetails("local_semantics", "meta.id.assoc", "char", "*", null));
         defs.put("linkAuth", new FieldDetails("link_auth", "meta.code", "char", "*", null));
         defs.put("linkAuthorized", new FieldDetails("link_authorized", "meta.code", "boolean", null, null));
 

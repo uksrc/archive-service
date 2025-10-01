@@ -18,7 +18,9 @@ import java.util.List;
  */
 public class VOTableXMLWriter {
 
-    final Logger logger;
+    private final Logger logger;
+
+    private static final String VERSION_TAG = "ivo://ivoa.net/std/DataLink#links-1.1";
 
     /**
      * Types of errors supported by IVOA DataLink
@@ -58,6 +60,12 @@ public class VOTableXMLWriter {
         Element resource = doc.createElement("RESOURCE");
         resource.setAttribute("type", "results");
         votable.appendChild(resource);
+
+        //<RESOURCE><INFO> element (1.1 compliance)
+        Element info = doc.createElement("INFO");
+        info.setAttribute("name", "standardID");
+        info.setAttribute("value", VERSION_TAG);
+        resource.appendChild(info);
 
         return doc;
     }
@@ -120,7 +128,8 @@ public class VOTableXMLWriter {
      * @param message The human-readable error message
      */
     public void addError(Document doc, Element parent, String observationId, ErrorType type, String message){
-        ArtifactTableRow row = new ArtifactTableRow(observationId, null, null, null, type.toString() + ": " + message, null);
+        //Errors assumed to be referring to this dataset (adjust semantics value if required)
+        ArtifactTableRow row = new ArtifactTableRow(observationId, "#this", null, null, type.toString() + ": " + message, null);
         Element tr = doc.createElement("TR");
         try {
             addRow(doc, tr, row);
@@ -141,7 +150,12 @@ public class VOTableXMLWriter {
         newField.setAttribute("name", fieldDetails.name());
         newField.setAttribute("datatype", fieldDetails.dataType());
         newField.setAttribute("arraysize", fieldDetails.arraySize());
-        newField.setAttribute("ucd",  fieldDetails.ucd());
+        if (fieldDetails.ucd() != null) {
+            newField.setAttribute("ucd", fieldDetails.ucd());
+        }
+        if (fieldDetails.unit() != null) {
+            newField.setAttribute("unit", fieldDetails.unit());
+        }
         tableEl.appendChild(newField);
     }
 
@@ -178,7 +192,9 @@ public class VOTableXMLWriter {
         Artifact artifact = artifactDetails.artifact();
         String accessUrl = hostPath + "/" + artifact.getId();
 
-        ArtifactTableRow row = new ArtifactTableRow(artifact.getId(), artifact.getProductType(), accessUrl, null, null, artifactDetails.planeId());
+        //productType SHOULD always be one of https://www.ivoa.net/rdf/datalink/core/2022-01-27/datalink.html
+        String semantics = artifact.getProductType() != null ? "#" +  artifact.getProductType() : null;
+        ArtifactTableRow row = new ArtifactTableRow(artifact.getId(), semantics, accessUrl, null, null, artifactDetails.planeId());
         row.setContentType(artifact.getContentType());
         row.setContentLength(Long.valueOf(artifact.getContentLength()));
         if (artifact.getDescriptionID() != null) {

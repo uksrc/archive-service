@@ -6,6 +6,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -30,6 +31,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+
 @Path("/datalink")
 public class DataLinkResource {
 
@@ -39,7 +41,9 @@ public class DataLinkResource {
     @PersistenceContext
     protected EntityManager em;
 
-    final Logger logger = Logger.getLogger(DataLinkResource.class);
+    private final Logger logger = Logger.getLogger(DataLinkResource.class);
+
+    private static final String CANONICAL_CT = "application/x-votable+xml;content=datalink";
 
     @GET
     @Path("/links")
@@ -66,16 +70,27 @@ public class DataLinkResource {
             responseCode = "500",
             description = "Internal error whilst retrieving Observation (or parameter error (if supplied))."
     )
-    @Produces(MediaType.APPLICATION_XML)
-    public Response getDataLinkObject(@QueryParam("ID") String id) {
+    public Response getDataLinkObject(@QueryParam("ID") String id,
+                                      @HeaderParam("User-Agent") String userAgent,
+                                      @HeaderParam("Accept") String accept) {
         StreamingOutput out = voTableGenerator.createDocument(id);
-        if (out != null) {
-            return Response.ok(out).build();
+        if (out == null) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Could not construct DataLink VOTable")
+                    .type(MediaType.TEXT_PLAIN)
+                    .build();
         }
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity("Error, could not construct DataLink VOTable")
-                .type(MediaType.TEXT_PLAIN)
-                .build();
+
+        // If the request looks like it's from a VO client (stilts, TOPCAT, etc.)
+        if ((accept != null && accept.contains("application/x-votable+xml"))
+                || (userAgent != null && userAgent.toLowerCase().contains("stilts"))) {
+            return Response.ok(out)
+                    .header(HttpHeaders.CONTENT_TYPE, "application/x-votable+xml;content=datalink")
+                    .build();
+        }
+
+        // Otherwise (browser debugging)
+        return Response.ok(out, MediaType.APPLICATION_XML).build();
     }
 
     @GET
