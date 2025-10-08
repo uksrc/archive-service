@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.Unmarshaller;
@@ -28,17 +29,10 @@ public class TapSchemaPopulator {
 
     @Inject
     EntityManager entityManager;
-    @Inject
-    TapSchemaRepository tapSchemaRepository;
 
     private static final Logger LOG = Logger.getLogger(TapSchemaPopulator.class);
 
-    static final String CHECK_TABLE_EXISTS_SQL = "SELECT 1 FROM \"TAP_SCHEMA\".\"tables\" WHERE table_name = ?";
     static final String CHECK_TAP_DEPLOYED_SQL = "SELECT schema_name FROM \"TAP_SCHEMA\".schemas;";
-    static final String CHECK_SCHEMA_ADDED_SQL = "SELECT schema_name FROM \"TAP_SCHEMA\".schemas WHERE schema_name = ?";
-    static final String GET_TABLES_FOR_SCHEMA =  "SELECT table_name FROM information_schema.tables WHERE table_schema = ?";
-    static final String GET_COLUMNS_FOR_TABLE = "SELECT column_name, data_type, udt_name, character_maximum_length FROM information_schema.columns WHERE table_name = ?";
-    static final String SCHEMA_NAME = "TAP_SCHEMA";
 
     @SuppressWarnings("unused")
     @PostConstruct
@@ -62,7 +56,7 @@ public class TapSchemaPopulator {
             addCAOMSchema();
 
         }catch (Exception e) {
-            LOG.error("Populating TAP Schema", e);
+            LOG.error("Attempting to populate TAP Schema", e);
         }
     }
 
@@ -107,9 +101,19 @@ public class TapSchemaPopulator {
                 List<Schema> schemas = model_in.getContent(Schema.class);
                 if (!schemas.isEmpty()) {
                     Schema schema = schemas.get(0);
-                    tapSchemaRepository.insertSchema(schema);
+                    insertSchema(schema);
               }
             }
         }
+    }
+
+    /**
+     * Adds the required schema to the database.
+     * Expected to of the TapschemaModel type so that it can be added to the TAP_SCHEMA table itself.
+     * @see TapschemaModel
+     */
+    @Transactional
+    public void insertSchema(Schema schema) {
+        entityManager.persist(schema);
     }
 }
