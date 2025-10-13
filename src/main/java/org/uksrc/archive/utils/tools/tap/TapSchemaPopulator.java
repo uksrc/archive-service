@@ -102,7 +102,7 @@ public class TapSchemaPopulator {
                 if (!schemas.isEmpty()) {
                     Schema schema = schemas.get(0);
                     insertSchema(schema);
-              }
+                }
             }
         }
     }
