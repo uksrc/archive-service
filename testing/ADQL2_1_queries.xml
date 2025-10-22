@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<queries>
+  <title>ADQL2.1 functionality</title>
+  <contact>
+    <name>Stephen Lloyd</name>
+    <url>mailto:stephen.lloyd@manchester.ac.uk</url>
+  </contact>
+  <publisher>
+    <name>SKA Regional Centre - UK</name>
+    <url>https://www.uksrc.org/</url>
+  </publisher>
+  <description>ADQL queries to test ADQL 2.1 validation with CAOM2.5</description>
+  <query uuid="51bd1d31-cf62-4187-bd91-65edbf9a9cb0">
+    <description>Distance with individual values</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM caom2.point as po WHERE DISTANCE(POINT('ICRS', po.cval1, po.cval2), POINT('ICRS', 150.0, 2.5)) &lt; 90.0;
+      <!-- These SHOULD also work with a 2.1 compliant service -->
+      <!-- 
+      SELECT * FROM caom2.point as po WHERE DISTANCE(POINT(po.cval1, po.cval2), POINT(150.0, 2.5)) &lt; 90.0;
+      SELECT * FROM caom2.point as po WHERE DISTANCE(po.cval1, po.cval2, 150.0, 2.5) &lt; 90.0; 
+      -->
+    </adql>
+  </query>
+</queries>
+
+
+SELECT * from caom2.position as pos
+JOIN caom2.point AS p ON pos.ID = p.ID;
+
+//have to flatten
+SELECT pos.ID, pt.cval1, pt.cval2, circ.radius
+FROM caom2.position AS pos
+JOIN caom2.point AS pt ON pos.ID = pt.ID
+JOIN caom2.circle AS circ ON pos.ID = circ.ID;
+
+SELECT *
+FROM
+    caom2.point as po
+WHERE
+    DISTANCE(POINT('ICRS', po.cval1, po.cval2), POINT('ICRS', 150.0, 2.5)) < 0.05;
