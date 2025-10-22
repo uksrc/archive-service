@@ -45,7 +45,7 @@ public final class Tools {
     /**
      * Converts a List of strings to a TSV
      * @param list The list of elements to convert to a TSV string.
-     * @return list of items "e-merlin  test    ALMA"
+     * @return list of items "e-merlin{TAB char}test{TAB char}ALMA"
      */
     public static String convertListToTsv(List<String> list) {
         StringJoiner joiner = new StringJoiner("\t");

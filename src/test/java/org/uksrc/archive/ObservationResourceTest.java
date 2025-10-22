@@ -8,9 +8,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import jakarta.xml.bind.JAXBElement;
-import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.ObservationIntentType;
-import org.ivoa.dm.caom2.SimpleObservation;
+import org.ivoa.dm.caom2.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,8 +19,7 @@ import org.uksrc.archive.utils.ObservationListWrapper;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.uksrc.archive.utils.Utilities.*;
 
 /**
@@ -39,10 +36,14 @@ public class ObservationResourceTest {
     @Inject
     ObservationResource observationResource;
 
+    static final String nonResolvableArtifactUri = "uri:TS8004_C_001_20190801_avg_uvplt_a_1331+3030.png";
+
     @BeforeEach
     @Transactional
     public void clearDatabase() {
-        // Clear the table
+        // Clear the table(s)
+        em.createQuery("DELETE FROM Artifact").executeUpdate();
+        em.createQuery("DELETE FROM Plane").executeUpdate();
         em.createQuery("DELETE FROM Observation").executeUpdate();
     }
 
@@ -271,8 +272,43 @@ public class ObservationResourceTest {
         Observation observation = createSimpleObservation(OBSERVATION1, COLLECTION1);
 
         // Expected response
-        assertThrows(AuthenticationFailedException.class, () -> {
-            observationResource.addObservation(observation);
-        });
+        assertThrows(AuthenticationFailedException.class, () -> observationResource.addObservation(observation));
+    }
+
+    @Test
+    @DisplayName("Add an observation with a single artifact and check the response is the same.")
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    public void testGettingArtifactObservation() {
+        //One plane with one artifact
+        Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1, nonResolvableArtifactUri);
+
+        try(Response res1 = observationResource.addObservation(obs1)) {
+            assertEquals (Response.Status.CREATED.getStatusCode(), res1.getStatus());
+
+            Response obsRes = observationResource.getAllObservations(null, null, null);
+            assertEquals (Response.Status.OK.getStatusCode(), obsRes.getStatus());
+
+            //Check one observation is returned
+            ObservationListWrapper wrapper = (ObservationListWrapper) obsRes.getEntity();
+            List<Observation> observations = wrapper.getObservations();
+            assertEquals(1, observations.size());
+
+            //Check it contains one plane
+            Observation obsOut = observations.get(0);
+            List<Plane> planes = obsOut.getPlanes();
+            assertEquals(1, planes.size());
+
+            //Check the plane contains one artifact
+            List<Artifact> artifacts = planes.get(0).getArtifacts();
+            assertEquals(1, artifacts.size());
+
+            //Check the artifact contains the same properties as createArtifactObservation(~)
+            Artifact art = artifacts.get(0);
+            assertNotNull(art);
+
+            assertEquals("2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1", art.getId());
+            assertEquals("uri:TS8004_C_001_20190801_avg_uvplt_a_1331+3030.png", art.getUri());
+            assertEquals("image/png", art.getContentType());
+        }
     }
 }

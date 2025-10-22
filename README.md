@@ -15,7 +15,7 @@ You can run your application in dev mode that enables live coding using:
 ./gradlew quarkusDev -x test
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+> **_NOTE:_** Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
 
 ## Packaging and running the application
 
@@ -32,4 +32,4 @@ The application is now runnable using `java -jar build/quarkus-app/quarkus-run.j
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+If you want to learn more about Quarkus, please visit its website: https://quarkus.io/.

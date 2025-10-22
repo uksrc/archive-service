@@ -58,7 +58,7 @@ public class TapSchemaRepository {
     // ---------------------------------- Methods for adding the TAP_SCHEMA model --------------------------------
     /**
      * Adds the required TAP_SCHEMA to the database.
-     * Hard-coded the sql to avoid any sql injection, potential to make it more generic by passing in the schema name
+     * Hard-coded the SQL to avoid any SQL injection, potential to make it more generic by passing in the schema name
      * but would require some defence.
      */
     @Transactional
@@ -91,7 +91,7 @@ public class TapSchemaRepository {
      * Adds a table's details to the TAP_SCHEMA in the database.
      * @param schemaName The schema that this table belongs to.
      * @param tableName The name of the table to be added to the TAP_SCHEMA
-     * @param tableType One of either "table" or "view"
+     * @param tableType One of either value "table" or "view"
      * @param description Human-readable description of the table
      */
     @Transactional
@@ -110,7 +110,7 @@ public class TapSchemaRepository {
      * @param tableName The name of the table that the column belongs to
      * @param columnName The name of the column as it appears in the table
      * @param dataType The type of data stored in the column, such as SMALLINT or VARCHAR
-     * @param udt The user-defined type, for example the actual data type for when a dataType is ARRAY
+     * @param udt The user-defined type, for example, the actual data type for when a dataType is ARRAY
      * @param maxLength maximum length of the data
      * @param description Human-readable description of the table
      */
@@ -134,7 +134,7 @@ public class TapSchemaRepository {
                 .setParameter(2, reservedCol ? "\"" + columnName + "\"" : columnName)
                 .setParameter(3, description)
                 .setParameter(4, dt.toUpperCase())
-                .setParameter(5, size)              //"-1" for array or maxlength for other types
+                .setParameter(5, size)              //"-1" for an array or maxlength for other types
                 .executeUpdate();
     }
 

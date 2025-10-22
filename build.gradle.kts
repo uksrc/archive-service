@@ -40,7 +40,7 @@ dependencies {
 
     //Vollt TAP
     implementation("fr.unistra.cds:ADQLlib:2.0-SNAPSHOT")
-    implementation("fr.unistra.cds:TAPlib:2.4.3-SNAPSHOT")
+    implementation("fr.unistra.cds:TAPlib:2.4.4-SNAPSHOT")
     implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
 
     implementation("org.javastro.ivoa.dm:tapschema:0.9.5")
@@ -58,6 +58,14 @@ dependencies {
 
     //Identity Management
     implementation("io.quarkus:quarkus-oidc")
+
+    //Datalink
+    implementation("org.apache.tika:tika-core:3.2.2")
+
+    //UserAgent evaluation
+    implementation("nl.basjes.parse.useragent:yauaa:7.31.0")
+    implementation("org.apache.logging.log4j:log4j-api:2.25.2")
+    implementation("org.apache.logging.log4j:log4j-core:2.23.1")
 
     testImplementation("io.quarkus:quarkus-test-security")
 

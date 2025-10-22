@@ -4,24 +4,24 @@ Any information regarding the current TAP service in use.
 ### Running locally on minikube
 1. Start minikube
 2. Make sure the images created are added to minikube's docker repository and not to the host machine:
-``` 
-eval $(minikube docker-env)
-Or on windows 
-& minikube -p minikube docker-env | Invoke-Expression``
-```
-3. check the tap.properties template for suitable values. See [*TAP Properties*](#tap_properties)
+    ``` 
+    eval $(minikube docker-env)
+    Or on windows 
+    & minikube -p minikube docker-env | Invoke-Expression``
+    ```
+3. check the tap.properties template for suitable values. See [*TAP Properties*](#tap-properties)
 4. clean and build the archive-service
-```
-gradle clean
-gradle build -x test
-```
+    ```
+    gradle clean
+    gradle build -x test
+    ```
 5. Expose the archive service on the minikube cluster and the displayed localhost:<port> should resolve the service (just add /tap)
-```
-minikube service archive-service --url
-```
+    ```
+    minikube service archive-service --url
+    ```
 
-### <a id="tap_properties"></a>TAP Properties
-The Vollt service requires a file called tap.properties to be available at runtime, this supplies properties such as the URL of the database.
+### TAP Properties
+The Vollt service requires a file called tap.properties to be available at runtime; this supplies properties such as the URL of the database.
 
 There is a template located at ``/src/main/resource/templates/tap.properties.template`` which contains the required properties including some variabled ones. The variabled properties will be injected at build-time with values from the ``application.properties`` file. Once updated the generated ``tap.properties`` file will be deployed to ``/src/main/resources`` where it can be accessed by the Vollt service at run-time. 
 
@@ -29,7 +29,7 @@ Depedendent on the operating system that is being deployed on (mainly testing), 
 ``file_root_path = /some/linux/path`` This is where user data will be stored (such as generated VOTable output files). 
 
 ### Vollt Dependencies
-The three libraries required to the TAP service are custom versions of Vollt and can be found here - https://github.com/slloyd-src/vollt. The individual JARs (adql, tap & uws) are built are embedded within the archive-service application under the ``lib`` folder.
+The three libraries required to the TAP service are custom versions of Vollt and can be found here—https://github.com/slloyd-src/vollt. The individual JARs (adql, tap & uws) are built are embedded within the archive-service application under the ``lib`` folder.
 
 ### TAP_SCHEMA Population
 ``utils/tools/tap/TapSchemaPopulator.java`` Reads the database upon startup and adds any entries under ``public`` to the ``TAP_SCHEMA``. These entries will now be available to the TAP interface at run-time.
@@ -48,7 +48,7 @@ Any ARRAYs are added as ``size = -1`` NOT using ```arraysize``` until Vollt is u
 E-UPL-TMCX-1 Upload result column xtype mismatch timestamp != null
 E-UPL-TMCX-2 Upload result column xtype mismatch timestamp != null
 
-Vollt is TAP 1.0 (1.1 in development according to publisher) so column xtype shouldn't be evaluated here (1.0 uses column datatype instead).
+Vollt is TAP 1.0 (1.1 in development according to publisher), so column xtype shouldn't be evaluated here (1.0 uses column datatype instead).
 
 #### 2 Section LOC: Test implementation of ObsLocTAP Data Model
 F-LOC-NOTP-1 No table with name ivoa.obsplan

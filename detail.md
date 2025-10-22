@@ -1,9 +1,10 @@
 # archive-service
 
 1. [Example resources](#examples)
-2. [Submission and retrieval endpoints (REST APIs)](#endpoints)
-3. [Tap service](#tapservice)
+2. [Submission and retrieval endpoints (REST APIs)](#rest-api-details)
+3. [Tap service](#tap-service)
 4. [Authentication](#authentication)
+5. [DataLink](#datalink)
 
 
 ------------------------------------------------------------------------------------------
@@ -41,14 +42,13 @@ Namespace details must conform with the current vo-dml model used.
 </DerivedObservation>
 ```
 ------------------------------------------------------------------------------------------
-<a id="endpoints"></a>
 ### REST API details
 Details of the functionality of the archive-service endpoints.
 
 #### Retrieving observations
 
 <details>
- <summary><code>GET</code> <code><b>/observations</b></code> <code>(Returns either all of the observations OR a paginated subset if optional page and size parameters supplied)</code></summary>
+ <summary><code>GET</code> <code><b>/archive/observations</b></code> <code>(Returns either all of the observations OR a paginated subset if optional page and size parameters supplied)</code></summary>
 
 ##### Parameters
 
@@ -70,13 +70,13 @@ Details of the functionality of the archive-service endpoints.
 ##### Example cURL
 
 > ```
->  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/observations'
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/archive/observations'
 > ```
 
 </details>
 
 <details>
- <summary><code>GET</code> <code><b>/observations/{observationId}</b></code> <code>(Returns an Observation with the supplied ID, if found)</code></summary>
+ <summary><code>GET</code> <code><b>/archive/observations/{observationId}</b></code> <code>(Returns an Observation with the supplied ID, if found)</code></summary>
 
 ##### Parameters
 
@@ -96,7 +96,7 @@ Details of the functionality of the archive-service endpoints.
 ##### Example cURL
 
 > ```
->  curl -X 'GET' 'http://localhost:8080/observations/23456' -H 'accept: application/xml'
+>  curl -X 'GET' 'http://localhost:8080/archive/observations/23456' -H 'accept: application/xml'
 > ```
 
 </details>
@@ -108,7 +108,7 @@ Details of the functionality of the archive-service endpoints.
 #### Adding new Observations
 
 <details>
- <summary><code>POST</code> <code><b>/observations</b></code> <code>(Add a new observation)</code></summary>
+ <summary><code>POST</code> <code><b>/archive/observations</b></code> <code>(Add a new observation)</code></summary>
 
 ##### Responses
 
@@ -120,13 +120,13 @@ Details of the functionality of the archive-service endpoints.
 ##### Example XML cURL
 
 > ```
->  curl -X 'POST' -H 'Content-Type: application/xml' -H 'accept: application/xml' --data "@observation2.json" http://localhost:8080/observations
+>  curl -X 'POST' -H 'Content-Type: application/xml' -H 'accept: application/xml' --data "@observation2.json" http://localhost:8080/archive/observations
 > ```
 
 ##### Example JSON cURL
 with JSON response also
 > ```
->  curl -X 'POST' -H 'Content-Type: application/json' -H 'accept: application/json' --data "@observation2.json" http://localhost:8080/observations
+>  curl -X 'POST' -H 'Content-Type: application/json' -H 'accept: application/json' --data "@observation2.json" http://localhost:8080/archive/observations
 > ```
 </details>
 
@@ -135,7 +135,7 @@ with JSON response also
 #### Updating observations
 
 <details>
- <summary><code>UPDATE</code> <code><b>/observations/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
+ <summary><code>UPDATE</code> <code><b>/archive/observations/{observationId}</b></code> <code>(Updates an observation (Simple or Derived) with the same observationId)</code></summary>
 
 ##### Parameters
 
@@ -155,7 +155,7 @@ with JSON response also
 ##### Example cURL
 
 > ```
->  curl -X 'PUT' -H 'Content-Type: application/xml' -H 'Accept: application/xml' -T observation2.xml http://localhost:8080/observations/988
+>  curl -X 'PUT' -H 'Content-Type: application/xml' -H 'Accept: application/xml' -T observation2.xml http://localhost:8080/archive/observations/988
 > ```
 
 </details>
@@ -165,7 +165,7 @@ with JSON response also
 #### Deleting Observations
 
 <details>
- <summary><code>DELETE</code> <code><b>/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
+ <summary><code>DELETE</code> <code><b>/archive/observations/{observationId}</b></code> <code>(Delete an Observation with the supplied ID, if found)</code></summary>
 
 ##### Parameters
 
@@ -185,7 +185,7 @@ with JSON response also
 ##### Example cURL
 
 > ```
->  curl -X 'DELETE' 'http://localhost:8080/observations/delete/123' -H 'accept: */*'
+>  curl -X 'DELETE' 'http://localhost:8080/archive/observations/delete/123' -H 'accept: */*'
 > ```
 
 </details>  
@@ -195,7 +195,7 @@ with JSON response also
 #### Retrieving collections
 
 <details>
- <summary><code>GET</code> <code><b>/collections</b></code> <code>(Returns the names of all the collections as a TSV (Tab Separated List))</code></summary>
+ <summary><code>GET</code> <code><b>/archive/collections</b></code> <code>(Returns the names of all the collections as a TSV (Tab Separated List))</code></summary>
 
 ##### Responses
 
@@ -208,23 +208,53 @@ with JSON response also
 ##### Example cURL
 
 > ```
->  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/collections'
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/archive/collections'
 > ```
 
 </details>
 
 ------------------------------------------------------------------------------------------
-<a id="tapservice"></a>
-## Tap Service
 
-### TAP SCHEMA setup
+#### Retrieving dataLink
+
+<details>
+ <summary><code>GET</code> <code><b>/archive/datalink/links</b></code> <code>(Returns the DataLink object for the observation supplied)</code></summary>
+
+##### Parameters
+
+> | name |  type     | data type | description                                                         |
+> |------|-----------|-----------|---------------------------------------------------------------------|
+> | ID   |  required | String    | The unique identifier of a specific Observation (Simple or Derived) |
+> 
+
+##### Responses
+
+> | http code | content-type | response                                                                 |
+> |-----------|--------------|--------------------------------------------------------------------------|
+> | `200`     | `text/plain` | `Returned successfully`                                                  |
+> | `500`     | `text/plain` | `{"code":"500","message":"Error, could not construct DataLink VOTable"}` |
+>
+
+##### Example cURL
+
+> ```
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/archive/datalink/links?ID=2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1'
+> ```
+
+</details>
+
+------------------------------------------------------------------------------------------
+
+### Tap Service
+
+#### TAP SCHEMA setup
 
 The TAP schema is currently added to the database with the import.sql file which runs automatically on startup and adds the required tables to the database.
 This is followed by a bean (TapSchemaPopulator) that will read the database and add each type (Observation etc.) to the generated TAP schema entries.
 
 TODO: Generate a VO-DML/XSD model definition so that the TAP schema entries can be auto-added in the same way as the CAOM library.
 
-### TAP service usage
+#### TAP service usage
 
 Navigate to the <host>/tap endpoint (http://localhost:8080/tap for example), the host is the root of the archive-service.
 
@@ -239,7 +269,7 @@ This displays the default [Vollt](http://cdsportal.u-strasbg.fr/taptuto/gettings
 
 along with a textbox to run experimental queries.
 
-### Deployment Settings
+#### Deployment Settings
 Update ``resources/templates/tap.properties.template`` as required. Any properties can be 'imported' from application.properties
 if required using ${value}
 
@@ -247,7 +277,7 @@ One setting that may need changing is ``file_root_path`` it should resolve to a 
 
 ``file_root_path = /some/linux/path``
 
-### Testing
+#### Testing
 Using [Stilts TapLint utility](https://www.star.bris.ac.uk/mbt/stilts/sun256/taplint.html), any issues can be highlighted.
 ```
 java -jar .\stilts.jar taplint interface=tap1.0 tapurl=http://localhost:8080/tap 
@@ -264,7 +294,7 @@ Using a OIDC controller, APIs are restricted to a specific group.
 
 Update the application.properties as required (example below uses environment variables for the client ID and secret).
 The ID and secret are available from the client registered on your auth-server.
-```xml
+```shell
 quarkus.oidc.auth-server-url=https://your-oidc-service.url
 quarkus.oidc.client-id=${OIDC_CLIENT_ID}
 quarkus.oidc.credentials.secret=${OIDC_CLIENT_SECRET}
@@ -275,23 +305,23 @@ quarkus.oidc.credentials.secret=${OIDC_CLIENT_SECRET}
 Restrict the APIs with the desired group(s)
 
 Change the test group ``prototyping-groups/mini-src`` with the group your users need to be a member of.
-```java
+```shell
 @RolesAllowed("prototyping-groups/mini-src")
 ```
 
 #### Getting a token
-1. Retrieve an authentication code
-    ```shell
+1. **Retrieve an authentication code**  
+
+   ```shell
     curl "https://ska-iam.stfc.ac.uk/authorize?response_type=code&client_id=${OIDC_CLIENT_ID}&redirect_uri=http://localhost:8080/auth-callback&audience=authn-api&scope=openid+profile+offline_access&state=yQRL_ZdyAgTLv1H2sXI6w-THqDcqvlM3ulAlyfhB"
     ```
-
+   
    - The ``redirect_uri`` has to be a service that receives two strings (code & state)
    - The ``state`` value is a string that represents this task and can be used to validate in the ``redirect_uri`` method.
    - Will redirect to the OIDC login screen of your provider via a web browser (unlikely to work when running curl from the command line)
 
-
-2. Handle the response
-
+2. **Handle the response**
+    
     Create a method that follows this signature in the language that you are using.
     ```java
     // Running in http://localhost:8080/auth-callback for the above curl request
@@ -300,33 +330,24 @@ Change the test group ``prototyping-groups/mini-src`` with the group your users 
         // Handle auth code and state as required
     }
     ```
-  
- 
-3. Generate a bearer token
-
+   
+3. **Generate a bearer token**
+   
     ```shell
     curl -X POST https://ska-iam.stfc.ac.uk/token -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=authorization_code" -d "code=<YOUR_AUTH_CODE>" -d  "client_id=${OIDC_CLIENT_ID}" -d "client_secret=${OIDC_CLIENT_SECRET}" -d  "redirect_uri=http://localhost:8080/auth-callback"
     ```
-   
+      
     This should then return a JSON object that contains various values including the required ``access_token``. The access token can then be used as the bearer token when trying to access the Archive Service's APIs.
 
-
-4. Use the bearer token to make a request
-
+4. **Use the bearer token to make a request**
+   
     ```shell
     curl.exe "http://localhost:8080/archive/observations" -H "Authorization: Bearer <INSERT BEARER TOKEN>"
     ```
    
-#### Test Cases
-Location of CADC's test cases.
-
-https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data
-
-<a id="authentication"></a>
-## Authentication
-
+#### Login Page
 A demonstration login page is supplied that will step through the OIDC approval steps at <host>/archive which is the root of the application.
-This is disabled for production by default but can be enabled by disabling the *IfBuildProfile("dev")* settings in both LoginResource.java and AuthenticationResource.java 
+This is disabled for production by default but can be enabled by disabling the *IfBuildProfile("dev")* settings in both LoginResource.java and AuthenticationResource.java
 
 #### application.properties values
 
@@ -336,7 +357,7 @@ Build-time settings only.
 
 
 - *quarkus.oidc.auth-server-url*: the URI of the OIDC service
-- *authentication.callback*: *redirectURI* to recieve the bearer token(s)
+- *authentication.callback*: *redirectURI* to receive the bearer token(s)
 - *quarkus.oidc.client-id*: The client ID of the client registered at *quarkus.oidc.auth-server-url*
 - *quarkus.oidc.credentials.secret*: The client secret of the client registered at *quarkus.oidc.auth-server-url*
 
@@ -353,3 +374,65 @@ The following env vars are required to allow the IAM process to succeed.
 - *OIDC_CLIENT_SECRET*: OIDC client secret of your registered client. Required for DEV builds.
 
 - *OIDC_AUTH_CALLBACK*: URI of the service that handles authentication callbacks.
+
+### DataLink
+
+Retrieve a DataLink object for a specific Artifact.
+
+```shell
+<HOST>/archive/datalink/links?ID={Artifact.id}
+```
+
+Returns a VOTable that lists the resources available.
+```shell
+<VOTABLE xmlns:stc="http://www.ivoa.net/xml/STC/v1.30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ivoa.net/xml/VOTable/v1.3" version="1.3">
+  <RESOURCE type="results">
+    <TABLE>
+      <FIELD arraysize="*" datatype="char" name="ID" ucd="meta.id;meta.main"/>
+      <FIELD arraysize="*" datatype="char" name="access_url" ucd="meta.ref.url"/>
+      <FIELD arraysize="*" datatype="char" name="service_def" ucd="meta.ref"/>
+      <FIELD arraysize="*" datatype="char" name="error_message" ucd="meta.code.error"/>
+      <FIELD arraysize="*" datatype="char" name="description" ucd="meta.note"/>
+      <FIELD arraysize="*" datatype="char" name="semantics" ucd="meta.code"/>
+      <FIELD arraysize="*" datatype="char" name="content_type" ucd="meta.code.mime"/>
+      <FIELD arraysize="" datatype="long" name="content_length" ucd="phys.size;meta.file"/>
+      <FIELD arraysize="*" datatype="char" name="content_qualifier" ucd="meta.code.class"/>
+      <FIELD arraysize="*" datatype="char" name="local_semantics" ucd="meta.code"/>
+      <FIELD arraysize="*" datatype="char" name="link_auth" ucd="meta.code"/>
+      <FIELD arraysize="" datatype="boolean" name="link_authorized" ucd="meta.code"/>
+      <!-- Custom properties for this service -->
+      <FIELD arraysize="*" datatype="char" name="plane_id" ucd="meta.id;meta.id.assoc"/>
+      <DATA>
+        <TABLEDATA>
+          <TR>
+            <TD>55e4160d-033f-4fae-9c47-93ec1f3b8643</TD>
+            <TD>http://localhost:8080/archive/datalink/resource/55e4160d-033f-4fae-9c47-93ec1f3b8643</TD>
+            <TD/>
+            <TD/>
+            <TD/>
+            <TD>auxiliary</TD>
+            <TD>image/png</TD>
+            <TD>264960</TD>
+            <TD/>
+            <TD/>
+            <TD>true</TD>                                       <!-- ALL resources require authentication -->
+            <TD>false</TD>                                      <!-- Needs updating when the WebUI can send current users -->
+            <TD>05974947-4872-4169-8240-c31f235232fd</TD>
+          </TR>
+        </TABLEDATA>
+      </DATA>
+    </TABLE>
+  </RESOURCE>
+</VOTABLE>
+```
+
+This gives the access_url to resolve the resource associated with the supplied Artifact.id value as shown by value http://localhost:8080/archive/datalink/resource/55e4160d-033f-4fae-9c47-93ec1f3b8643 above.
+
+Note: The /archive/datalink/resource API determines the actual Artifact.uri via the supplied Artifact.id value. Currently expected to be a file/http url to a fixed location.
+
+The link_authorized property value needs updating once there's a mechanism in place to send the current user's status.
+
+## Test Cases
+Location of CADC's test cases.
+
+https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data

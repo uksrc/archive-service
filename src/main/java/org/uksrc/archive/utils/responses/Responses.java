@@ -14,7 +14,7 @@ import org.hibernate.PropertyValueException;
 public final class Responses {
     /**
      * Generate an error response (also details which property if missing)
-     * @param e Whatever exception has been thrown
+     * @param e The exception that has been thrown
      * @return A 400 response containing the exception error.
      */
     public static Response errorResponse (@NotNull Exception e){
