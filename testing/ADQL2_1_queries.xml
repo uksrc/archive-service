@@ -195,4 +195,37 @@
       SELECT COORDSYS(coordinates) FROM TargetPosition;
     </adql>
   </query>
+
+   <!-- Optional Features - Start -->
+  <query uuid="8adaccff-89a1-4e16-b0c1-f0f81710531f">
+    <description>UPPER and LOWER for values</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT UPPER(name) AS name_upper, LOWER(name) AS name_lower FROM Telescope;
+    </adql>
+  </query>
+  <query uuid="c223afc5-e8f7-4900-9f08-fea33d7e1f49">
+    <description>UPPER against a real value</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM algorithm WHERE UPPER(name) = 'CORRELATOR';
+    </adql>
+  </query>
+   <query uuid="c876e53b-4379-4cfb-a0ff-bbdae040f5b6">
+    <description>LOWER against a value that doesn't match</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM algorithm WHERE LOWER(name) = 'SUBARU'  <!-- Syntax valid, however the query evaluation expected to not match -->
+    </adql>
+  </query>
+   <query uuid="bf424a45-94f5-4255-ae40-993280becf93">
+    <description>ILIKE to perform a case-insentive match with wildcards/patterns</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM Provenance WHERE name ILIKE 'eMERL%';
+    </adql>
+  </query>
+  <query uuid="2118e1c5-51e3-4629-a276-507786ccef7b"> <!-- ADQL 2.1 documentation shows the example below using the '%'' mod operator which doesn't work -->
+    <description>WITH to create a temporary value to use as a subquery</description>
+    <adql valid="true" version="adql-2.1">
+      WITH "point" AS (SELECT * FROM artifact WHERE MOD(contentLength,10) = 0) SELECT cval1, cval2 FROM caom2."point" WHERE cval1 &gt; 10 AND cval2 &lt; 100
+    </adql>
+  </query>
+
 </queries>
