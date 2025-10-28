@@ -9,7 +9,7 @@ db_password = ${quarkus.datasource.password}
 file_manager = local
 #Use correct linux path upon release deployment
 file_root_path = /tmp
-sql_translator = postgres
+sql_translator = pgsphere
 metadata = db
 
 fix_on_fail = true

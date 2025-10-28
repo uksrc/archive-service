@@ -39,7 +39,7 @@ dependencies {
     implementation("io.quarkus:quarkus-kubernetes-config")
 
     //Vollt TAP
-    implementation("fr.unistra.cds:ADQLlib:2.0-SNAPSHOT")
+    implementation("fr.unistra.cds:ADQLlib:2.1-SNAPSHOT")
     implementation("fr.unistra.cds:TAPlib:2.4.3-SNAPSHOT")
     implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
 

@@ -9,32 +9,190 @@
     <name>SKA Regional Centre - UK</name>
     <url>https://www.uksrc.org/</url>
   </publisher>
-  <description>ADQL queries to test ADQL 2.1 validation with CAOM2.5</description>
+  <description>ADQL queries to test ADQL 2.1 validation with CAOM2.5
+  </description>
   <query uuid="51bd1d31-cf62-4187-bd91-65edbf9a9cb0">
     <description>Distance with individual values</description>
     <adql valid="true" version="adql-2.1">
-      SELECT * FROM caom2.point as po WHERE DISTANCE(POINT('ICRS', po.cval1, po.cval2), POINT('ICRS', 150.0, 2.5)) &lt; 90.0;
+      SELECT * FROM caom2."point" as po WHERE DISTANCE(po.cval1, po.cval2, 150.0, 2.5) &lt; 90.0; 
       <!-- These SHOULD also work with a 2.1 compliant service -->
       <!-- 
-      SELECT * FROM caom2.point as po WHERE DISTANCE(POINT(po.cval1, po.cval2), POINT(150.0, 2.5)) &lt; 90.0;
-      SELECT * FROM caom2.point as po WHERE DISTANCE(po.cval1, po.cval2, 150.0, 2.5) &lt; 90.0; 
+      SELECT * FROM caom2."point" as po WHERE DISTANCE(POINT(po.cval1, po.cval2), POINT(150.0, 2.5)) &lt; 90.0;
+      SELECT * FROM caom2."point" as po WHERE DISTANCE(POINT('ICRS', po.cval1, po.cval2), POINT('ICRS', 150.0, 2.5)) &lt; 90.0;
       -->
     </adql>
   </query>
+  <query uuid="c97c42db-c102-48b8-aae1-c908e0f90bd0">
+    <description>BOX with individual values and no geometric coord system defined</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM "point" as po WHERE 1 = CONTAINS(POINT(cval1, cval2), BOX(190.0, 56.0, 10.0, 10.0));
+      <!-- Again, 2.1 queries should not require the 'ICRS' coord system param (although still supported)-->
+      <!-- SELECT * FROM "point" as po WHERE 1 = CONTAINS(POINT('ICRS', cval1, cval2), BOX('ICRS', 190.0, 56.0, 10.0, 10.0));-->
+    </adql>
+  </query>
+   <query uuid="be18af86-d10f-4b49-bae2-32096028e03b">
+    <description>CIRCLE with individual values and no geometric coord system defined</description>
+    <adql valid="false" version="adql-2.1">
+      SELECT * FROM point as po WHERE CONTAINS(POINT(po.cval1, po.cval2), CIRCLE(195.0, 57.0, 5.0)) = 1;
+      <!-- SELECT * FROM point as po WHERE CONTAINS(POINT('ICRS', po.cval1, po.cval2), CIRCLE('ICRS', 195.0, 57.0, 5.0)) = 1; -->
+    </adql>
+  </query>
+  <query uuid="e257048e-450b-11e6-a621-b59840aabaf1">
+    <description>POLYGON with individual values and no geometric coord system defined</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM "point" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(180.0, 50.0, 200.0, 50.0, 200.0, 70.0, 180.0, 70.0));
+      <!--SELECT * FROM "point" as po WHERE 1 = CONTAINS(POINT('ICRS', po.cval1, po.cval2), POLYGON('ICRS', 180.0, 50.0, 200.0, 50.0, 200.0, 70.0, 180.0, 70.0))-->
+    </adql>
+  </query>
+  <query uuid="1f5d27dc-450c-11e6-8564-332de33a5c03">
+    <description>POLYGON with POINT and no geometric coord system defined</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM "point" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(POINT(180.0, 50.0), POINT(200.0, 50.0), POINT(200.0, 70.0), POINT(180.0, 70.0)));
+    </adql>
+  </query>
+   <query uuid="6a721a9c-e304-4c04-ab02-b6dc0325b407">
+    <description>REGION with POINT</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM "point" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), REGION('CIRCLE ICRS 180.0 0.0 5.0'));
+    </adql>
+  </query>
+  <query uuid="1863b9a0-42d0-4c13-9575-4b4b9c12a23d">
+    <description>REGION (with an incorrect geometric coord system defined) with POINT</description>
+    <adql valid="false" version="adql-2.1">
+      SELECT * FROM "point" WHERE CONTAINS(POINT(180.0, 0.0), REGION('CIRCLE MADE_UP 180.0 0.0 5.0')) = 1;
+    </adql>
+  </query>
+  <query uuid="fc068d27-b3ce-4b05-a59a-dcccb9b88fc5">
+    <description>Cone search using Distance</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM "point" WHERE DISTANCE(ra, dec, 180.0, 0.0) &lt; 2.5
+    </adql>
+  </query>
+  <query uuid="1a190300-a8b6-43d9-98b0-f8b35fe824ab">
+    <description>Attempt at a crossmatch using Distance</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT a.id AS src_id, b.id AS cat_id, 
+      DISTANCE(POINT(a.cval1, a.cval2), POINT(b.cval1, b.cval2)) AS dist_deg 
+      FROM caom2."point" AS a JOIN caom2."point" AS b ON a.id != b.id AND DISTANCE(POINT(a.cval1, a.cval2), POINT(b.cval1, b.cval2)) &lt; 0.001;
+    </adql>
+  </query>
+  <!-- User defined functions not supported by the validator unfortunately -->
+  <!--<query uuid="25d08c6e-9658-46c7-86ee-ab13416e61a7">
+    <description>Geometric results from a user defined function</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT obs_id, ra, dec FROM observations WHERE CONTAINS(POINT('ICRS', ra, dec), get_observation_region(obs_id)) = 1
+    </adql>
+  </query>
+  -->
+  <query uuid="942a6165-5c9b-4d57-b7ef-2e79094a9171">
+    <description>Convert the unit returned</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM "point" WHERE IN_UNIT(DISTANCE(POINT(ra, dec), POINT(180.0, 0.0)), 'arcsec') &lt; 10.0
+    </adql>
+  </query>
+  <query uuid="9a76bfd2-d907-41c5-a9e8-965ea97301b0">
+    <description>Return first non-null value</description>
+    <adql valid="true" version="adql-2.1">
+      <!-- test with a column that has a nullable type -->
+      SELECT COALESCE(collection, 'Unknown') FROM Observation;
+    </adql>
+  </query>
+  <query uuid="8fdb3534-beea-4f84-850a-95c821fe9cda">
+    <description>Cast to a double value from ?</description>
+    <adql valid="true" version="adql-2.1">
+      <!-- sequenceNumber is an integer -->
+      SELECT CAST(sequenceNumber AS DOUBLE) AS doubleValue FROM Observation;
+    </adql>
+  </query>
+   <query uuid="77d668e5-56e9-4178-b009-c6997efe3295">
+    <description>Cast to varchar value from a numeric value</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT CAST(cval1 AS VARCHAR) AS value_text FROM "point";
+    </adql>
+  </query>
+  <query uuid="ec39e609-53ff-4a5f-9dd2-f899b26ccfdc">
+    <description>UNION of both tables, removing duplicates</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT a.cval1 AS ra, a.cval2 AS dec FROM caom2."point" AS a
+      UNION
+      SELECT b.cval1 AS ra, b.cval2 AS dec FROM caom2."point" AS b;
+    </adql>
+  </query>
+  <query uuid="cc99aadc-fa67-4ba5-ab88-0627de0580fe">
+    <description>INTERSECTion of both tables, retuning rows that only appear in both results</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT ID FROM "shape" INTERSECT SELECT ID FROM "point";
+    </adql>
+  </query>
+  <query uuid="0f7f5dc2-2f9e-4825-a323-5a9dac2134d5">
+    <description>EXCEPTion of first table, retuning rows that only appear in first result</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT ID FROM shape EXCEPT SELECT id FROM "point";
+    </adql>
+  </query>
+  <query uuid="93049119-9265-421d-b3c3-c721c412172d">
+    <description>Chaining of SET operators</description>
+    <adql valid="true" version="adql-2.1">
+      (SELECT id, cval1, cval2 FROM "point" UNION SELECT id, dimension_naxis1, dimension_naxis2 FROM "position") EXCEPT SELECT id, dimension_naxis1, dimension_naxis2 FROM "position";
+    </adql>
+  </query>
+  <query uuid="c503e3bc-1797-4450-adf7-c7418cc2c579">
+    <description>ORDER_BY a specific qualified column</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT contentType, contentLength FROM artifact ORDER BY contentLength;
+    </adql>
+  </query>
+   <query uuid="167c435e-09a4-49f6-9f17-f76cab035449">
+    <description>ORDER_BY with an expression</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT contentType, contentLength, (contentLength / 10) AS sort_key FROM Artifact ORDER BY sort_key DESC;
+    </adql>
+  </query>
+  <query uuid="0befb4b6-67c5-437b-897e-96b6d56e628d">
+    <description>Commments inside a query</description>
+    <adql valid="true" version="adql-2.1">
+      -- A header comment
+      SELECT * -- a sub-comment
+      FROM Plane;
+    </adql>
+  </query>
+   <query uuid="8499cbcb-f46c-4dd8-938a-81b443fb249d">
+    <description>Simple use of a string literal including an enclosed quote</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM algorithm WHERE name = 'correlator';
+    </adql>
+  </query>
+  <query uuid="36c3939f-2acf-45f1-b490-72e0a2d745fc">
+    <description>Geometric functions MUST use string literals</description>
+    <adql valid="false" version="adql-2.1">
+      SELECT 1 FROM "point" as po WHERE CONTAINS(POINT(po.cval1, po.cval2), CIRCLE(column_name, 180.0, 0.0, 5.0)) = 1
+    </adql>
+  </query>
+  <query uuid="fdb38885-127f-479e-8f27-100c4b2f6e7d">
+    <description>Geometric functions MUST use string literals</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT 1 FROM "point" AS po WHERE CONTAINS(POINT('ICRS', po.cval1, po.cval2), CIRCLE('ICRS', 190.0, 52.0, 5.0)) = 1;
+    </adql>
+  </query>
+   <query uuid="5c312c93-f6bf-4179-ba65-242388930357">
+    <description>Accept NULL as a valid expression value</description>
+    <adql valid="true" version="adql-2.1">
+      -- Test for NULL
+      SELECT * FROM "point" WHERE POLYGON_ID IS NULL;
+    </adql>
+  </query>
+  <query uuid="81a5a8ba-4dbc-40ea-8e7c-b114eb3d9325">
+    <description>Accept NULL as a valid expression value in COALESCE</description>
+    <adql valid="true" version="adql-2.1">
+      -- Use COALESCE with NULL
+      SELECT COALESCE(calibration_namespace, NULL, 'No namespace defined') AS namespace FROM "position";
+    </adql>
+  </query>
+  <query uuid="683fd59d-8a94-4ba4-91e2-c079e9bf32c1">
+    <description>COORDSYS usage as a deprecated method.</description>
+    <adql valid="true" version="adql-2.1">
+      -- Deprecated under ADQL 2.1
+      SELECT COORDSYS(coordinates) FROM TargetPosition;
+    </adql>
+  </query>
 </queries>
-
-
-SELECT * from caom2.position as pos
-JOIN caom2.point AS p ON pos.ID = p.ID;
-
-//have to flatten
-SELECT pos.ID, pt.cval1, pt.cval2, circ.radius
-FROM caom2.position AS pos
-JOIN caom2.point AS pt ON pos.ID = pt.ID
-JOIN caom2.circle AS circ ON pos.ID = circ.ID;
-
-SELECT *
-FROM
-    caom2.point as po
-WHERE
-    DISTANCE(POINT('ICRS', po.cval1, po.cval2), POINT('ICRS', 150.0, 2.5)) < 0.05;
