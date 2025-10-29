@@ -1,16 +1,13 @@
 package org.uksrc.archive.utils.tools.tap;
 
 import io.quarkus.runtime.Startup;
-import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.configuration.ConfigUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
-import org.uksrc.archive.AuthenticationResource;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -60,7 +57,7 @@ public class TapPropertiesRenderer {
             Files.createDirectories(path.getParent());
             Files.writeString(path, rendered);
 
-            LOG.info("TAP properties saved to " + path.toString());
+            LOG.info("TAP properties saved to " + path);
         }
     }
 

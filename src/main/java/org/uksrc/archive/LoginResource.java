@@ -1,6 +1,5 @@
 package org.uksrc.archive;
 
-import io.quarkus.arc.profile.IfBuildProfile;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -11,7 +10,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import java.util.Random;
 
 /**
- * Example of the login process, will call the AuthenticationResource method once logged in (which will request
+ * Example of the login process, it will call the AuthenticationResource method once logged in (which will request
  * a bearer token).
  */
 @Path("")
