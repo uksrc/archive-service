@@ -38,21 +38,12 @@ dependencies {
     implementation("commons-beanutils:commons-beanutils:1.9.4")
     implementation("io.quarkus:quarkus-kubernetes-config")
 
-    //Vollt TAP
+    //TAP
     implementation("fr.unistra.cds:ADQLlib:2.0-SNAPSHOT")
-    implementation("fr.unistra.cds:TAPlib:2.4.4-SNAPSHOT")
-    implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
-
     implementation("org.javastro.ivoa.dm:tapschema:0.9.5")
-
 
     //Model(s)
     implementation("org.opencadc:CAOM:2.5.6-SNAPSHOT:quarkus")
-
-    //Required by Vollt
-    // TAP lib upload func.
-    implementation("org.apache.commons:commons-fileupload2-javax:2.0.0-M2")
-    implementation("org.apache.commons:commons-fileupload2-jakarta-servlet6:2.0.0-M2")
 
     implementation ("uk.ac.starlink:stil:4.3.1")
 
@@ -68,7 +59,6 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.23.1")
 
     testImplementation("io.quarkus:quarkus-test-security")
-
 }
 
 tasks.withType<Test> {
@@ -77,10 +67,4 @@ tasks.withType<Test> {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
-}
-
-apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
-
-tasks.named("processResources") {
-    dependsOn("generateVolltWebXml")
 }

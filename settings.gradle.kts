@@ -20,7 +20,7 @@ dependencyResolutionManagement {
             url= uri("https://central.sonatype.com/repository/maven-snapshots/")
         }
 
-        //TODO - Vollt TAP dependencies from our repo (updated to Jakarta)
+        // Our repository
         maven {
             url= uri("https://repo.dev.uksrc.org/repository/maven-snapshots/")
         }
