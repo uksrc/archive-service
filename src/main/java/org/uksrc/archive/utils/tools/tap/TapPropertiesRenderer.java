@@ -40,12 +40,18 @@ public class TapPropertiesRenderer {
     @PostConstruct
     public void renderTemplate() throws IOException {
         LOG.info("TAP properties rendering started...");
+        System.out.println("TAP properties rendering started..." + outputPath);
 
         String rootPath = "";
         List<String> activeProfiles = ConfigUtils.getProfiles();
         String primaryProfile = activeProfiles.isEmpty() ? null : activeProfiles.get(0);
         if (primaryProfile != null && !primaryProfile.equals("prod")) {
-            rootPath = System.getProperty("java.io.tmpdir");
+            Path configDir = Paths.get(System.getProperty("user.home"), ".config", outputPath);
+            Files.createDirectories(configDir);
+            rootPath = configDir.toString();
+        }
+        else {
+            rootPath = outputPath;
         }
 
         var config = ConfigProvider.getConfig();
@@ -56,11 +62,11 @@ public class TapPropertiesRenderer {
             String content = new String(in.readAllBytes());
             String rendered = replacePlaceholdersWithConfig(content, config);
 
-            Path path = Paths.get(rootPath, outputPath, "tap.properties");
+            Path path = Paths.get(rootPath, "tap.properties");
             Files.createDirectories(path.getParent());
             Files.writeString(path, rendered);
 
-            LOG.info("TAP properties saved to " + path.toString());
+            LOG.info("TAP properties saved to " + path);
         }
     }
 

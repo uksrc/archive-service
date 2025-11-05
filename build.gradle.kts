@@ -40,7 +40,7 @@ dependencies {
 
     //Vollt TAP
     implementation("fr.unistra.cds:ADQLlib:2.1-SNAPSHOT")
-    implementation("fr.unistra.cds:TAPlib:2.4.3-SNAPSHOT")
+    implementation("fr.unistra.cds:TAPlib:2.4.5-SNAPSHOT")
     implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
 
     implementation("org.javastro.ivoa.dm:tapschema:0.9.5")
@@ -73,6 +73,27 @@ tasks.withType<JavaCompile> {
 
 apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
 
-tasks.named("processResources") {
-    dependsOn("generateVolltWebXml")
+tasks.test {
+   // testLogging.showStandardStreams = true
+    useJUnitPlatform()
+    //To make available to Vollt itself during unit tests only (as the servlet path doesn't get setup automatically).
+    environment("VOLLT_BASE_PATH", file("src/main/resources/META-INF/resources").absolutePath)
+    systemProperty("quarkus.profile", "test")
 }
+
+tasks.register("cleanGeneratedFile") {
+    doFirst {
+        val targetFile = layout.projectDirectory.file("src/main/resources/META-INF/web.xml").asFile
+        if (targetFile.exists()) {
+            println("Deleting generated file: $targetFile")
+            targetFile.delete()
+        }
+    }
+}
+
+tasks.named("build") {
+    dependsOn("cleanGeneratedFile")
+}
+
+
+
