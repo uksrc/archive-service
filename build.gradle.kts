@@ -1,4 +1,3 @@
-
 plugins {
     java
     id("io.quarkus")
@@ -71,8 +70,6 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
 }
 
-apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
-
 tasks.test {
    // testLogging.showStandardStreams = true
     useJUnitPlatform()
@@ -81,18 +78,18 @@ tasks.test {
     systemProperty("quarkus.profile", "test")
 }
 
-tasks.register("cleanGeneratedFile") {
-    doFirst {
-        val targetFile = layout.projectDirectory.file("src/main/resources/META-INF/web.xml").asFile
-        if (targetFile.exists()) {
-            println("Deleting generated file: $targetFile")
-            targetFile.delete()
+sourceSets {
+    named("main") {
+        resources {
+            srcDir("build/generated-resources")
         }
     }
 }
 
-tasks.named("build") {
-    dependsOn("cleanGeneratedFile")
+apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
+
+tasks.named("processResources") {
+    dependsOn("generateWebXml")
 }
 
 
