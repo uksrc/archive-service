@@ -59,7 +59,6 @@ dependencies {
     implementation("io.quarkus:quarkus-oidc")
 
     testImplementation("io.quarkus:quarkus-test-security")
-
 }
 
 tasks.withType<Test> {

@@ -1,110 +1,188 @@
 package org.uksrc.archive;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
+import org.ivoa.dm.caom2.DerivedObservation;
+import org.ivoa.dm.caom2.Observation;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.StringReader;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static io.restassured.RestAssured.given;
 
 import static jakarta.ws.rs.core.Response.Status.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.hamcrest.Matchers.*;
+import static org.uksrc.archive.utils.Utilities.TEST_READER_ROLE;
+import static org.uksrc.archive.utils.Utilities.TEST_WRITER_ROLE;
 
 /**
  * Intended for the use of testing the TAP ADQL service with queries.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
 public class QueryValidationTest {
+
     @Inject
     EntityManager em;
 
-    private static final String BOLD   = "\u001B[1m";
-    private static final String RESET  = "\u001B[0m";
+    @Inject
+    ObservationResource observationResource;
+
+    private static boolean dataLoaded = false;
 
     //http://localhost:8080/archive/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=VOTABLE&QUERY=SELECT%20*%20FROM%20caom2.Observation%20WHERE%20DISTANCE(160.0%2C%200%2C%20180.0%2C%200.0)%20%3C%201.0
 
-    private static final String TAP_QUERY = "/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=VOTABLE&QUERY=";
-
-    @BeforeAll
-    public static void init(){
-        //VOLLT_BASE_PATH="C:\Development\caom\archive-service\src\main\resources\META-INF\resources"
-       // checkEnvironment();
-        Path projectRoot = Paths.get("").toAbsolutePath(); // current working dir
-        Path resourceDir = projectRoot.resolve("src/main/resources/META-INF/resources");
-
-        String absolutePath = resourceDir.toString();
-        System.out.println("VOLLT_BASE_PATH = " + absolutePath);
-
-        // Make it available to the launched service if it reads env vars
-        System.setProperty("VOLLT_BASE_PATH", absolutePath);
-    }
-
-    //BeforeAll doesn't allow the HTTP call unfortunately
-    @BeforeEach
-    public void setup() throws IOException {
-        Response res = given()
-                .contentType("application/xml")
-                .when()
-                .get("/observations/2cf99e88-90e1-4fe8-a502-e5cafdc6ffa1") //MUST be the same as the caom2:Id value in the supplied file
-                .andReturn();
-
-        if (res.statusCode() == NOT_FOUND.getStatusCode()) {
-            String xml = Files.readString(Paths.get("testing/observation1.xml"));
-
-            given()
-                    .contentType("application/xml")
-                    .body(xml)
-                    .when()
-                    .post("/observations")
-                    .then()
-                    .statusCode(CREATED.getStatusCode());
-        }
-    }
-
-    //DISABLED until the TAP service is changed, the current Vollt service isn't initialising in test.
-    @Test
-    public void testDistance() throws IOException {
-        String request = TAP_QUERY + URLEncoder.encode("SELECT * FROM TAP_SCHEMA.tables", StandardCharsets.UTF_8);
-        Response res = given()
-               // .contentType("application/xml")
-                .when()
-                //.get(request)
-                .get(TAP_QUERY + "SELECT * FROM TAP_SCHEMA.tables")
-                .andReturn();
-
-        String body = res.getBody().asString();
-        System.out.println(body);
-
-        assertEquals(res.statusCode(), OK.getStatusCode());
-    }
+    private static final String TAP_QUERY = "/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=%s&QUERY=";
 
     /**
-     * Determines whether the required environment variable is set for running the Vollt TAP service servlet in a test profile.
-     * Required ENV:VOLLT_BASE_PATH set to the /resources folder of the local deployment.
+     * Unfortunately, BeforeAll & BeforeEach cannot be used to add an Observation due to security and API startup timing.
+     * Needs to be called before ALL tests, so testing an individual test would require a called to SetupData() first.
+     * @throws IOException Error reading the example Observation file.
+     * @throws JAXBException Error parsing the example Observation XML.
      */
-    private static void checkEnvironment() {
-        if (System.getenv("VOLLT_BASE_PATH") == null) {
-            boolean ansi = System.console() != null && System.getenv().get("TERM") != null;
-            if (ansi) {
-                System.out.println(BOLD + "VOLLT_BASE_PATH is not defined!" + RESET);
-            }
-            else {
-                System.out.println("VOLLT_BASE_PATH is not defined!");
-            }
-            System.out.println("Suggested value should be to the absolute path to /archive-service/src/main/resources/META-INF/resources");
+    @Test
+    @Order(1)
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    void setupData() throws IOException, JAXBException {
+        if (!dataLoaded) {
+            String xml = Files.readString(Paths.get("testing/observation1.xml"));
 
-            assumeTrue(System.getenv("VOLLT_BASE_PATH") != null);
+            JAXBContext jaxbContext = JAXBContext.newInstance(DerivedObservation.class);
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            Object result = unmarshaller.unmarshal(new StringReader(xml));
+
+            Observation obs;
+            if (result instanceof JAXBElement<?> jaxbElement) {
+                obs = (Observation) jaxbElement.getValue();
+            } else {
+                obs = (Observation) result;
+            }
+            observationResource.addObservation(obs);
+
+            dataLoaded = true;
         }
+    }
+
+    @Test
+    @DisplayName("Select the standard TAP_SCHEMA tables")
+    public void testSchemas() {
+        String request = String.format(TAP_QUERY, "VOTABLE") + "SELECT * FROM TAP_SCHEMA.tables";
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("VOTABLE.RESOURCE.INFO.find {it.@name == 'QUERY'}.@value",
+                        equalTo("SELECT * FROM TAP_SCHEMA.tables"));
+    }
+
+    @Test
+    @DisplayName("Distance with individual values (No Points)")
+    public void testDistance() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM caom2.\"point\" as po WHERE DISTANCE(po.cval1, po.cval2, 150.0, 2.5) < 90.0;";
+        Response res = queryRequest(request);
+
+        //String jsonPathExpression = "metadata.find { it.name == 'ID' }.datatype";
+
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data.size()", equalTo(2));
+                //.body(jsonPathExpression, equalTo("LONG"));
+    }
+
+    @Test
+    @DisplayName("BOX with individual values and no geometric co-ord system defined")
+    public void testBox() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(cval1, cval2), BOX(190.0, 56.0, 10.0, 10.0));";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data.size()", equalTo(1));
+    }
+
+    @Test
+    @DisplayName("CIRCLE with individual values and no geometric co-ord system defined")
+    public void testCircle() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM point as po WHERE CONTAINS(POINT(po.cval1, po.cval2), CIRCLE(195.0, 57.0, 5.0)) = 1;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("metadata.name", containsInAnyOrder("cval1", "cval2", "ID", "POLYGON_ID"));
+    }
+
+    @Test
+    @DisplayName("POLYGON with individual values and no geometric co-ord system defined")
+    public void testPolygon() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(180.0, 50.0, 200.0, 50.0, 200.0, 70.0, 180.0, 70.0));";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("metadata.name", containsInAnyOrder("cval1", "cval2", "ID", "POLYGON_ID"));
+    }
+
+    @Test
+    @DisplayName("POLYGON with individual values and no geometric co-ord system defined (no results)")
+    public void testPolygonFailure() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(100.0, 50.0, 110.0, 50.0, 110.0, 70.0, 100.0, 70.0));";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(0))
+                .body("metadata.name", containsInAnyOrder("cval1", "cval2", "ID", "POLYGON_ID"));
+    }
+
+    @Test
+    @DisplayName("REGION with POINT")
+    public void testPolygonWithPoint() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), REGION('CIRCLE ICRS 190.0 50.0 7.0'));";
+        double expectedCval1 = 193.109524583333;        //Must match the value from the test file (observation1.xml)
+        double tolerance = 0.00001;
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(1))
+                .body("metadata.name", containsInAnyOrder("cval1", "cval2", "ID", "POLYGON_ID"))
+                .body("data[0][0].toDouble()", closeTo(expectedCval1, tolerance));  //Value from database should be a double regardless but "cast" still required.
+    }
+
+    @Test
+    @DisplayName("REGION (with an incorrect geometric co-ord system defined) with POINT")
+    public void testRegionWithIncorrectGeometricCoOrd() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" WHERE CONTAINS(POINT(180.0, 0.0), REGION('CIRCLE MADE_UP 180.0 0.0 5.0')) = 1;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(BAD_REQUEST.getStatusCode())
+                .body(containsString("Unsupported region serialization"));
+    }
+
+
+    /**
+     * Perform an AQDL query.
+     * All queries are performed against the localhost instance of the archive-service.
+     * @param query The ADQL query (NOT URL encoded)
+     * @return The raw response from the target
+     */
+    private Response queryRequest(String query) {
+        return given()
+                .contentType("application/xml")
+                .when()
+                .get(query)
+                .andReturn();
     }
 }
