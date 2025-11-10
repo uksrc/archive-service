@@ -24,6 +24,7 @@ import static io.restassured.RestAssured.given;
 import static jakarta.ws.rs.core.Response.Status.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.uksrc.archive.utils.Utilities.TEST_READER_ROLE;
 import static org.uksrc.archive.utils.Utilities.TEST_WRITER_ROLE;
 
@@ -49,29 +50,32 @@ public class QueryValidationTest {
     /**
      * Unfortunately, BeforeAll & BeforeEach cannot be used to add an Observation due to security and API startup timing.
      * Needs to be called before ALL tests, so testing an individual test would require a called to SetupData() first.
-     * @throws IOException Error reading the example Observation file.
-     * @throws JAXBException Error parsing the example Observation XML.
      */
     @Test
     @Order(1)
     @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
-    void setupData() throws IOException, JAXBException {
+    void setupData() {
         if (!dataLoaded) {
-            String xml = Files.readString(Paths.get("testing/observation1.xml"));
+            try {
+                String xml = Files.readString(Paths.get("testing/observation1.xml"));
 
-            JAXBContext jaxbContext = JAXBContext.newInstance(DerivedObservation.class);
-            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            Object result = unmarshaller.unmarshal(new StringReader(xml));
+                JAXBContext jaxbContext = JAXBContext.newInstance(DerivedObservation.class);
+                Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+                Object result = unmarshaller.unmarshal(new StringReader(xml));
 
-            Observation obs;
-            if (result instanceof JAXBElement<?> jaxbElement) {
-                obs = (Observation) jaxbElement.getValue();
-            } else {
-                obs = (Observation) result;
+                Observation obs;
+                if (result instanceof JAXBElement<?> jaxbElement) {
+                    obs = (Observation) jaxbElement.getValue();
+                } else {
+                    obs = (Observation) result;
+                }
+                observationResource.addObservation(obs);
+
+                dataLoaded = true;
+            }catch(Exception e) {
+                System.out.println(e.getMessage());
+                fail();
             }
-            observationResource.addObservation(obs);
-
-            dataLoaded = true;
         }
     }
 
