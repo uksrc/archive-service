@@ -358,6 +358,96 @@ public class QueryValidationTest {
         assertTrue(isSorted);
     }
 
+    @Test
+    @DisplayName("Commments inside a query")
+    public void testComments() {
+        String request = String.format(TAP_QUERY, "JSON") + "-- A header comment\n" +
+                "      SELECT * -- a sub-comment\n" +
+                "      FROM Plane;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(6));
+    }
+
+    @Test
+    @DisplayName("Simple use of a string literal including an enclosed quote")
+    public void testStringLiteral() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM algorithm WHERE name = 'correlator';";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(1))
+                .body("data[0][1]", equalTo("correlator"));
+    }
+
+    @Test
+    @DisplayName("Geometric functions MUST use string literals")
+    public void testGeometricStringLiteral() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT 1 FROM \"point\" as po WHERE CONTAINS(POINT(po.cval1, po.cval2), CIRCLE('ICRS', 195.0, 56.0, 5.0)) = 1;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("data[0][0]", equalTo(1));
+    }
+
+    @Test
+    @DisplayName("Accept NULL as a valid expression value")
+    public void testNullExpressionValue() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" WHERE POLYGON_ID IS NULL;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("data[0][2]", equalTo(1))
+                .body("data[1][2]", equalTo(2))
+                .body("data[0][3]", equalTo(null));
+    }
+
+    @Test
+    @DisplayName("Accept NULL as a valid expression value in COALESCE")
+    public void testNullCoalesceExpressionValue() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT COALESCE(calibration_namespace, NULL, 'No namespace defined') AS namespace FROM \"position\";";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("data[0][0]", equalTo("No namespace defined"));
+    }
+
+    @Test
+    @DisplayName("COORDSYS usage as a deprecated method. (Remove when usage finally removed)")
+    public void testDeprecatedMethod() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT POINT('ICRS', 25.0, -19.5) from caom2.point;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("data[0][0]", startsWith("POSITION"));
+    }
+
+    /** Optional Features - Start */
+
+    @Test
+    @DisplayName("UPPER and LOWER for values")
+    public void testCapitalisationMethods() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT UPPER(name) AS name_upper, LOWER(name) AS name_lower FROM Telescope;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(1))
+                .body("data[0][0]", equalTo("E-MERLIN"))
+                .body("data[0][1]", equalTo("e-merlin"));
+    }
+
     /**
      * Perform an AQDL query.
      * All queries are performed against the localhost instance of the archive-service.
