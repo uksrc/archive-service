@@ -17,11 +17,13 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 
 import static jakarta.ws.rs.core.Response.Status.*;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.uksrc.archive.utils.Utilities.TEST_READER_ROLE;
 import static org.uksrc.archive.utils.Utilities.TEST_WRITER_ROLE;
 
@@ -171,6 +173,190 @@ public class QueryValidationTest {
                 .body(containsString("Unsupported region serialization"));
     }
 
+    @Test
+    @DisplayName("Cone search using Distance")
+    public void testConeSearchWithDistance() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE DISTANCE(po.cval1, po.cval2, 180.0, 0.0) < 2.5";
+
+        //Expected miss
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(0))
+                .body("metadata.name", containsInAnyOrder("cval1", "cval2", "ID", "POLYGON_ID"));
+    }
+
+    @Test
+    @DisplayName("Cone search using Distance 2")
+    public void testConeSearchWithDistance2() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE DISTANCE(po.cval1, po.cval2, 195.5, 56.0) < 2.5";
+        double expectedCval2 = 56.57208;        //Must match the value from the test file (observation1.xml)
+        double tolerance = 0.00001;
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("metadata.name", containsInAnyOrder("cval1", "cval2", "ID", "POLYGON_ID"))
+                .body("data[0][1].toDouble()", closeTo(expectedCval2, tolerance));
+    }
+
+    @Test
+    @DisplayName("Attempt at a crossmatch using Distance")
+    public void testCrossMatchWithDistance() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT a.id AS src_id, b.id AS cat_id, DISTANCE(POINT(a.cval1, a.cval2), POINT(b.cval1, b.cval2)) AS dist_deg " +
+                "FROM caom2.\"point\" AS a JOIN caom2.\"point\" AS b ON a.id != b.id AND DISTANCE(POINT(a.cval1, a.cval2), POINT(b.cval1, b.cval2)) < 10.0;";
+        double expectedCval2 = 1.8791494589752562;        //Must match the value from the test file (observation1.xml)
+        double tolerance = 0.00001;
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("metadata.name", containsInAnyOrder("src_id", "cat_id", "dist_deg"))
+                .body("data[0][2].toDouble()", closeTo(expectedCval2, tolerance));
+    }
+
+    //IN_UNIT doesn't seem to accept 'arcsec', 'deg', etc. at the moment
+  /*  @Test
+    @DisplayName("Convert the unit returned")
+    public void testConvertUnit() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" WHERE IN_UNIT(DISTANCE(POINT(ra, dec), POINT(180.0, 0.0)), 'arcsec') < 10.0";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+    }*/
+
+    @Test
+    @DisplayName("Return first non-null value")
+    public void testCoalesce() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT COALESCE(collection, 'Unknown') FROM Observation;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(1))
+                .body("data[0][0]", equalTo("EMERLIN"));
+    }
+
+    @Test
+    @DisplayName("Cast to a doublw value from ?")
+    public void testDoubleCast() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT CAST(contentLength AS DOUBLE) AS doubleValue FROM Artifact;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data.size()", greaterThan(0))
+                .body("data[0][0]", isA(Number.class));
+    }
+
+    @Test
+    @DisplayName("Cast to varchar value from a numeric value")
+    public void testVarcharCast() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT CAST(contentLength AS VARCHAR) AS charValue FROM Artifact;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data.size()", greaterThan(0))
+                .body("data[0][0]", isA(String.class));
+    }
+
+    @Test
+    @DisplayName("UNION of both tables, removing duplicates")
+    public void testUnionNoDuplicates() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT a.cval1 AS ra, a.cval2 AS dec FROM caom2.\"point\" AS a" +
+                " UNION SELECT b.cval1 AS ra, b.cval2 AS dec FROM caom2.\"point\" AS b;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2));
+    }
+
+    @Test
+    @DisplayName("INTERSECTion of both tables, retuning rows that only appear in both results")
+    public void testIntersectingTables() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT ID FROM \"shape\" INTERSECT SELECT ID FROM \"point\";";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2));
+    }
+
+    @Test
+    @DisplayName("EXCEPTion of first table, retuning rows that only appear in first result")
+    public void testExceptionTable() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT ID FROM shape EXCEPT SELECT id FROM \"point\";";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(0));
+    }
+
+    @Test
+    @DisplayName("Chaining of SET operators")
+    public void testChaining() {
+        String request = String.format(TAP_QUERY, "JSON") + "(SELECT id, cval1, cval2 FROM \"point\" UNION SELECT id, dimension_naxis1, dimension_naxis2 FROM \"position\") EXCEPT SELECT id, dimension_naxis1, dimension_naxis2 FROM \"position\";";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("data[0][0]", equalTo(2));
+    }
+
+    @Test
+    @DisplayName("ORDER_BY a specific qualified column")
+    public void testOrderingByAQualifiedColumn() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT contentType, contentLength FROM artifact ORDER BY contentLength;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode());
+
+        //Check each value in the second column in the response is sorted (ASC by default).
+        List<List<Object>> dataArray = res.jsonPath().getList("data");
+        boolean isSorted = true;
+        for (int i = 0; i < dataArray.size() - 1; i++) {
+            Integer lower = (Integer) dataArray.get(i).get(1);
+            Integer upper = (Integer) dataArray.get(i+1).get(1);
+            if (lower > upper) {
+                isSorted = false;
+                break;
+            }
+        }
+        assertTrue(isSorted);
+    }
+
+    @Test
+    @DisplayName("ORDER_BY with an expression")
+    public void testOrderingWithAnExpression() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT contentType, contentLength, (contentLength / 10) AS sort_key FROM Artifact ORDER BY sort_key DESC;";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode());
+
+        //Check each value in the second column in the response is sorted (descending) and that
+        //the expression has been performed.
+        List<List<Object>> dataArray = res.jsonPath().getList("data");
+        boolean isSorted = true;
+        for (int i = 0; i < dataArray.size() - 1; i++) {
+            Integer lower = (Integer) dataArray.get(i).get(1);
+            Integer upper = (Integer) dataArray.get(i+1).get(1);
+            Integer dividedValue = (Integer) dataArray.get(i).get(2);
+            if (lower < upper && dividedValue * 10 == lower) {
+                isSorted = false;
+                break;
+            }
+        }
+        assertTrue(isSorted);
+    }
 
     /**
      * Perform an AQDL query.
