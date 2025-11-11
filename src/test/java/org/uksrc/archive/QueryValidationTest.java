@@ -452,6 +452,55 @@ public class QueryValidationTest {
                 .body("data[0][1]", equalTo("e-merlin"));
     }
 
+    @Test
+    @DisplayName("UPPER against a real value")
+    public void testMatchingAnUpper() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM algorithm WHERE UPPER(name) = 'CORRELATOR';";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(1))
+                .body("data[0][1]", equalTo("correlator"));
+    }
+
+    @Test
+    @DisplayName("LOWER against a value that doesn't match")
+    public void testMatchingANonExistentLower() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM algorithm WHERE LOWER(name) = 'SUBARU';";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(0));
+    }
+
+    @Test
+    @DisplayName("ILIKE to perform a case-insentive match with wildcards/patterns")
+    public void testWildcardsWithILike() {
+        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM Provenance WHERE name ILIKE 'eMERL%';";
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(5))
+                .body("data[0][4]", startsWith("eMERLIN"));
+    }
+
+    @Test
+    @DisplayName("WITH to create a temporary value to use as a subquery")
+    public void testTemporarySubquery() {
+        String request = String.format(TAP_QUERY, "JSON") + "WITH \"point\" AS (SELECT * FROM artifact WHERE MOD(contentLength,10) = 0) SELECT cval1, cval2 FROM caom2.\"point\" WHERE cval1 > 10 AND cval2 < 100";
+        double expectedCval2 = 56.57208;        //Must match the value from the test file (observation1.xml)
+        double tolerance = 0.00001;
+
+        Response res = queryRequest(request);
+        res.then()
+                .statusCode(OK.getStatusCode())
+                .body("data", hasSize(2))
+                .body("data[0][1].toDouble()", closeTo(expectedCval2, tolerance));
+    }
+
     /**
      * Perform an AQDL query.
      * All queries are performed against the localhost instance of the archive-service.
