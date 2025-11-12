@@ -39,7 +39,7 @@ public class TapPropertiesRenderer {
         LOG.info("TAP properties rendering started...");
         System.out.println("TAP properties rendering started..." + outputPath);
 
-        String rootPath = "";
+        String rootPath;
         List<String> activeProfiles = ConfigUtils.getProfiles();
         String primaryProfile = activeProfiles.isEmpty() ? null : activeProfiles.get(0);
         if (primaryProfile != null && !primaryProfile.equals("prod")) {
