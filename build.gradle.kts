@@ -39,8 +39,8 @@ dependencies {
     implementation("io.quarkus:quarkus-kubernetes-config")
 
     //Vollt TAP
-    implementation("fr.unistra.cds:ADQLlib:2.0-SNAPSHOT")
-    implementation("fr.unistra.cds:TAPlib:2.4.4-SNAPSHOT")
+    implementation("fr.unistra.cds:ADQLlib:2.1-SNAPSHOT")
+    implementation("fr.unistra.cds:TAPlib:2.4.5-SNAPSHOT")
     implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
 
     implementation("org.javastro.ivoa.dm:tapschema:0.9.5")
@@ -79,8 +79,38 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
 }
 
+tasks.test {
+   // testLogging.showStandardStreams = true
+    useJUnitPlatform()
+    //To make available to Vollt itself during unit tests only (as the servlet path doesn't get setup automatically).
+    environment("VOLLT_BASE_PATH", file("src/main/resources/META-INF/resources").absolutePath)
+    systemProperty("quarkus.profile", "test")
+}
+
+sourceSets {
+    named("main") {
+        resources {
+            srcDir("build/generated-resources")
+        }
+    }
+}
+
 apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
+apply(from = "src/main/kotlin/generateTapProperties.gradle.kts")
 
 tasks.named("processResources") {
-    dependsOn("generateVolltWebXml")
+    dependsOn("generateWebXml")
 }
+
+// Make sure web.xml generation waits for tap.properties
+tasks.named("generateWebXml") {
+    dependsOn("generateTapProperties")
+}
+
+// Optionally ensure this all happens before compile/resources
+/*tasks.named("classes") {
+    dependsOn("generateTapProperties", "generateWebXml")
+}*/
+
+
+
