@@ -96,10 +96,21 @@ sourceSets {
 }
 
 apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
+apply(from = "src/main/kotlin/generateTapProperties.gradle.kts")
 
 tasks.named("processResources") {
     dependsOn("generateWebXml")
 }
+
+// Make sure web.xml generation waits for tap.properties
+tasks.named("generateWebXml") {
+    dependsOn("generateTapProperties")
+}
+
+// Optionally ensure this all happens before compile/resources
+/*tasks.named("classes") {
+    dependsOn("generateTapProperties", "generateWebXml")
+}*/
 
 
 
