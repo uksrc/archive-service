@@ -47,5 +47,4 @@ nb-configuration.xml
 
 # Plugin directory
 /.quarkus/cli/plugins/
-/src/main/resources/tap.properties
-/src/main/resources/META-INF/web.xml
+

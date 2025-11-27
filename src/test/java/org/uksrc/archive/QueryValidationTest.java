@@ -28,9 +28,13 @@ import static org.uksrc.archive.utils.Utilities.TEST_WRITER_ROLE;
 
 /**
  * Intended for the use of testing the TAP ADQL service with queries.
+ *
+ * NOTE: Disabled only on this branch as the tap service has been removed pending the addition
+ * of the new version.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
+@Disabled("Temporarily disabled due to TAP service not available yet")
 public class QueryValidationTest {
 
     @Inject
