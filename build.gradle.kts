@@ -37,6 +37,7 @@ dependencies {
     implementation("io.quarkus:quarkus-agroal")
     implementation("commons-beanutils:commons-beanutils:1.9.4")
     implementation("io.quarkus:quarkus-kubernetes-config")
+    implementation("org.json:json:20250517")
 
     //Vollt TAP
     implementation("fr.unistra.cds:ADQLlib:2.1-SNAPSHOT")

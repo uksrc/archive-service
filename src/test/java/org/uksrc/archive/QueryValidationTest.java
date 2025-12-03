@@ -34,9 +34,6 @@ import static org.uksrc.archive.utils.Utilities.TEST_WRITER_ROLE;
 public class QueryValidationTest {
 
     @Inject
-    EntityManager em;
-
-    @Inject
     ObservationResource observationResource;
 
     private static boolean dataLoaded = false;
