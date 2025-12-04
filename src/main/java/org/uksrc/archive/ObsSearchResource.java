@@ -10,6 +10,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.ivoa.dm.caom2.Observation;
+import org.uksrc.archive.auth.ConditionalRolesAllowed;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
 
@@ -26,6 +27,7 @@ public class ObsSearchResource {
     @GET
     @Path("/cone")
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.view")
     public Response getAllObservations(@QueryParam("ra") Double ra, @QueryParam("dec") Double dec, @QueryParam("radius") Double radius,
                                        @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         if ((page != null) ^ (size != null)) {
@@ -33,7 +35,6 @@ public class ObsSearchResource {
         } else if ((page != null && page < 0) || (size != null && size < 1)) {
             return Responses.errorResponse("Page must be 0 or greater and size must be greater than 0.");
         }
-
 
         TypedQuery<Observation> query = em.createQuery(CONE_SEARCH_QUERY, Observation.class);
         query.setParameter("ra", ra);

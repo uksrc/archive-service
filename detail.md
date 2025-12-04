@@ -5,6 +5,8 @@
 3. [Tap service](#tap-service)
 4. [Authentication](#authentication)
 5. [DataLink](#datalink)
+6. [Spherical Queries](#spherical-queries)
+7. [Test Cases](#test-cases)
 
 
 ------------------------------------------------------------------------------------------
@@ -431,6 +433,83 @@ This gives the access_url to resolve the resource associated with the supplied A
 Note: The /archive/datalink/resource API determines the actual Artifact.uri via the supplied Artifact.id value. Currently expected to be a file/http url to a fixed location.
 
 The link_authorized property value needs updating once there's a mechanism in place to send the current user's status.
+
+### Spherical Queries
+
+The postgres database that is currently used has the [pgSphere extension](https://github.com/postgrespro/pgsphere) installed and can be used with the following approach. Hibernate 6+
+
+1. [Register a new function](#register-a-new-function-postgresqldialect)
+2. [Nominate the function](#nominate-the-function)
+3. [Use the function](#use-the-function)
+
+#### Register a new function (PostgreSQLDialect)
+
+    This exposes pgSphere functionality to Hibernate for use in HQL queries (& ultimately in JPQL queries).
+    ```
+    import org.hibernate.boot.model.FunctionContributions;
+    import org.hibernate.boot.model.FunctionContributor;
+    import org.hibernate.dialect.PostgreSQLDialect;
+    import org.hibernate.query.sqm.function.SqmFunctionRegistry;
+    import org.hibernate.type.StandardBasicTypes;
+    
+    /**
+    * Class to register pgSphere helper functions for Hibernate queries.
+    */
+    public class PgSphereDialect extends PostgreSQLDialect implements FunctionContributor {
+
+      @Override
+      public void contributeFunctions(FunctionContributions functionContributions) {
+        SqmFunctionRegistry registry = functionContributions.getFunctionRegistry();
+      
+        var typeConfig = functionContributions.getTypeConfiguration();
+        var doubleType = typeConfig.getBasicTypeRegistry()
+                .resolve(StandardBasicTypes.DOUBLE);
+                
+        // Distance function x,y <-> x,y
+        registry.registerPattern(
+              "pgsphere_distance",
+              "(spoint(radians(?1), radians(?2))::spoint <-> spoint(radians(?3), radians(?4))::spoint)",
+              doubleType
+        );
+      }
+    }
+    ```
+
+    As can be seen the function needs three parameters. 
+    1. the function name for use when being called by HQL queries
+    2. The function definition itself
+    3. The return type
+
+#### Nominate the function
+
+Place a new file in *src\main\resources\META-INF\services* called *org.hibernate.boot.model.FunctionContributor* which contains the name of the class containing the new function (full package path required).
+```
+org.uksrc.archive.utils.query.PgSphereDialect
+```
+
+This allows Java's service loader to discover the function at build-time.
+
+#### Use the function
+
+Create a JPQL query that makes use of the function.
+```
+@PersistenceContext
+protected EntityManager em;
+
+String CONE_SEARCH_QUERY =
+           "SELECT obs FROM Observation obs JOIN obs.targetPosition tp JOIN tp.coordinates p" +
+                   " WHERE FUNCTION('pgsphere_distance', p.cval1, p.cval2, :ra, :dec) <= radians(:radiusInDegrees)";
+
+//Use as normal
+TypedQuery<Observation> query = em.createQuery(CONE_SEARCH_QUERY, Observation.class);
+query.setParameter("ra", ra);
+query.setParameter("dec", dec);
+query.setParameter("radiusInDegrees", radius);
+
+List<Observation> observations = query.getResultList();
+```
+
+
 
 ## Test Cases
 Location of CADC's test cases.

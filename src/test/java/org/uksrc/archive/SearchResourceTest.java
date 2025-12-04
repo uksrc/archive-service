@@ -4,9 +4,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBElement;
-import jakarta.xml.bind.Unmarshaller;
 import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.TargetPosition;
 import org.ivoa.dm.caom2.types.Point;
@@ -17,7 +14,6 @@ import org.uksrc.archive.utils.ObservationListWrapper;
 
 import java.awt.*;
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -25,8 +21,7 @@ import java.util.List;
 import static io.restassured.RestAssured.given;
 import static jakarta.ws.rs.core.Response.Status.OK;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.uksrc.archive.utils.Utilities.TEST_READER_ROLE;
-import static org.uksrc.archive.utils.Utilities.TEST_WRITER_ROLE;
+import static org.uksrc.archive.utils.Utilities.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
@@ -38,6 +33,7 @@ public class SearchResourceTest {
     private static JSONObject positions;
     private static boolean dataLoaded = false;
 
+    //Load all the test data values that are either inside or outside the target cone (also contains the target position).
     @BeforeAll
     public static void loadData() {
         try {
@@ -101,30 +97,11 @@ public class SearchResourceTest {
         }
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private <T> T readXmlString(String xml, Class<T> clazz) throws Exception {
-        JAXBContext ctx = JAXBContext.newInstance(clazz);
-        Unmarshaller um = ctx.createUnmarshaller();
-
-        Object result = um.unmarshal(new StringReader(xml));
-
-        return (result instanceof JAXBElement<?> el)
-                ? clazz.cast(el.getValue())
-                : clazz.cast(result);
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private <T> T readXmlFile(String path, Class<T> clazz) throws Exception {
-        String xml = Files.readString(Paths.get(path));
-        return readXmlString(xml, clazz);
-    }
-
-
     /**
      * Uses the values for 'target' from positions to make a TargetPosition object.
      * Will be used to test against.
      * @see "testing/coneTestData.json"
-     * @return
+     * @return TargetPosition containing the values from the 'target' object in positions.
      */
     private TargetPosition createTargetPosition(){
         JSONObject position = positions.getJSONObject("target");

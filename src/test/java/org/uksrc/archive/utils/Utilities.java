@@ -1,7 +1,13 @@
 package org.uksrc.archive.utils;
 
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.Unmarshaller;
 import org.ivoa.dm.caom2.*;
 
+import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -80,5 +86,35 @@ public class Utilities {
         obs.addToPlanes(plane);
 
         return obs;
+    }
+
+    /**
+     * Reads an XML string into a JAXB object.
+     * @param xml The XML string to read.
+     * @param clazz The class to unmarshal into.
+     * @return The unmarshalled object.
+     * @throws Exception If the XML cannot be unmarshalled.
+     */
+    public static  <T> T readXmlString(String xml, Class<T> clazz) throws Exception {
+        JAXBContext ctx = JAXBContext.newInstance(clazz);
+        Unmarshaller um = ctx.createUnmarshaller();
+
+        Object result = um.unmarshal(new StringReader(xml));
+
+        return (result instanceof JAXBElement<?> el)
+                ? clazz.cast(el.getValue())
+                : clazz.cast(result);
+    }
+
+    /**
+     * Reads an XML file into a JAXB object.
+     * @param path The path to the XML file.
+     * @param clazz The class to unmarshal into.
+     * @return The unmarshalled object.
+     * @throws Exception If the XML cannot be unmarshalled.
+     */
+    public static <T> T readXmlFile(String path, Class<T> clazz) throws Exception {
+        String xml = Files.readString(Paths.get(path));
+        return readXmlString(xml, clazz);
     }
 }
