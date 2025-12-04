@@ -443,8 +443,8 @@ The postgres database that is currently used has the [pgSphere extension](https:
 3. [Use the function](#use-the-function)
 
 #### Register a new function (PostgreSQLDialect)
-
-    This exposes pgSphere functionality to Hibernate for use in HQL queries (& ultimately in JPQL queries).
+This exposes pgSphere functionality to Hibernate for use in HQL queries (& ultimately in JPQL queries).
+    
     ```
     import org.hibernate.boot.model.FunctionContributions;
     import org.hibernate.boot.model.FunctionContributor;
