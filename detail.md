@@ -515,3 +515,10 @@ List<Observation> observations = query.getResultList();
 Location of CADC's test cases.
 
 https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data
+
+#### Unit tests
+There are several files included for running unit tests, these can be found in the project folder */testing*.
+
+If the CAOM model definitions change then these *might* need updating too. These have been added to *reduce* the burden of having to update the unit tests programmatically.
+
+*coneTestData.json* contains a target and a radius alongside some coordinates that may or may not be inside that radius. All the true/false values MUST relate to the values in the *target* object if updating.
