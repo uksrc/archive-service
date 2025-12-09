@@ -69,7 +69,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.23.1")
 
     testImplementation("io.quarkus:quarkus-test-security")
-
+    testImplementation("org.javastro:jsofa:20210512")
 }
 
 tasks.withType<Test> {

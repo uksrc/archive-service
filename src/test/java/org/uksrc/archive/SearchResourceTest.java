@@ -23,6 +23,11 @@ import static jakarta.ws.rs.core.Response.Status.OK;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.uksrc.archive.utils.Utilities.*;
 
+/**
+ * Tests the /search/cone endpoint.
+ * Uses a single target position to test against, with a list of positions to search around.
+ * Intended to be a fine-grained test of the cone search functionality, using the coneTestData.json file.
+ */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
 public class SearchResourceTest {
@@ -92,8 +97,6 @@ public class SearchResourceTest {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-
-            System.out.println(res.getBody().asString());
         }
     }
 
