@@ -22,6 +22,10 @@ import static jakarta.ws.rs.core.Response.Status.OK;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.uksrc.archive.utils.Utilities.*;
 
+/**
+ * Tests the /search/cone endpoint, for use with multiple Observation entries. Intended to
+ * allow the testing of paging and cone search functionality that doesn't catch all entries.
+ */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
 public class SearchMultipleResourceTest {
@@ -59,7 +63,7 @@ public class SearchMultipleResourceTest {
 
     @Test
     @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE})
-    void testConeSearch() {
+    void testRestrictedSearchCriteriaConeSearch() {
         //Attempts to retrieve the 3 closest to RA & DEC from a total defined by NUM_OBSERVATIONS
         final int NUM_EXPECTED = 3;
 
@@ -84,8 +88,57 @@ public class SearchMultipleResourceTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
 
-        System.out.println(res.getBody().asString());
+    @Test
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE})
+    void testConeSearchFullResults() {
+        String query = "/search/cone?ra=" + RA + "&dec=" + DEC + "&radius=" + 20.0;
+
+        Response res = given()
+                .contentType("application/xml")
+                .when()
+                .get(query)
+                .andReturn();
+
+        assertEquals (OK.getStatusCode(), res.getStatusCode());
+
+        try {
+            String xml = res.getBody().asString();
+            ObservationListWrapper wrapper = readXmlString(xml, ObservationListWrapper.class);
+
+            List<Observation> observations = wrapper.getObservations();
+            assertTrue(observations.size() >= NUM_OBSERVATIONS,
+                    "Expected " + NUM_OBSERVATIONS + " observations");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE})
+    void testConeSearchPagedResults() {
+        int NUM_EXPECTED = 5;
+        String query = "/search/cone?ra=" + RA + "&dec=" + DEC + "&radius=" + 20.0 + "&page=0&size=" + NUM_EXPECTED;
+
+        Response res = given()
+                .contentType("application/xml")
+                .when()
+                .get(query)
+                .andReturn();
+
+        assertEquals (OK.getStatusCode(), res.getStatusCode());
+
+        try {
+            String xml = res.getBody().asString();
+            ObservationListWrapper wrapper = readXmlString(xml, ObservationListWrapper.class);
+
+            List<Observation> observations = wrapper.getObservations();
+            assertTrue(observations.size() >= NUM_EXPECTED,
+                    "Expected " + NUM_EXPECTED + " observations");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
