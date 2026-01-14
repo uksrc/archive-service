@@ -2,34 +2,22 @@ package org.uksrc.archive;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.ivoa.dm.caom2.Observation;
-import org.uksrc.archive.auth.ConditionalRolesAllowed;
-import org.uksrc.archive.utils.ObservationListWrapper;
-import org.uksrc.archive.utils.responses.Responses;
-import org.uksrc.archive.utils.tools.Tools;
+import org.eclipse.microprofile.graphql.GraphQLApi;
+import org.eclipse.microprofile.graphql.Query;
+import org.ivoa.dm.caom2.SimpleObservation;
 
-@Path("/search")
+import java.util.List;
+import java.util.stream.Collectors;
+
+@GraphQLApi
+//@Path("/search")
+//@ApplicationScoped
 public class ObsSearchResource {
 
     @PersistenceContext
     protected EntityManager em;
 
-   public static final String CONE_SEARCH_QUERY =
+  /* public static final String CONE_SEARCH_QUERY =
            "SELECT obs FROM Observation obs JOIN obs.targetPosition tp JOIN tp.coordinates p" +
                    " WHERE FUNCTION('pgsphere_distance', p.cval1, p.cval2, :ra, :dec) <= radians(:radiusInDegrees)";
 
@@ -109,5 +97,45 @@ public class ObsSearchResource {
             System.err.println("Query Execution Error: " + e.getMessage());
             return Response.serverError().entity("Database query failed.").build();
         }
+    }*/
+
+    /*@Query("observations")
+    public List<Observation> getSimpleObjects() {
+        return em.createQuery(
+                "SELECT o FROM Observation o", Observation.class
+        ).getResultList();
+    }*/
+
+    /*@Query("elites")
+    public List<UpperClass> getSimpleObjects() {
+        return em.createQuery(
+                "SELECT o FROM UpperClass o", UpperClass.class
+        ).getResultList();
+    }*/
+
+
+   /* @Transactional
+    @Query("getElites")
+    public List<EliteClass> getElites() {
+        return em.createQuery("SELECT e FROM EliteClass e", EliteClass.class)
+                .getResultList();
+    }*/
+  /* @Transactional
+   @Query("getElites")
+   public List<Lower> getElites() {
+       return em.createQuery("SELECT e FROM UpperRes e", Upper.class)
+               .getResultList()
+               .stream()
+               .map(e -> (Lower) e)
+               .toList();
+   }*/
+
+    @Query("observations")
+    public List<GqlObservation> getObservations() {
+        return em.createQuery("SELECT o FROM SimpleObservation o", SimpleObservation.class)
+                .getResultList()
+                .stream()
+                .map(GqlObservation::new)
+                .collect(Collectors.toList());
     }
 }

@@ -17,9 +17,9 @@ java {
 }
 
 dependencies {
-    implementation("io.quarkus:quarkus-container-image-docker")
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
-    implementation ("io.quarkus:quarkus-core")
+
+    implementation("io.quarkus:quarkus-container-image-docker")
     implementation("io.quarkus:quarkus-undertow")
     implementation("io.quarkus:quarkus-resteasy-reactive")
     implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
@@ -29,6 +29,7 @@ dependencies {
     implementation("io.quarkus:quarkus-kubernetes")
     implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-arc")
+    implementation("io.quarkus:quarkus-smallrye-graphql")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
     implementation ("jakarta.validation:jakarta.validation-api:3.0.2")
