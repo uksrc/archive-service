@@ -1,6 +1,7 @@
 name: Build & Push Image on Tag
 
 on:
+  workflow_dispatch:  # allows manual run
   push:
     tags:
       - "v*.*.*"   # semantic versioning like v1.0.1
