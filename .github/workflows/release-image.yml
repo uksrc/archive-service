@@ -38,14 +38,7 @@ jobs:
       - name: Build Image (Test only)
         if: github.event_name == 'pull_request'
         run: |
-          ./gradlew build \
-            -Dquarkus.container-image.build=true \
-            -Dquarkus.container-image.push=true \
-            -Dquarkus.container-image.registry=${{ secrets.HARBOR_REGISTRY }} \
-            -Dquarkus.container-image.group=${{ secrets.HARBOR_PROJECT }} \
-            -Dquarkus.container-image.tag=pr-test
-
-      # #./gradlew build -Dquarkus.container-image.build=true
+          ./gradlew build -Dquarkus.container-image.build=true
 
       # 2. BUILD & PUSH (Runs only on Tags)
       # This performs the actual deployment to Harbor.
