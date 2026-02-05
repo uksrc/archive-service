@@ -246,6 +246,42 @@ with JSON response also
 </details>
 
 ------------------------------------------------------------------------------------------
+### Searching
+
+#### Cone Search
+
+<details>
+ <summary><code>GET</code> <code><b>/archive/cone</b></code> <code>Returns all of the observations within the spherical radius, if optional page and size parameters supplied then a paginated subset is returned.</code></summary>
+
+##### Parameters
+
+> | name   | type     | data type | description                     |
+> |--------|----------|-----------|---------------------------------|
+> | ra     | required | double    | Right ascension                 |
+> | dec    | required | double    | Declination                     |
+> | radius | required | double    | Spherical radius of the search. |
+> | page         | optional | integer   | The page index, zero-indexed                                                   |
+> | size         | optional | integer   | The number of observations to return for each page, must be greater than zero. |
+
+
+
+##### Responses
+
+> | http code | content-type      | response                                 |
+> |-----------|-------------------|------------------------------------------|
+> | `200`     | `application/xml` | `Returned successfully`                  |
+> | `400`     | `text/plain`      | `{"code":"400","message":"Bad Request"}` |
+
+
+##### Example cURL
+
+> ```
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/archive/cone?ra=12.3456789&dec=-12.3456789&radius=10.0'
+> ```
+
+</details>
+
+------------------------------------------------------------------------------------------
 
 ### Tap Service
 
