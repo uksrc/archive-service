@@ -1,13 +1,13 @@
 package org.uksrc.archive;
 
+import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -17,11 +17,17 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.hibernate.Hibernate;
 import org.ivoa.dm.caom2.Observation;
+import org.ivoa.dm.caom2.Plane;
 import org.uksrc.archive.auth.ConditionalRolesAllowed;
+import org.uksrc.archive.searchrequest.schema.ObservationSearchRequest;
+import org.uksrc.archive.searchrequest.service.ObservationSearchService;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
+
+import java.util.List;
 
 @Path("/search")
 public class ObsSearchResource {
@@ -29,9 +35,14 @@ public class ObsSearchResource {
     @PersistenceContext
     protected EntityManager em;
 
+    @Inject
+    ObservationSearchService searchService;
+
    public static final String CONE_SEARCH_QUERY =
            "SELECT obs FROM Observation obs JOIN obs.targetPosition tp JOIN tp.coordinates p" +
                    " WHERE FUNCTION('pgsphere_distance', p.cval1, p.cval2, :ra, :dec) <= radians(:radiusInDegrees)";
+    @Inject
+    Request request;
 
     @GET
     @Path("/cone")
@@ -109,5 +120,14 @@ public class ObsSearchResource {
             System.err.println("Query Execution Error: " + e.getMessage());
             return Response.serverError().entity("Database query failed.").build();
         }
+    }
+
+    @GET
+    @Path("/search")
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.view")
+    public Response search(@BeanParam ObservationSearchRequest request) {
+        TypedQuery<Observation> query = searchService.searchQuery(request);
+        return Tools.performQuery(0, 10, query);
     }
 }
