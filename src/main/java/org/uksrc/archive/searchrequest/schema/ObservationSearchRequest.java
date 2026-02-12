@@ -17,7 +17,7 @@ public class ObservationSearchRequest {
     public String band;
 
     @QueryParam("startDate")
-    public OffsetDateTime startDate;
+    public String startDate;
 
     // Helper methods (cleaner than null checks everywhere)
     public Optional<String> target() {
@@ -26,7 +26,7 @@ public class ObservationSearchRequest {
 
     public Optional<String> band() { return Optional.ofNullable(band); }
 
-    public Optional<OffsetDateTime> startDate() {
+    public Optional<String> startDate() {
         return Optional.ofNullable(startDate);
     }
 }
