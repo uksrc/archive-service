@@ -1,7 +1,6 @@
 package org.uksrc.archive.searchrequest.query;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.ivoa.dm.caom2.Observation;

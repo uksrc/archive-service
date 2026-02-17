@@ -2,7 +2,6 @@ package org.uksrc.archive.searchrequest.schema;
 
 import jakarta.ws.rs.QueryParam;
 
-import java.time.OffsetDateTime;
 import java.util.Optional;
 
 /**
