@@ -17,21 +17,21 @@ import java.time.format.DateTimeParseException;
  * that allows filtering observation queries based on a specified start date. This parameter
  * checks if a start date is provided in the observation search request and applies the necessary
  * filters to the query context to include results that satisfy the start date condition.
- *
+ * <p>
  * This parameter supports parsing full ISO-8601 formatted date-time strings or simple date strings.
  * When a date-time string is provided, it filters results that occur on or after the specified
  * date-time. If only a date is provided, it filters results occurring on or after the beginning
  * of that day.
- *
+ * <p>
  * The main functionality involves:
  * - Parsing the start date value from the search request.
  * - Converting the parsed date to Modified Julian Date (MJD), which is used to represent the date
  *   in astronomical data contexts.
  * - Applying the parsed and formatted date as a filter condition in the query context.
- *
+ * <p>
  * The StartDateParameter is specifically used in conjunction with the ObservationSearchRequest
  * and QueryContext classes to refine the list of observations based on the desired time range.
- *
+ * <p>
  * Example call: <a href="http://localhost:8080/archive/search/search?startDate=2001-07-01T14:08:52Z">http://localhost:8080/archive/search/search?startDate=2001-07-01T14:08:52Z</a>
 
  */
