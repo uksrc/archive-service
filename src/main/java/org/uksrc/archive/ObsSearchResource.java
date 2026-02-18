@@ -45,6 +45,15 @@ public class ObsSearchResource {
     Request request;
 
     @GET
+    @Path("/")
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @ConditionalRolesAllowed("resource.roles.view")
+    public Response search(@BeanParam ObservationSearchRequest request) {
+        TypedQuery<Observation> query = searchService.searchQuery(request);
+        return Tools.performQuery(0, 10, query);
+    }
+
+    @GET
     @Path("/cone")
     @Operation(summary = "Cone search of Observations", description = "Returns a list of Observations that are located within the supplied cone")
     @Parameters({
@@ -120,14 +129,5 @@ public class ObsSearchResource {
             System.err.println("Query Execution Error: " + e.getMessage());
             return Response.serverError().entity("Database query failed.").build();
         }
-    }
-
-    @GET
-    @Path("/search")
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @ConditionalRolesAllowed("resource.roles.view")
-    public Response search(@BeanParam ObservationSearchRequest request) {
-        TypedQuery<Observation> query = searchService.searchQuery(request);
-        return Tools.performQuery(0, 10, query);
     }
 }
