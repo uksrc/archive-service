@@ -5,6 +5,8 @@
 3. [Tap service](#tap-service)
 4. [Authentication](#authentication)
 5. [DataLink](#datalink)
+6. [Spherical Queries](#spherical-queries)
+7. [Test Cases](#test-cases)
 
 
 ------------------------------------------------------------------------------------------
@@ -244,6 +246,42 @@ with JSON response also
 </details>
 
 ------------------------------------------------------------------------------------------
+### Searching
+
+#### Cone Search
+
+<details>
+ <summary><code>GET</code> <code><b>/archive/cone</b></code> <code>Returns all of the observations within the spherical radius, if optional page and size parameters supplied then a paginated subset is returned.</code></summary>
+
+##### Parameters
+
+> | name   | type     | data type | description                     |
+> |--------|----------|-----------|---------------------------------|
+> | ra     | required | double    | Right ascension                 |
+> | dec    | required | double    | Declination                     |
+> | radius | required | double    | Spherical radius of the search. |
+> | page         | optional | integer   | The page index, zero-indexed                                                   |
+> | size         | optional | integer   | The number of observations to return for each page, must be greater than zero. |
+
+
+
+##### Responses
+
+> | http code | content-type      | response                                 |
+> |-----------|-------------------|------------------------------------------|
+> | `200`     | `application/xml` | `Returned successfully`                  |
+> | `400`     | `text/plain`      | `{"code":"400","message":"Bad Request"}` |
+
+
+##### Example cURL
+
+> ```
+>  curl -X 'GET' -H 'accept: application/xml' 'http://localhost:8080/archive/cone?ra=12.3456789&dec=-12.3456789&radius=10.0'
+> ```
+
+</details>
+
+------------------------------------------------------------------------------------------
 
 ### Tap Service
 
@@ -432,7 +470,91 @@ Note: The /archive/datalink/resource API determines the actual Artifact.uri via 
 
 The link_authorized property value needs updating once there's a mechanism in place to send the current user's status.
 
+### Spherical Queries
+
+The postgres database that is currently used has the [pgSphere extension](https://github.com/postgrespro/pgsphere) installed and can be used with the following approach. Hibernate 6+
+
+1. [Register a new function](#register-a-new-function-postgresqldialect)
+2. [Nominate the function](#nominate-the-function)
+3. [Use the function](#use-the-function)
+
+#### Register a new function (PostgreSQLDialect)
+This exposes pgSphere functionality to Hibernate for use in HQL queries (& ultimately in JPQL queries).
+    
+    ```
+    import org.hibernate.boot.model.FunctionContributions;
+    import org.hibernate.boot.model.FunctionContributor;
+    import org.hibernate.dialect.PostgreSQLDialect;
+    import org.hibernate.query.sqm.function.SqmFunctionRegistry;
+    import org.hibernate.type.StandardBasicTypes;
+    
+    /**
+    * Class to register pgSphere helper functions for Hibernate queries.
+    */
+    public class PgSphereDialect extends PostgreSQLDialect implements FunctionContributor {
+
+      @Override
+      public void contributeFunctions(FunctionContributions functionContributions) {
+        SqmFunctionRegistry registry = functionContributions.getFunctionRegistry();
+      
+        var typeConfig = functionContributions.getTypeConfiguration();
+        var doubleType = typeConfig.getBasicTypeRegistry()
+                .resolve(StandardBasicTypes.DOUBLE);
+                
+        // Distance function x,y <-> x,y
+        registry.registerPattern(
+              "pgsphere_distance",
+              "(spoint(radians(?1), radians(?2))::spoint <-> spoint(radians(?3), radians(?4))::spoint)",
+              doubleType
+        );
+      }
+    }
+    ```
+
+    As can be seen the function needs three parameters. 
+    1. the function name for use when being called by HQL queries
+    2. The function definition itself
+    3. The return type
+
+#### Nominate the function
+
+Place a new file in *src\main\resources\META-INF\services* called *org.hibernate.boot.model.FunctionContributor* which contains the name of the class containing the new function (full package path required).
+```
+org.uksrc.archive.utils.query.PgSphereDialect
+```
+
+This allows Java's service loader to discover the function at build-time.
+
+#### Use the function
+
+Create a JPQL query that makes use of the function.
+```
+@PersistenceContext
+protected EntityManager em;
+
+String CONE_SEARCH_QUERY =
+           "SELECT obs FROM Observation obs JOIN obs.targetPosition tp JOIN tp.coordinates p" +
+                   " WHERE FUNCTION('pgsphere_distance', p.cval1, p.cval2, :ra, :dec) <= radians(:radiusInDegrees)";
+
+//Use as normal
+TypedQuery<Observation> query = em.createQuery(CONE_SEARCH_QUERY, Observation.class);
+query.setParameter("ra", ra);
+query.setParameter("dec", dec);
+query.setParameter("radiusInDegrees", radius);
+
+List<Observation> observations = query.getResultList();
+```
+
+
+
 ## Test Cases
 Location of CADC's test cases.
 
 https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data
+
+#### Unit tests
+There are several files included for running unit tests, these can be found in the project folder */testing*.
+
+If the CAOM model definitions change then these *might* need updating too. These have been added to *reduce* the burden of having to update the unit tests programmatically.
+
+*coneTestData.json* contains a target and a radius alongside some coordinates that may or may not be inside that radius. All the true/false values MUST relate to the values in the *target* object if updating.

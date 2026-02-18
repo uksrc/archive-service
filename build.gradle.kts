@@ -37,6 +37,7 @@ dependencies {
     implementation("io.quarkus:quarkus-agroal")
     implementation("commons-beanutils:commons-beanutils:1.9.4")
     implementation("io.quarkus:quarkus-kubernetes-config")
+    implementation("org.json:json:20250517")
 
     //Vollt TAP
     implementation("fr.unistra.cds:ADQLlib:2.1-SNAPSHOT")
@@ -68,7 +69,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.23.1")
 
     testImplementation("io.quarkus:quarkus-test-security")
-
+    testImplementation("org.javastro:jsofa:20210512")
 }
 
 tasks.withType<Test> {
