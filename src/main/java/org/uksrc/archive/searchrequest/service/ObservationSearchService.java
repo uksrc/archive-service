@@ -6,10 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
 import org.ivoa.dm.caom2.Observation;
-import org.uksrc.archive.searchrequest.descriptors.BandParameter;
-import org.uksrc.archive.searchrequest.descriptors.SearchParameter;
-import org.uksrc.archive.searchrequest.descriptors.StartDateParameter;
-import org.uksrc.archive.searchrequest.descriptors.TargetParameter;
+import org.uksrc.archive.searchrequest.descriptors.*;
 import org.uksrc.archive.searchrequest.query.QueryContext;
 import org.uksrc.archive.searchrequest.schema.ObservationSearchRequest;
 
@@ -52,7 +49,8 @@ public class ObservationSearchService {
     private final List<SearchParameter> parameters = List.of(
             new TargetParameter(),
             new BandParameter(),
-            new StartDateParameter()
+            new StartDateParameter(),
+            new ProjectName()
     );
 
     /**

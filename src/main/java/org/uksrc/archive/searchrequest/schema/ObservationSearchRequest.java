@@ -8,7 +8,7 @@ import java.util.Optional;
  * Represents a request to search for observations based on specific criteria.
  * This class is used to encapsulate query parameters for filtering observations.
  */
-public class ObservationSearchRequest {
+public class  ObservationSearchRequest {
     @QueryParam("target")
     public String target;
 
@@ -17,6 +17,9 @@ public class ObservationSearchRequest {
 
     @QueryParam("startDate")
     public String startDate;
+
+    @QueryParam("projectName")
+    public String projectName;
 
     // Helper methods (cleaner than null checks everywhere)
     public Optional<String> target() {
@@ -28,4 +31,6 @@ public class ObservationSearchRequest {
     public Optional<String> startDate() {
         return Optional.ofNullable(startDate);
     }
+
+    public Optional<String> projectName() { return Optional.ofNullable(projectName); }
 }
