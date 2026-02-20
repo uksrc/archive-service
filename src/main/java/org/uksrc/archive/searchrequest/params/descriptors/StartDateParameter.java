@@ -1,4 +1,4 @@
-package org.uksrc.archive.searchrequest.descriptors;
+package org.uksrc.archive.searchrequest.params.descriptors;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.JoinType;

@@ -4,11 +4,8 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Request;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.*;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -17,11 +14,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.hibernate.Hibernate;
 import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.Plane;
 import org.uksrc.archive.auth.ConditionalRolesAllowed;
-import org.uksrc.archive.searchrequest.schema.ObservationSearchRequest;
+import org.uksrc.archive.searchrequest.params.descriptors.PredicateDescriptor;
+import org.uksrc.archive.searchrequest.params.parser.DescriptorFactory;
 import org.uksrc.archive.searchrequest.service.ObservationSearchService;
 import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.responses.Responses;
@@ -38,6 +34,9 @@ public class ObsSearchResource {
     @Inject
     ObservationSearchService searchService;
 
+    @Inject
+    DescriptorFactory descriptorFactory;
+
    public static final String CONE_SEARCH_QUERY =
            "SELECT obs FROM Observation obs JOIN obs.targetPosition tp JOIN tp.coordinates p" +
                    " WHERE FUNCTION('pgsphere_distance', p.cval1, p.cval2, :ra, :dec) <= radians(:radiusInDegrees)";
@@ -48,8 +47,12 @@ public class ObsSearchResource {
     @Path("/")
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @ConditionalRolesAllowed("resource.roles.view")
-    public Response search(@BeanParam ObservationSearchRequest request) {
-        TypedQuery<Observation> query = searchService.searchQuery(request);
+    public Response search(@Context UriInfo uriInfo) {
+        MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+
+        List<PredicateDescriptor> descriptors = descriptorFactory.fromQueryParams(params);
+
+        TypedQuery<Observation> query = searchService.searchQuery(descriptors);
         return Tools.performQuery(0, 10, query);
     }
 
