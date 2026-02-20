@@ -60,7 +60,7 @@ public class StartDateParameter implements SearchParameter {
                 double formattedTime = toMjdSeconds(instant);
 
                 //Search for time.bounds.lower values greater than the supplied param value
-                ctx.add(cb.greaterThanOrEqualTo(lowerPath, formattedTime));
+             //   ctx.add(cb.greaterThanOrEqualTo(lowerPath, formattedTime));
 
             } catch (DateTimeParseException e) {
                 // Date-only → whole day range
@@ -69,7 +69,7 @@ public class StartDateParameter implements SearchParameter {
 
                 double startMjd = toMjdSeconds(start);
 
-                ctx.add(cb.greaterThanOrEqualTo(lowerPath, startMjd));
+             //   ctx.add(cb.greaterThanOrEqualTo(lowerPath, startMjd));
             }
         });
     }
