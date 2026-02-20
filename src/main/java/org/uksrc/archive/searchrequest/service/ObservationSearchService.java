@@ -55,6 +55,7 @@ public class ObservationSearchService {
                 .toList();
 
         cq.where(cb.and(predicates.toArray(new Predicate[0])));
+        cq.distinct(true);
         return em.createQuery(cq);
     }
 }

@@ -28,8 +28,10 @@ public class FieldRegistry {
             ),
             "freq", new FieldDefinition(
                     "freq",
-                    "plane.energy.bounds",
-                    FieldType.SPECTRAL_RANGE
+                    "planes.energy.bounds",
+                    FieldType.SPECTRAL_RANGE,
+                    "lower",
+                    "upper"
             )
     );
 
