@@ -1,6 +1,5 @@
 package org.uksrc.archive.searchrequest.params.descriptors;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -17,7 +16,7 @@ public class EqualsDescriptor<T> implements PredicateDescriptor {
     }
 
     @Override
-    public Predicate toPredicate(QueryContext context) {
+    public Predicate toPredicate(QueryContext<?> context) {
         Path<?> field = resolvePath(context.root(), path);
         return context.criteriaBuilder().equal(field, value);
     }

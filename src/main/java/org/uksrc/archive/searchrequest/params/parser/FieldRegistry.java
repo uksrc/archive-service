@@ -5,7 +5,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Map;
 import java.util.Optional;
 
-import org.ivoa.dm.caom2.EnergyBand;
 import  org.uksrc.archive.searchrequest.params.parser.DescriptorFactory.*;
 
 @ApplicationScoped
@@ -15,26 +14,22 @@ public class FieldRegistry {
             "project", new FieldDefinition(
                     "project",
                     "proposal.project",
-                    FieldType.STRING,
-                    null
+                    FieldType.STRING
             ),
             "target", new FieldDefinition(
                     "target",
                     "target.name",
-                    FieldType.STRING,
-                    null
+                    FieldType.STRING
             ),
             "band", new FieldDefinition(
                     "band",
                     "planes.energy.energyBands",
-                    FieldType.COLLECTION,
-                    EnergyBand.class
+                    FieldType.COLLECTION
             ),
             "freq", new FieldDefinition(
                     "freq",
                     "plane.energy.bounds",
-                    FieldType.SPECTRAL_RANGE,
-                    null
+                    FieldType.SPECTRAL_RANGE
             )
     );
 

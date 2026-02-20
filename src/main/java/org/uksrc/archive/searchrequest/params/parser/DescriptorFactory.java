@@ -28,8 +28,7 @@ public class DescriptorFactory {
     public record FieldDefinition(
             String paramName,
             String entityPath,
-            FieldType type,
-            Class<? extends Enum<?>> enumClass
+            FieldType type
     ) {}
 
 
@@ -60,9 +59,9 @@ public class DescriptorFactory {
 
                     case STRING ->
                             descriptors.add(
-                                    new EqualsDescriptor(def.entityPath(), values.get(0))
+                                    new EqualsDescriptor<>(def.entityPath(), values.get(0))
                             );
-                    case ENUM, COLLECTION -> descriptors.add(
+                    case COLLECTION -> descriptors.add(
                             new CollectionDescriptor(
                                     def,
                                     values.get(0)

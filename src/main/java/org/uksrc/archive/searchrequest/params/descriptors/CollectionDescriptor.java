@@ -33,7 +33,7 @@ public class CollectionDescriptor implements PredicateDescriptor {
      * @return A Predicate that represents the constructed query condition.
      */
     @Override
-    public Predicate toPredicate(QueryContext ctx) {
+    public Predicate toPredicate(QueryContext<?> ctx) {
         CriteriaBuilder cb = ctx.criteriaBuilder();
         From<?, ?> parent = resolveParentPath(ctx.root(), fieldDef);
         String lastPart = getLastPathSegment(fieldDef.entityPath());

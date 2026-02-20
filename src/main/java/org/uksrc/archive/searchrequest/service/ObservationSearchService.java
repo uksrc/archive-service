@@ -8,10 +8,8 @@ import jakarta.persistence.criteria.*;
 import org.ivoa.dm.caom2.Observation;
 import org.uksrc.archive.searchrequest.params.descriptors.*;
 import org.uksrc.archive.searchrequest.query.QueryContext;
-import org.uksrc.archive.searchrequest.schema.ObservationSearchRequest;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A service class responsible for dynamically constructing and executing search queries
@@ -50,7 +48,7 @@ public class ObservationSearchService {
         CriteriaQuery<Observation> cq = cb.createQuery(Observation.class);
         Root<Observation> root = cq.from(Observation.class);
 
-        QueryContext ctx = new QueryContext(cb, root);
+        QueryContext<Observation> ctx = new QueryContext<>(cb, root);
 
         List<Predicate> predicates = descriptors.stream()
                 .map(d -> d.toPredicate(ctx))
