@@ -10,6 +10,29 @@ import  org.uksrc.archive.searchrequest.params.parser.DescriptorFactory.*;
 @ApplicationScoped
 public class FieldRegistry {
 
+    public enum FieldType {
+        STRING,
+        NUMBER,
+        RANGE,
+        SPECTRAL_RANGE,
+        BAND,
+        ENUM,
+        COLLECTION
+    }
+
+    public record FieldDefinition(
+            String paramName,
+            String entityPath,
+            FieldType type,
+            String minAttribute,
+            String maxAttribute
+    ) {
+        // Convenience constructor for scalar values
+        public FieldDefinition(String paramName, String entityPath, FieldType type) {
+            this(paramName, entityPath, type, null, null);
+        }
+    }
+
     private final Map<String, FieldDefinition> fields = Map.of(
             "project", new FieldDefinition(
                     "project",

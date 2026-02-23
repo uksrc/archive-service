@@ -4,17 +4,17 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
-import org.uksrc.archive.searchrequest.params.parser.DescriptorFactory;
 import org.uksrc.archive.searchrequest.query.QueryContext;
+import static org.uksrc.archive.searchrequest.params.parser.FieldRegistry.FieldDefinition;
 
 public class RangeDescriptor<V extends Comparable<? super V>>
         implements PredicateDescriptor {
 
-    private final DescriptorFactory.FieldDefinition fieldDef;
+    private final FieldDefinition fieldDef;
     private final V min;
     private final V max;
 
-    public RangeDescriptor(DescriptorFactory.FieldDefinition fieldDef, V min, V max) {
+    public RangeDescriptor(FieldDefinition fieldDef, V min, V max) {
         this.fieldDef = fieldDef;
         this.min = min;
         this.max = max;
@@ -25,7 +25,7 @@ public class RangeDescriptor<V extends Comparable<? super V>>
         CriteriaBuilder cb = ctx.criteriaBuilder();
 
         // 1. Join through planes/energy to get the parent of the 'bounds' object
-        From<?, ?> parent = resolveParentPath(ctx.root(), ctx, fieldDef);
+        From<?, ?> parent = resolveParentPath(ctx.root(), fieldDef);
 
         // 2. Since 'bounds' is @Embedded, we use .get() twice:
         // once for the embedded object, once for its attribute.
@@ -40,13 +40,13 @@ public class RangeDescriptor<V extends Comparable<? super V>>
         );
     }
 
-    private From<?, ?> resolveParentPath(From<?, ?> root, QueryContext<?> ctx, DescriptorFactory.FieldDefinition def) {
+    private From<?, ?> resolveParentPath(From<?, ?> root, FieldDefinition def) {
         String[] parts = def.entityPath().split("\\.");
         From<?, ?> current = root;
         // Join associations (like 'plane' or 'energy')
         // but STOP before the @Embedded 'bounds' object.
         for (int i = 0; i < parts.length - 1; i++) {
-            current = (From<?, ?>) current.join(parts[i]);
+            current = current.join(parts[i]);
         }
         return current;
     }

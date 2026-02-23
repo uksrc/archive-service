@@ -34,52 +34,52 @@ import java.time.format.DateTimeParseException;
  * Database storage of the time bounds is in 'MJD seconds' for CAOM.
  * Utility for conversion <a href="https://heasarc.gsfc.nasa.gov/cgi-bin/Tools/xTime/xTime.pl">https://heasarc.gsfc.nasa.gov/cgi-bin/Tools/xTime/xTime.pl</a> although MJD rather than MJD seconds.
  */
-public class StartDateParameter implements SearchParameter {
+public class StartDateParameter /*implements SearchParameter*/ {
 
-    private static final Instant MJD_EPOCH =
-            LocalDate.of(1858, 11, 17)
-            .atStartOfDay(ZoneOffset.UTC)
-            .toInstant();
-
-    @Override
-    public void applyIfPresent(ObservationSearchRequest request, QueryContext ctx) {
-        request.startDate().ifPresent(raw -> {
-            CriteriaBuilder cb = ctx.criteriaBuilder();
-
-            Path<Double> lowerPath = ctx.root()
-                    .join("planes", JoinType.INNER)
-                    .join("time", JoinType.INNER)
-                    .join("bounds", JoinType.INNER)
-                    .get("lower");
-
-            try {
-                // Try full ISO datetime first
-                OffsetDateTime odt = OffsetDateTime.parse(raw);
-                Instant instant = odt.toInstant();
-
-                double formattedTime = toMjdSeconds(instant);
-
-                //Search for time.bounds.lower values greater than the supplied param value
-             //   ctx.add(cb.greaterThanOrEqualTo(lowerPath, formattedTime));
-
-            } catch (DateTimeParseException e) {
-                // Date-only → whole day range
-                LocalDate date = LocalDate.parse(raw);
-                Instant start = date.atStartOfDay(ZoneOffset.UTC).toInstant();
-
-                double startMjd = toMjdSeconds(start);
-
-             //   ctx.add(cb.greaterThanOrEqualTo(lowerPath, startMjd));
-            }
-        });
-    }
+//    private static final Instant MJD_EPOCH =
+//            LocalDate.of(1858, 11, 17)
+//            .atStartOfDay(ZoneOffset.UTC)
+//            .toInstant();
+//
+//    @Override
+//    public void applyIfPresent(ObservationSearchRequest request, QueryContext ctx) {
+//        request.startDate().ifPresent(raw -> {
+//            CriteriaBuilder cb = ctx.criteriaBuilder();
+//
+//            Path<Double> lowerPath = ctx.root()
+//                    .join("planes", JoinType.INNER)
+//                    .join("time", JoinType.INNER)
+//                    .join("bounds", JoinType.INNER)
+//                    .get("lower");
+//
+//            try {
+//                // Try full ISO datetime first
+//                OffsetDateTime odt = OffsetDateTime.parse(raw);
+//                Instant instant = odt.toInstant();
+//
+//                double formattedTime = toMjdSeconds(instant);
+//
+//                //Search for time.bounds.lower values greater than the supplied param value
+//             //   ctx.add(cb.greaterThanOrEqualTo(lowerPath, formattedTime));
+//
+//            } catch (DateTimeParseException e) {
+//                // Date-only → whole day range
+//                LocalDate date = LocalDate.parse(raw);
+//                Instant start = date.atStartOfDay(ZoneOffset.UTC).toInstant();
+//
+//                double startMjd = toMjdSeconds(start);
+//
+//             //   ctx.add(cb.greaterThanOrEqualTo(lowerPath, startMjd));
+//            }
+//        });
+//    }
 
     /**
      * Convert the Instant to MJD Seconds (Seconds since 1858-11-17T00:00:00Z)
      * @param instant an Instant value representing the date to search for.
      * @return double containing the MJD Seconds
      */
-    private double toMjdSeconds(Instant instant) {
-        return Duration.between(MJD_EPOCH, instant).toNanos() / 1_000_000_000.0;
-    }
+ //   private double toMjdSeconds(Instant instant) {
+ //       return Duration.between(MJD_EPOCH, instant).toNanos() / 1_000_000_000.0;
+ //   }
 }

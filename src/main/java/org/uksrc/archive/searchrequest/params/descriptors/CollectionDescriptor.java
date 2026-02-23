@@ -1,8 +1,9 @@
 package org.uksrc.archive.searchrequest.params.descriptors;
 
 import jakarta.persistence.criteria.*;
-import org.uksrc.archive.searchrequest.params.parser.DescriptorFactory;
 import org.uksrc.archive.searchrequest.query.QueryContext;
+import static org.uksrc.archive.searchrequest.params.parser.FieldRegistry.FieldDefinition;
+import static org.uksrc.archive.searchrequest.params.parser.FieldRegistry.FieldType;
 
 /**
  * The CollectionDescriptor class is used to construct a JPA Predicate
@@ -15,10 +16,10 @@ import org.uksrc.archive.searchrequest.query.QueryContext;
  */
 public class CollectionDescriptor implements PredicateDescriptor {
 
-    private final DescriptorFactory.FieldDefinition fieldDef;
+    private final FieldDefinition fieldDef;
     private final String value;
 
-    public CollectionDescriptor(DescriptorFactory.FieldDefinition fieldDef, String value) {
+    public CollectionDescriptor(FieldDefinition fieldDef, String value) {
         this.fieldDef = fieldDef;
         this.value = value.toUpperCase();
     }
@@ -39,7 +40,7 @@ public class CollectionDescriptor implements PredicateDescriptor {
         String lastPart = getLastPathSegment(fieldDef.entityPath());
 
         // Handle COLLECTION (varchar[] or converted strings)
-        if (fieldDef.type() == DescriptorFactory.FieldType.COLLECTION) {
+        if (fieldDef.type() == FieldType.COLLECTION) {
             Expression<String> pathAsString = parent.get(lastPart).as(String.class);
 
             return cb.or(
@@ -63,7 +64,7 @@ public class CollectionDescriptor implements PredicateDescriptor {
      * @param def The field definition containing the entity path to be resolved.
      * @return The last accessed path of the parent in the entity graph.
      */
-    private From<?, ?> resolveParentPath(From<?, ?> root, DescriptorFactory.FieldDefinition def) {
+    private From<?, ?> resolveParentPath(From<?, ?> root, FieldDefinition def) {
         String[] parts = def.entityPath().split("\\.");
         From<?, ?> current = root;
         for (int i = 0; i < parts.length - 1; i++) {
