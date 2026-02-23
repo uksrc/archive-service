@@ -150,7 +150,8 @@ public class DescriptorFactory {
      * @param max the maximum value of the range, or {@code null} if no maximum is defined.
      * @return a {@code PredicateDescriptor} instance based on the provided field definition and range values.
      */
-    private PredicateDescriptor buildRangeDescriptor(FieldRegistry.FieldDefinition def, Double min, Double max) {
+    private PredicateDescriptor buildRangeDescriptor(FieldDefinition def, Double min, Double max) {
+        //TODO - need a way of only applying conversions if they are required (such as freq->wav)
         if (def.type() == FieldType.SPECTRAL_RANGE) {
             double c = 299792458.0;
             // Inverse swap: High freq = Low wavelength
