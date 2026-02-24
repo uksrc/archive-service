@@ -6,7 +6,6 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import org.uksrc.archive.searchrequest.params.descriptors.*;
 
 import static org.uksrc.archive.searchrequest.params.parser.FieldRegistry.FieldDefinition;
-import static org.uksrc.archive.searchrequest.params.parser.FieldRegistry.FieldType;
 
 import java.util.*;
 
@@ -132,32 +131,10 @@ public class DescriptorFactory {
             registry.get(key).ifPresent(def -> {
                 String valMin = minValues.get(key);
                 String valMax = maxValues.get(key);
-                rangeDescriptors.add(buildRangeDescriptor(def, valMin, valMax));
+                rangeDescriptors.add(new RangeDescriptor(def, valMin, valMax));
             });
         }
         return rangeDescriptors;
-    }
-
-    /**
-     * Builds a {@code PredicateDescriptor} instance for a provided field definition and its range values.
-     * This method determines the type of the field and creates an appropriate {@code RangeDescriptor}.
-     * If the field type is {@code SPECTRAL_RANGE}, it performs wavelength-frequency conversion.
-     *
-     * @param def the {@code FieldDefinition} that provides metadata such as field type and entity path.
-     * @param min the minimum value of the range, or {@code null} if no minimum is defined.
-     * @param max the maximum value of the range, or {@code null} if no maximum is defined.
-     * @return a {@code PredicateDescriptor} instance based on the provided field definition and range values.
-     */
-    private PredicateDescriptor buildRangeDescriptor(FieldDefinition def, String min, String max) {
-        //TODO - need a way of only applying conversions if they are required (such as freq->wav)
-      //  if (def.type() == FieldType.SPECTRAL_RANGE) {
-       //     double c = 299792458.0;
-            // Inverse swap: High freq = Low wavelength
-       //     Double wavMin = (max != null && max != 0) ? c / max : null;
-        //    Double wavMax = (min != null && min != 0) ? c / min : null;
-        //    return new RangeDescriptor(def, wavMin, wavMax);
-       // }
-        return new RangeDescriptor(def, min, max);
     }
 
 // --- Helper Utilities ---
