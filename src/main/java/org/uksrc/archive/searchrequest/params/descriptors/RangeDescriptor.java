@@ -6,6 +6,10 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import org.uksrc.archive.searchrequest.params.transform.RangeTransformer;
 import org.uksrc.archive.searchrequest.query.QueryContext;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.uksrc.archive.searchrequest.params.parser.FieldRegistry.FieldDefinition;
 
 /**
@@ -63,10 +67,19 @@ public class RangeDescriptor implements PredicateDescriptor {
         Path<Double> dbMin = parent.get(fieldDef.minAttribute());
         Path<Double> dbMax = parent.get(fieldDef.maxAttribute());
 
-        return cb.and(
-                cb.lessThanOrEqualTo(dbMin, dbMaxVal),
-                cb.greaterThanOrEqualTo(dbMax, dbMinVal)
-        );
+        List<Predicate> predicates = new ArrayList<>();
+
+        // If we have a transformed max value, apply: dbMin <= userMax
+        if (dbMaxVal != null) {
+            predicates.add(cb.lessThanOrEqualTo(dbMin, dbMaxVal));
+        }
+
+        // If we have a transformed min value, apply: dbMax >= userMin
+        if (dbMinVal != null) {
+            predicates.add(cb.greaterThanOrEqualTo(dbMax, dbMinVal));
+        }
+
+        return cb.and(predicates.toArray(new Predicate[0]));
     }
 
     /**

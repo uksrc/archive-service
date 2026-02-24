@@ -137,10 +137,10 @@ public class FieldRegistry {
             "startDate", new FieldDefinition(       //Ignores the upper value (end date in this case)
                     "startDate",
                     "planes.time.bounds",
-                    FieldType.DATE//,
-                   // "lower",
-                   // "upper",
-                   // Transformers.STRICT_START_TIME
+                    FieldType.RANGE,
+                    "lower",
+                    "upper",
+                   Transformers.STRICT_START_TIME
             )
     );
 
