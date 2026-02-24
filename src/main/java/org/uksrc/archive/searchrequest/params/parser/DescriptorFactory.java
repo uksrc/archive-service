@@ -145,13 +145,4 @@ public class DescriptorFactory {
     private String stripSuffix(String key) {
         return key.replaceAll("(_min|Min|_max|Max)$", "");
     }
-
-    private Double parse(String s) {
-        if (s == null || s.isBlank()) return null;
-        try {
-            return Double.parseDouble(s);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid numeric value: " + s, e);
-        }
-    }
 }
