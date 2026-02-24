@@ -3,10 +3,8 @@ package org.uksrc.archive.searchrequest.params.parser;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MultivaluedMap;
-import org.uksrc.archive.searchrequest.params.descriptors.CollectionDescriptor;
-import org.uksrc.archive.searchrequest.params.descriptors.EqualsDescriptor;
-import org.uksrc.archive.searchrequest.params.descriptors.PredicateDescriptor;
-import org.uksrc.archive.searchrequest.params.descriptors.RangeDescriptor;
+import org.uksrc.archive.searchrequest.params.descriptors.*;
+
 import static org.uksrc.archive.searchrequest.params.parser.FieldRegistry.FieldDefinition;
 import static org.uksrc.archive.searchrequest.params.parser.FieldRegistry.FieldType;
 
@@ -41,8 +39,8 @@ public class DescriptorFactory {
      */
     public List<PredicateDescriptor> fromQueryParams(MultivaluedMap<String, String> params) {
         List<PredicateDescriptor> descriptors = new ArrayList<>();
-        Map<String, Double> minValues = new HashMap<>();
-        Map<String, Double> maxValues = new HashMap<>();
+        Map<String, String> minValues = new HashMap<>();
+        Map<String, String> maxValues = new HashMap<>();
 
         // Handle scalar values or range points (and extract range values)
         params.forEach((key, values) -> {
@@ -67,13 +65,13 @@ public class DescriptorFactory {
      * @param maxValues    a map used to store maximum values for range parameters, keyed by the stripped parameter name.
      */
     private void processParameter(String key, String value, List<PredicateDescriptor> descriptors,
-                                  Map<String, Double> minValues, Map<String, Double> maxValues) {
+                                  Map<String, String> minValues, Map<String, String> maxValues) {
 
         // Handle Range Suffixes
         if (isMin(key)) {
-            minValues.put(stripSuffix(key), parse(value));
+            minValues.put(stripSuffix(key), value);
         } else if (isMax(key)) {
-            maxValues.put(stripSuffix(key), parse(value));
+            maxValues.put(stripSuffix(key), value);
         } else {
             // Handle Standalone/Point values
             registry.get(key).ifPresent(def -> handleScalarOrPoint(def, key, value, descriptors, minValues, maxValues));
@@ -101,15 +99,15 @@ public class DescriptorFactory {
      */
     private void handleScalarOrPoint(FieldDefinition def, String key, String value,
                                      List<PredicateDescriptor> descriptors,
-                                     Map<String, Double> minValues, Map<String, Double> maxValues) {
+                                     Map<String, String> minValues, Map<String, String> maxValues) {
         switch (def.type()) {
             case STRING          -> descriptors.add(new EqualsDescriptor<>(def.entityPath(), value));
             case BAND, COLLECTION -> descriptors.add(new CollectionDescriptor(def, value));
             case SPECTRAL_RANGE, RANGE -> {
-                Double val = parse(value);
-                minValues.putIfAbsent(key, val);
-                maxValues.putIfAbsent(key, val);
+                minValues.putIfAbsent(key, value);
+                maxValues.putIfAbsent(key, value);
             }
+            case DATE -> descriptors.add(new DateDescriptor(def, value));
         }
     }
 
@@ -125,15 +123,15 @@ public class DescriptorFactory {
      * @param maxValues a map containing maximum values for range-based parameters, keyed by parameter name
      * @return a list of {@code PredicateDescriptor} instances built using the provided ranges
      */
-    private List<PredicateDescriptor> createRangeDescriptors(Map<String, Double> minValues, Map<String, Double> maxValues) {
+    private List<PredicateDescriptor> createRangeDescriptors(Map<String, String> minValues, Map<String, String> maxValues) {
         List<PredicateDescriptor> rangeDescriptors = new ArrayList<>();
         Set<String> allKeys = new HashSet<>(minValues.keySet());
         allKeys.addAll(maxValues.keySet());
 
         for (String key : allKeys) {
             registry.get(key).ifPresent(def -> {
-                Double valMin = minValues.get(key);
-                Double valMax = maxValues.get(key);
+                String valMin = minValues.get(key);
+                String valMax = maxValues.get(key);
                 rangeDescriptors.add(buildRangeDescriptor(def, valMin, valMax));
             });
         }
@@ -150,16 +148,16 @@ public class DescriptorFactory {
      * @param max the maximum value of the range, or {@code null} if no maximum is defined.
      * @return a {@code PredicateDescriptor} instance based on the provided field definition and range values.
      */
-    private PredicateDescriptor buildRangeDescriptor(FieldDefinition def, Double min, Double max) {
+    private PredicateDescriptor buildRangeDescriptor(FieldDefinition def, String min, String max) {
         //TODO - need a way of only applying conversions if they are required (such as freq->wav)
-        if (def.type() == FieldType.SPECTRAL_RANGE) {
-            double c = 299792458.0;
+      //  if (def.type() == FieldType.SPECTRAL_RANGE) {
+       //     double c = 299792458.0;
             // Inverse swap: High freq = Low wavelength
-            Double wavMin = (max != null && max != 0) ? c / max : null;
-            Double wavMax = (min != null && min != 0) ? c / min : null;
-            return new RangeDescriptor<>(def, wavMin, wavMax);
-        }
-        return new RangeDescriptor<>(def, min, max);
+       //     Double wavMin = (max != null && max != 0) ? c / max : null;
+        //    Double wavMax = (min != null && min != 0) ? c / min : null;
+        //    return new RangeDescriptor(def, wavMin, wavMax);
+       // }
+        return new RangeDescriptor(def, min, max);
     }
 
 // --- Helper Utilities ---

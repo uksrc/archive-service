@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import  org.uksrc.archive.searchrequest.params.parser.DescriptorFactory.*;
+import org.uksrc.archive.searchrequest.params.transform.RangeTransformer;
+import org.uksrc.archive.searchrequest.params.transform.Transformers;
 
 /**
  * A registry for managing field definitions that are used to describe parameters
@@ -31,6 +33,7 @@ public class FieldRegistry {
     public enum FieldType {
         STRING,
         NUMBER,
+        DATE,
         RANGE,
         SPECTRAL_RANGE,
         BAND,
@@ -60,11 +63,12 @@ public class FieldRegistry {
             String entityPath,
             FieldType type,
             String minAttribute,
-            String maxAttribute
+            String maxAttribute,
+            RangeTransformer transformer
     ) {
         // Convenience constructor for scalar values
         public FieldDefinition(String paramName, String entityPath, FieldType type) {
-            this(paramName, entityPath, type, null, null);
+            this(paramName, entityPath, type, null, null, null);
         }
     }
 
@@ -119,7 +123,24 @@ public class FieldRegistry {
                     "planes.energy.bounds",
                     FieldType.SPECTRAL_RANGE,
                     "lower",
-                    "upper"
+                    "upper",
+                    Transformers.FREQUENCY_TO_WAVELENGTH
+            ),
+            "dateRange", new FieldDefinition(       //Uses the overlap range
+                    "dateRange",
+                    "planes.time.bounds",
+                    FieldType.RANGE,
+                    "lower",
+                    "upper",
+                    Transformers.ISO_TO_MJD
+            ),
+            "startDate", new FieldDefinition(       //Ignores the upper value (end date in this case)
+                    "startDate",
+                    "planes.time.bounds",
+                    FieldType.DATE//,
+                   // "lower",
+                   // "upper",
+                   // Transformers.STRICT_START_TIME
             )
     );
 
