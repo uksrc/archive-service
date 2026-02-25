@@ -38,7 +38,8 @@ public class FieldRegistry {
         SPECTRAL_RANGE,
         BAND,
         ENUM,
-        COLLECTION
+        COLLECTION,
+        CONE
     }
 
     /**
@@ -141,6 +142,14 @@ public class FieldRegistry {
                     "lower",
                     "upper",
                    Transformers.STRICT_START_TIME
+            ),
+            "cone", new FieldDefinition(
+                    "cone",                      // Search key
+                    "targetPosition.coordinates", // Base path to the entity
+                    FieldType.CONE,              // New type
+                    "cval1",                     // RA column
+                    "cval2",
+                    null
             )
     );
 

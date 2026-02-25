@@ -41,14 +41,21 @@ public class DescriptorFactory {
         Map<String, String> minValues = new HashMap<>();
         Map<String, String> maxValues = new HashMap<>();
 
+        Map<String, Double> coneParams = new HashMap<>();
+        // keys: "ra", "dec", "radius"
+
         // Handle scalar values or range points (and extract range values)
         params.forEach((key, values) -> {
             if (values == null || values.isEmpty()) return;
-            processParameter(key, values.get(0), descriptors, minValues, maxValues);
+
+            if (!isConeParameter(key)) {
+                processParameter(key, values.get(0), descriptors, minValues, maxValues);
+            }
         });
 
         // Handle ranges
         descriptors.addAll(createRangeDescriptors(minValues, maxValues));
+        createConeDescriptor(params).ifPresent(descriptors::add);
 
         return descriptors;
     }
@@ -137,6 +144,28 @@ public class DescriptorFactory {
         return rangeDescriptors;
     }
 
+    private Optional<PredicateDescriptor> createConeDescriptor(MultivaluedMap<String, String> params) {
+        String raVal = params.getFirst("ra");
+        String decVal = params.getFirst("dec");
+        String radVal = params.getFirst("radius");
+
+        if (raVal != null && decVal != null && radVal != null) {
+            // Look up the FieldDefinition that maps to targetPosition.coordinates
+            return registry.get("cone").map(def -> {
+                try {
+                    double ra = Double.parseDouble(raVal);
+                    double dec = Double.parseDouble(decVal);
+                    double radius = Double.parseDouble(radVal);
+                    return new ConeSearchDescriptor(def, ra, dec, radius);
+                } catch (NumberFormatException e) {
+                    // Log warning or throw exception for malformed coordinates
+                    return null;
+                }
+            });
+        }
+        return Optional.empty();
+    }
+
 // --- Helper Utilities ---
 
     private boolean isMin(String key) { return key.endsWith("Min") || key.endsWith("_min"); }
@@ -144,5 +173,9 @@ public class DescriptorFactory {
 
     private String stripSuffix(String key) {
         return key.replaceAll("(_min|Min|_max|Max)$", "");
+    }
+
+    private boolean isConeParameter(String key) {
+        return "ra".equalsIgnoreCase(key) || "dec".equalsIgnoreCase(key) || "radius".equalsIgnoreCase(key);
     }
 }

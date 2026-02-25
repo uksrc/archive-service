@@ -36,28 +36,18 @@ public class Transformers {
         if (val == null) return null;
 
         try {
-                // Try full ISO datetime first
-                OffsetDateTime odt = OffsetDateTime.parse(min);
-                Instant instant = odt.toInstant();
+            // Try full ISO datetime first
+            OffsetDateTime odt = OffsetDateTime.parse(min);
+            Instant instant = odt.toInstant();
 
-                return toMjdSeconds(instant);
+            return toMjdSeconds(instant);
+        } catch (DateTimeParseException e) {
+            // Date-only → whole day range
+            LocalDate date = LocalDate.parse(min);
+            Instant start = date.atStartOfDay(ZoneOffset.UTC).toInstant();
 
-                //Search for time.bounds.lower values greater than the supplied param value
-             //   ctx.add(cb.greaterThanOrEqualTo(lowerPath, formattedTime));
-
-            } catch (DateTimeParseException e) {
-                // Date-only → whole day range
-                LocalDate date = LocalDate.parse(min);
-                Instant start = date.atStartOfDay(ZoneOffset.UTC).toInstant();
-
-                return toMjdSeconds(start);
-
-             //   ctx.add(cb.greaterThanOrEqualTo(lowerPath, startMjd));
-            }
-
-        // The parsing logic is now encapsulated here
-        //Instant instant = OffsetDateTime.parse(val).toInstant();
-       // return toMjdSeconds(instant);
+            return toMjdSeconds(start);
+        }
     };
 
     public static final RangeTransformer STRICT_START_TIME = (min, max, lower) -> {

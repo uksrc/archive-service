@@ -66,9 +66,31 @@ public class SearchResourceTest {
         }
     }
 
+    /**
+     * Tests the functionality of the Cone Search API endpoint.
+     * This is for the dedicated cone search API
+     */
     @Test
     @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
-    void testConeSearch() {
+    void testConeSearchAPI() {
+        testConeSearch("/search/cone");
+    }
+
+    /**
+     * Tests the functionality of the Search API endpoint.
+     * This is for the filter search API, where parameters other than the cone search can be supplied.
+     */
+    @Test
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    void testSearchAPI() {
+        testConeSearch("/search");
+    }
+
+    /**
+     * Will perform a cone search as the specified API endpoint.
+     * @param api The API to use to perform the cone search. Must support parameters ra, dec and radius.
+     */
+    private void testConeSearch(String api) {
         JSONObject target = positions.getJSONObject("target");
         double radius = target.getDouble("radius");
 
@@ -76,7 +98,7 @@ public class SearchResourceTest {
         for(int i = 0; i < positionList.length(); i++) {
             JSONObject position = positionList.getJSONObject(i);
 
-            String query = "/search/cone?ra=" + position.getDouble("ra") + "&dec=" + position.getDouble("dec") + "&radius=" + radius;
+            String query = api + "?ra=" + position.getDouble("ra") + "&dec=" + position.getDouble("dec") + "&radius=" + radius;
             int minExpected = position.getBoolean("withinRadius") ? 1 : 0;
 
             Response res = given()
