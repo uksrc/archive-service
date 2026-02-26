@@ -133,6 +133,7 @@ public class DescriptorFactory {
         Set<String> allKeys = new HashSet<>(minValues.keySet());
         allKeys.addAll(maxValues.keySet());
 
+        //Process ALL min/max key values
         for (String key : allKeys) {
             registry.get(key).ifPresent(def -> {
                 String valMin = minValues.get(key);
@@ -143,6 +144,22 @@ public class DescriptorFactory {
         return rangeDescriptors;
     }
 
+    /**
+     * Creates a {@code PredicateDescriptor} for a cone search query based on the provided parameters.
+     * A cone search operation requires three specific parameters: "ra" (right ascension),
+     * "dec" (declination), and "radius". If any one of these parameters is provided without the
+     * others, an {@code IllegalArgumentException} is thrown. If all required parameters are
+     * available and valid, a {@code ConeSearchDescriptor} is created. Otherwise, an empty
+     * {@code Optional} is returned.
+     *
+     * @param params a map of query parameters where the key is the parameter name
+     *               and the value is a list of associated values. The method specifically
+     *               looks for the parameters "ra", "dec", and "radius".
+     * @return an {@code Optional} containing a {@code PredicateDescriptor} for the cone search
+     *         criteria, or an empty {@code Optional} if none of the cone search parameters are present.
+     * @throws IllegalArgumentException if only a subset of the cone search parameters are provided,
+     *                                  or if the parameters are not in a valid numeric format.
+     */
     private Optional<PredicateDescriptor> createConeDescriptor(MultivaluedMap<String, String> params) {
         String raVal = params.getFirst("ra");
         String decVal = params.getFirst("dec");
@@ -176,6 +193,8 @@ public class DescriptorFactory {
 
 // --- Helper Utilities ---
 
+    //Utilities to help with parameter processing for values that are supplied with a min & max suffix.
+    //Queries for frequency, for example, that expect 'freqMin' and 'freqMax'
     private boolean isMin(String key) { return key.endsWith("Min") || key.endsWith("_min"); }
     private boolean isMax(String key) { return key.endsWith("Max") || key.endsWith("_max"); }
 
@@ -183,10 +202,27 @@ public class DescriptorFactory {
         return key.replaceAll("(_min|Min|_max|Max)$", "");
     }
 
+    /**
+     * Simple check against known cone search parameters
+     * @param key parameter name
+     * @return boolean true if parameter is a cone search parameter
+     */
     private boolean isConeParameter(String key) {
         return "ra".equalsIgnoreCase(key) || "dec".equalsIgnoreCase(key) || "radius".equalsIgnoreCase(key);
     }
 
+    /**
+     * Validates a set of parameter keys to ensure they conform to accepted criteria.
+     * A parameter key is considered valid if it is either:
+     * - Registered in the parameter registry.
+     * - Recognised as a known spatial parameter (e.g., "ra", "dec", "radius").
+     * - A recognised global parameter for pagination (e.g., "page", "size").
+     * If any key is not recognised under these conditions, this method throws an
+     * {@code IllegalArgumentException}.
+     *
+     * @param keys the set of parameter keys to be validated
+     * @throws IllegalArgumentException if an unrecognised parameter key is encountered
+     */
     private void validateParamKeys(Set<String> keys) {
         for (String key : keys) {
             // A key is valid if it's in the registry OR it's a known spatial parameter
