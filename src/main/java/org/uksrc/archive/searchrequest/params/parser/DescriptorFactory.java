@@ -37,12 +37,11 @@ public class DescriptorFactory {
      * @return a list of {@code PredicateDescriptor} instances derived from the query parameters
      */
     public List<PredicateDescriptor> fromQueryParams(MultivaluedMap<String, String> params) {
+        validateParamKeys(params.keySet());
+
         List<PredicateDescriptor> descriptors = new ArrayList<>();
         Map<String, String> minValues = new HashMap<>();
         Map<String, String> maxValues = new HashMap<>();
-
-        Map<String, Double> coneParams = new HashMap<>();
-        // keys: "ra", "dec", "radius"
 
         // Handle scalar values or range points (and extract range values)
         params.forEach((key, values) -> {
@@ -149,7 +148,17 @@ public class DescriptorFactory {
         String decVal = params.getFirst("dec");
         String radVal = params.getFirst("radius");
 
-        if (raVal != null && decVal != null && radVal != null) {
+        //Check that all three of the cone search parameters are present
+        boolean hasAny = (raVal != null || decVal != null || radVal != null);
+        boolean hasAll = (raVal != null && decVal != null && radVal != null);
+
+        if (hasAny && !hasAll) {
+            throw new IllegalArgumentException(
+                    "Incomplete Cone Search: 'ra', 'dec', and 'radius' must all be provided together."
+            );
+        }
+
+        if (hasAll) {
             // Look up the FieldDefinition that maps to targetPosition.coordinates
             return registry.get("cone").map(def -> {
                 try {
@@ -158,8 +167,7 @@ public class DescriptorFactory {
                     double radius = Double.parseDouble(radVal);
                     return new ConeSearchDescriptor(def, ra, dec, radius);
                 } catch (NumberFormatException e) {
-                    // Log warning or throw exception for malformed coordinates
-                    return null;
+                    throw new IllegalArgumentException("Invalid numeric format for cone search parameters.");
                 }
             });
         }
@@ -177,5 +185,20 @@ public class DescriptorFactory {
 
     private boolean isConeParameter(String key) {
         return "ra".equalsIgnoreCase(key) || "dec".equalsIgnoreCase(key) || "radius".equalsIgnoreCase(key);
+    }
+
+    private void validateParamKeys(Set<String> keys) {
+        for (String key : keys) {
+            // A key is valid if it's in the registry OR it's a known spatial parameter
+            boolean isRegistered = registry.containsParam(key);
+            boolean isSpatial = isConeParameter(key);
+
+            // Add other global params here (e.g., "limit", "offset", "sort")
+            boolean isPagination = "limit".equalsIgnoreCase(key) || "offset".equalsIgnoreCase(key);
+
+            if (!isRegistered && !isSpatial && !isPagination) {
+                throw new IllegalArgumentException("Unknown query parameter: " + key);
+            }
+        }
     }
 }

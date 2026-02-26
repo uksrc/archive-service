@@ -50,10 +50,14 @@ public class ObsSearchResource {
     public Response search(@Context UriInfo uriInfo) {
         MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
 
-        List<PredicateDescriptor> descriptors = descriptorFactory.fromQueryParams(params);
+        try {
+            List<PredicateDescriptor> descriptors = descriptorFactory.fromQueryParams(params);
 
-        TypedQuery<Observation> query = searchService.searchQuery(descriptors);
-        return Tools.performQuery(0, 10, query);
+            TypedQuery<Observation> query = searchService.searchQuery(descriptors);
+            return Tools.performQuery(0, 10, query);
+        } catch (Exception e) {
+            return Responses.errorResponse(e);
+        }
     }
 
     @GET

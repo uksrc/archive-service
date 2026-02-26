@@ -163,4 +163,8 @@ public class FieldRegistry {
     public Optional<FieldDefinition> get(String param) {
         return Optional.ofNullable(fields.get(param));
     }
+
+    public boolean containsParam(String param) {
+        return fields.containsKey(param);
+    }
 }
