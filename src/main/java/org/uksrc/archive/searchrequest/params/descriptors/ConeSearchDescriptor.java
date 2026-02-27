@@ -39,6 +39,23 @@ public class ConeSearchDescriptor implements PredicateDescriptor {
         this.radius = radius;
     }
 
+    /**
+     * Constructs a JPA {@link Predicate} that represents a spatial filtering condition
+     * based on a cone search criterion. This method dynamically builds a predicate
+     * to filter entities whose spatial coordinates fall within the specified angular
+     * distance (radius) from a given central point (right ascension and declination).
+     * <p>
+     * The method utilises the PostGIS `pgsphere_distance` function to calculate the
+     * angular distance in radians between stored coordinates and the central point.
+     * Entities with distances less than or equal to the radius are included in the result.
+     *
+     * @param context the {@link QueryContext} providing access to the {@link CriteriaBuilder}
+     *                and the root entity for constructing the predicate. It includes information
+     *                necessary for resolving paths to database attributes and creating required
+     *                comparison expressions.
+     * @return a {@link Predicate} that filters entities based on the specified cone search
+     *         criterion, ensuring that the spatial coordinates are within the defined angular distance.
+     */
     @Override
     public Predicate toPredicate(QueryContext<?> context) {
         CriteriaBuilder cb = context.criteriaBuilder();

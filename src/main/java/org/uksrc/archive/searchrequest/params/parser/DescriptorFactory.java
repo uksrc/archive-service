@@ -26,7 +26,7 @@ import java.util.*;
 public class DescriptorFactory {
 
     @Inject
-    FieldRegistry registry;
+    FieldRegistry registry;         /* Access to the registry of field definitions */
 
     /**
      * Converts query parameters into a list of {@code PredicateDescriptor} instances
@@ -112,7 +112,6 @@ public class DescriptorFactory {
                 minValues.putIfAbsent(key, value);
                 maxValues.putIfAbsent(key, value);
             }
-           // case DATE -> descriptors.add(new DateDescriptor(def, value));
         }
     }
 
@@ -228,11 +227,12 @@ public class DescriptorFactory {
             // A key is valid if it's in the registry OR it's a known spatial parameter
             boolean isRegistered = registry.containsParam(key);
             boolean isSpatial = isConeParameter(key);
+            boolean isRange = isMin(key) || isMax(key);
 
             // Add other global params here (e.g., "limit", "offset", "sort")
             boolean isPagination = "limit".equalsIgnoreCase(key) || "offset".equalsIgnoreCase(key);
 
-            if (!isRegistered && !isSpatial && !isPagination) {
+            if (!isRegistered && !isSpatial && !isPagination && !isRange) {
                 throw new IllegalArgumentException("Unknown query parameter: " + key);
             }
         }
