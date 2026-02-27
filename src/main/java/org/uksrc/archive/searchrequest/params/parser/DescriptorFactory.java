@@ -79,39 +79,30 @@ public class DescriptorFactory {
             maxValues.put(stripSuffix(key), value);
         } else {
             // Handle Standalone/Point values
-            registry.get(key).ifPresent(def -> handleScalarOrPoint(def, key, value, descriptors, minValues, maxValues));
+            registry.get(key).ifPresent(def -> createScalarDescriptors(def, value, descriptors));
         }
     }
 
+    /* ----------------------------------- Descriptor Creation ----------------------------------- */
+
     /**
-     * Handles the processing of a given field definition and its associated value
-     * by determining the appropriate descriptor or value mappings to use.
-     * Depending on the field type, this method dynamically adds descriptors
-     * or updates the range maps for minimum and maximum values.
-     * NOTE: Also extracts values for ranges
+     * Creates scalar-based {@code PredicateDescriptor} objects and adds them to the provided list
+     * of descriptors based on the type of the given field definition. Specifically, this method
+     * handles scalar types such as strings and collections by creating appropriate descriptor
+     * instances.
+     * NOTE: Scalar as in the database field, not the parameter value.
      *
-     * @param def the field definition that provides metadata, such as the field type
-     *            and entity path information.
-     * @param key the parameter key representing the name of the parameter being processed.
-     * @param value the parameter value to be evaluated and used for creating descriptors
-     *              or updating minimum and maximum values.
-     * @param descriptors a list of {@code PredicateDescriptor} objects where new descriptors
-     *                    will be added based on the field type and value.
-     * @param minValues a map to store minimum values for range-based fields, keyed by the
-     *                  stripped parameter name.
-     * @param maxValues a map to store maximum values for range-based fields, keyed by the
-     *                  stripped parameter name.
+     * @param def          the definition of the field, which provides the metadata and type
+     *                     information necessary to determine the descriptor creation logic.
+     * @param value        the parameter value associated with the field, used to configure the
+     *                     created descriptor.
+     * @param descriptors  the list of {@code PredicateDescriptor} instances to which new scalar
+     *                     descriptors will be added.
      */
-    private void handleScalarOrPoint(FieldDefinition def, String key, String value,
-                                     List<PredicateDescriptor> descriptors,
-                                     Map<String, String> minValues, Map<String, String> maxValues) {
+    private void createScalarDescriptors(FieldDefinition def, String value, List<PredicateDescriptor> descriptors) {
         switch (def.type()) {
             case STRING          -> descriptors.add(new EqualsDescriptor<>(def, value));
             case BAND, COLLECTION -> descriptors.add(new CollectionDescriptor(def, value));
-            case SPECTRAL_RANGE, RANGE -> {
-                minValues.putIfAbsent(key, value);
-                maxValues.putIfAbsent(key, value);
-            }
         }
     }
 
@@ -190,7 +181,7 @@ public class DescriptorFactory {
         return Optional.empty();
     }
 
-// --- Helper Utilities ---
+    /* ----------------------------------- Helper Utilities ----------------------------------- */
 
     //Utilities to help with parameter processing for values that are supplied with a min & max suffix.
     //Queries for frequency, for example, that expect 'freqMin' and 'freqMax'
