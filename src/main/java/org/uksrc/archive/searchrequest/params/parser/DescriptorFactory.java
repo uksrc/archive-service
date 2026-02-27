@@ -106,13 +106,13 @@ public class DescriptorFactory {
                                      List<PredicateDescriptor> descriptors,
                                      Map<String, String> minValues, Map<String, String> maxValues) {
         switch (def.type()) {
-            case STRING          -> descriptors.add(new EqualsDescriptor<>(def.entityPath(), value));
+            case STRING          -> descriptors.add(new EqualsDescriptor<>(def, value));
             case BAND, COLLECTION -> descriptors.add(new CollectionDescriptor(def, value));
             case SPECTRAL_RANGE, RANGE -> {
                 minValues.putIfAbsent(key, value);
                 maxValues.putIfAbsent(key, value);
             }
-            case DATE -> descriptors.add(new DateDescriptor(def, value));
+           // case DATE -> descriptors.add(new DateDescriptor(def, value));
         }
     }
 

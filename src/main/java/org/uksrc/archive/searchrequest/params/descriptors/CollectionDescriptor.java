@@ -36,12 +36,11 @@ public class CollectionDescriptor implements PredicateDescriptor {
     @Override
     public Predicate toPredicate(QueryContext<?> ctx) {
         CriteriaBuilder cb = ctx.criteriaBuilder();
-        From<?, ?> parent = resolveParentPath(ctx.root(), fieldDef);
-        String lastPart = getLastPathSegment(fieldDef.entityPath());
+        Path<?> fieldPath = resolvePath(ctx.root(), fieldDef.entityPath());
 
         // Handle COLLECTION (varchar[] or converted strings)
         if (fieldDef.type() == FieldType.COLLECTION) {
-            Expression<String> pathAsString = parent.get(lastPart).as(String.class);
+            Expression<String> pathAsString = fieldPath.as(String.class);
 
             return cb.or(
                     cb.like(pathAsString, "%{" + value + "}%"),
@@ -53,34 +52,7 @@ public class CollectionDescriptor implements PredicateDescriptor {
 
         // Handle standard Scalar ENUM or STRING
         // Compare the DB column (as a string) to our string value.
-        return cb.equal(parent.get(lastPart).as(String.class), value);
-    }
-
-    /**
-     * Resolves the parent path of an entity by traversing the entity path defined in the given field definition
-     * and joining the intermediate parts of the path starting from the root.
-     *
-     * @param root The starting point (root) of the entity graph.
-     * @param def The field definition containing the entity path to be resolved.
-     * @return The last accessed path of the parent in the entity graph.
-     */
-    private From<?, ?> resolveParentPath(From<?, ?> root, FieldDefinition def) {
-        String[] parts = def.entityPath().split("\\.");
-        From<?, ?> current = root;
-        for (int i = 0; i < parts.length - 1; i++) {
-            current = current.join(parts[i]);
-        }
-        return current;
-    }
-
-    /**
-     * Returns the property path's final value that represents the column in the database.
-     * @param path The full path to the property, such as plane.id.
-     * @return plane.id would return "id".
-     */
-    private String getLastPathSegment(String path) {
-        String[] parts = path.split("\\.");
-        return parts[parts.length - 1];
+        return cb.equal(fieldPath, value);
     }
 }
 

@@ -1,7 +1,6 @@
 package org.uksrc.archive.searchrequest.params.descriptors;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import org.uksrc.archive.searchrequest.params.transform.RangeTransformer;
@@ -57,7 +56,7 @@ public class RangeDescriptor implements PredicateDescriptor {
     @Override
     public Predicate toPredicate(QueryContext<?> ctx) {
         CriteriaBuilder cb = ctx.criteriaBuilder();
-        From<?, ?> parent = resolveParentPath(ctx.root(), fieldDef);
+        Path<?> parent = resolvePath(ctx.root(), fieldDef.entityPath());
 
         // Get the logic from the definition
         RangeTransformer rt = fieldDef.transformer();
@@ -80,26 +79,5 @@ public class RangeDescriptor implements PredicateDescriptor {
         }
 
         return cb.and(predicates.toArray(new Predicate[0]));
-    }
-
-    /**
-     * Resolves the parent path in the entity hierarchy based on the provided field definition.
-     * This method traverses the entity path specified in the {@code FieldDefinition} sequentially
-     * to join the required associations in the path, stopping before reaching the last part of the path.
-     *
-     * @param root The root {@code From} node representing the starting point of the entity hierarchy.
-     * @param def  The {@code FieldDefinition} containing the entity path to be resolved.
-     * @return The {@code From} node representing the resolved parent path, just before the last part
-     *         of the entity path.
-     */
-    private From<?, ?> resolveParentPath(From<?, ?> root, FieldDefinition def) {
-        String[] parts = def.entityPath().split("\\.");
-        From<?, ?> current = root;
-
-        // Join every single part in the entityPath
-        for (String part : parts) {
-            current = current.join(part);
-        }
-        return current;
     }
 }

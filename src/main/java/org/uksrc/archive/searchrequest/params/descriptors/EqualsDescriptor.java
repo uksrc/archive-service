@@ -2,8 +2,9 @@ package org.uksrc.archive.searchrequest.params.descriptors;
 
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import org.uksrc.archive.searchrequest.query.QueryContext;
+
+import static org.uksrc.archive.searchrequest.params.parser.FieldRegistry.FieldDefinition;
 
 /**
  * The {@code EqualsDescriptor} class represents a descriptor for creating an
@@ -15,23 +16,22 @@ import org.uksrc.archive.searchrequest.query.QueryContext;
  */
 public class EqualsDescriptor<T> implements PredicateDescriptor {
 
-    private final String path;
+    private final FieldDefinition fieldDef;
     private final T value;
 
     /**
      * Constructs a new {@code EqualsDescriptor} instance for specifying an equality condition
      * in a JPA Criteria API query.
      *
-     * @param path  the dot-separated string representing the path of the field to be used
-     *              in the equality condition. This path is typically the field name or
-     *              a nested property within an entity.
+     * @param fieldDef  The field definition that specifies the metadata of the entity attribute
+     *                  used for range-based comparison. It includes the entity path and optional
+     *                  minimum and maximum attribute names.
      * @param value the value to be compared against the field specified by the path
      *              for equality. The type of this value should match the field's type
      *              to ensure compatibility during query execution.
-     * @param <T>   the type of the value to be compared for equality.
      */
-    public EqualsDescriptor(String path, T value) {
-        this.path = path;
+    public EqualsDescriptor(FieldDefinition fieldDef, T value) {
+        this.fieldDef = fieldDef;
         this.value = value;
     }
 
@@ -47,16 +47,7 @@ public class EqualsDescriptor<T> implements PredicateDescriptor {
      */
     @Override
     public Predicate toPredicate(QueryContext<?> context) {
-        Path<?> field = resolvePath(context.root(), path);
+        Path<?> field = resolvePath(context.root(), fieldDef.entityPath());
         return context.criteriaBuilder().equal(field, value);
-    }
-
-    private Path<?> resolvePath(Root<?> root, String path) {
-        String[] parts = path.split("\\.");
-        Path<?> p = root;
-        for (String part : parts) {
-            p = p.get(part);
-        }
-        return p;
     }
 }
