@@ -49,14 +49,23 @@ public class SearchResourceTest {
         }
     }
 
+    /**
+     * Loads data into the database for testing.
+     * Done this way to avoid issues with timing on the database startup (as opposed to in @BeforeAll).
+     */
     @Test
     @Order(1)
     @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     void setupData() {
         if (!dataLoaded) {
             try {
+                //Test for cone positions
                 Observation obs = readXmlFile("testing/observationTargeted.xml", Observation.class);
                 obs.setTargetPosition(createTargetPosition());
+                observationResource.addObservation(obs);
+
+                //Test resource for filtered parameters
+                obs = readXmlFile("testing/observationFiltered.xml", Observation.class);
                 observationResource.addObservation(obs);
                 dataLoaded = true;
             }
@@ -84,6 +93,126 @@ public class SearchResourceTest {
     @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     void testSearchAPI() {
         testConeSearch("/search");
+    }
+
+    /**
+     * Tests the functionality of the Search API for a specific target object.
+     * This method verifies that the search endpoint correctly retrieves observations
+     * related to the specified astronomical target.
+     * <p>
+     * Preconditions:
+     * - observationFiltered.xml is loaded into the database.
+     * <p>
+     * Test Details:
+     * - Sends a search query targeting the object "M31".
+     * - Asserts that the number of retrieved observations matches the expected value.
+     */
+    @Test
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    void testSearchTarget() {
+        String query = "/search?target=M31";
+
+        searchIncidence(query, 1);
+    }
+
+    /**
+     * Tests the functionality of the Search API for a specific target object.
+     * This method verifies that the search endpoint correctly retrieves observations
+     * related to the specified astronomical target.
+     * <p>
+     * Preconditions:
+     * - observationFiltered.xml is loaded into the database.
+     * <p>
+     * Test Details:
+     * - Sends a search query targeting the object "NotPresent" (which should not exist).
+     * - Asserts that the number of retrieved observations matches the expected value.
+     */
+    @Test
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    void testInvalidSearchTarget() {
+        String query = "/search?target=NotPresent";
+
+        searchIncidence(query, 0);
+    }
+
+    /**
+     * Tests the functionality of the Search API for filtering based on the observation band.
+     * This method verifies that the search endpoint correctly retrieves observations
+     * related to specified wavelength bands such as "radio" and "UV".
+     * <p>
+     * Preconditions:
+     * - The appropriate test data must be preloaded into the database to ensure
+     *   observations are available for the specified bands.
+     * <p>
+     * Assumptions:
+     * - Multiple bands can coexist within the same observation.
+     * <p>
+     * Assertions:
+     * - Ensures that the observations filtered by the "radio" band result in the expected count.
+     * - Ensures that the observations filtered by the "UV" band result in the expected count.
+     */
+    @Test
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    void testSearchBand() {
+        //More than one band can exist in the same observation.
+        String query = "/search?band=radio";
+        searchIncidence(query, 1);
+
+        query = "/search?band=UV";
+        searchIncidence(query, 1);
+    }
+
+    /**
+     * Validates that the Search API correctly handles cases where no observations
+     * match the specified wavelength band filter. This test ensures the system
+     * can handle searches for bands that have no associated observations.
+     * <p>
+     * Preconditions:
+     * - Test data must be preloaded into the database, ensuring that no observations
+     *   exist for the specified bands ("Infrared" and "Xray").
+     * <p>
+     * Assertions:
+     * - Ensures that the number of observations returned for each query
+     *   matches the expected value (0 in this case).
+     */
+    @Test
+    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    void testMissingSearchBand() {
+        //More than one band can exist in the same observation.
+        String query = "/search?band=Infrared";
+        searchIncidence(query, 0);
+
+        query = "/search?band=Xray";
+        searchIncidence(query, 0);
+    }
+
+    /**
+     * Searches for observations based on the given query and verifies the number of results.
+     *
+     * @param query The API endpoint query string used to search for observations.
+     *              This should define the search parameters.
+     * @param numExpected The expected number of observations to be returned
+     *                    by the query. Used for assertion.
+     */
+    private void searchIncidence(String query, int numExpected){
+        Response res = given()
+                .contentType("application/xml")
+                .when()
+                .get(query)
+                .andReturn();
+
+        assertEquals (OK.getStatusCode(), res.getStatusCode());
+
+        try {
+            String xml = res.getBody().asString();
+            ObservationListWrapper wrapper = readXmlString(xml, ObservationListWrapper.class);
+
+            List<Observation> observations = wrapper.getObservations();
+            assertEquals(numExpected, observations.size(),
+                    "Expected " + numExpected + " observations");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

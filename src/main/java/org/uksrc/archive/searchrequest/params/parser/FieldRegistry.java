@@ -114,6 +114,11 @@ public class FieldRegistry {
                     "target.name",
                     FieldType.STRING
             ),
+            "sensitivity", new FieldDefinition(
+                    "sensitivity",
+                    "energy.resolvingPowerBounds",
+                    FieldType.SPECTRAL_RANGE
+            ),
             "band", new FieldDefinition(
                     "band",
                     "planes.energy.energyBands",
@@ -144,11 +149,11 @@ public class FieldRegistry {
                    Transformers.STRICT_START_TIME
             ),
             "cone", new FieldDefinition(
-                    "cone",                      // Search key
-                    "targetPosition.coordinates", // Base path to the entity
-                    FieldType.CONE,              // New type
-                    "cval1",                     // RA column
-                    "cval2",
+                    "cone",             // Search key
+                    "targetPosition.coordinates",   // Base path to the entity
+                    FieldType.CONE,
+                    "cval1",            // RA column
+                    "cval2",                        // Dec column
                     null
             )
     );
@@ -164,6 +169,12 @@ public class FieldRegistry {
         return Optional.ofNullable(fields.get(param));
     }
 
+    /**
+     * Checks if the specified parameter name exists in the registry.
+     *
+     * @param param The name of the parameter to check for existence.
+     * @return {@code true} if the parameter exists in the registry, {@code false} otherwise.
+     */
     public boolean containsParam(String param) {
         return fields.containsKey(param);
     }
