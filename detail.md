@@ -6,7 +6,8 @@
 4. [Authentication](#authentication)
 5. [DataLink](#datalink)
 6. [Spherical Queries](#spherical-queries)
-7. [Test Cases](#test-cases)
+7. [Searching](#optional-search-parameters)
+8. [Test Cases](#test-cases)
 
 
 ------------------------------------------------------------------------------------------
@@ -470,7 +471,7 @@ Note: The /archive/datalink/resource API determines the actual Artifact.uri via 
 
 The link_authorized property value needs updating once there's a mechanism in place to send the current user's status.
 
-### Spherical Queries
+## Spherical Queries
 
 The postgres database that is currently used has the [pgSphere extension](https://github.com/postgrespro/pgsphere) installed and can be used with the following approach. Hibernate 6+
 
@@ -545,7 +546,32 @@ query.setParameter("radiusInDegrees", radius);
 List<Observation> observations = query.getResultList();
 ```
 
+## Optional Search Parameters
 
+Using the following API endpoint, the user can make specialised queries.
+```
+http://localhost:8080/archive/search
+```
+
+| Parameter      | Description                                                          |
+|----------------|----------------------------------------------------------------------|
+| `ra`           | Right Ascension (deg)                                                |
+| `dec`          | Declination (deg)                                                    |
+| `radius`       | Radius in degrees                                                    |
+| `page`         | Page number                                                          |
+| `size`         | Number of results per page                                           |
+| `target`       | Target Name                                                          |
+| `startDate`    | For observations present after this date (fractionally or wholly)    |
+| `freqMin`      | Minimum energy bounds                                                |
+| `freqMax`      | Maximum energy bounds (observations within - fractionally or wholly) |
+| `project`      | Project name                                                         |
+| `dateRangeMin` | Minimum date bounds                                                  |
+| `dateRangeMax` | Maximum date bounds (observations within - fractionally or wholly)   |
+
+- For a cone search, parameters `ra`, `dec` and `radius` are required. 
+- For a date range search, both the `min` and `max` parameters are required.
+- For a frequency range search, both the `min` and `max` parameters are required.
+- All date parameters are in the ISO 8601 format (either date or date-time).
 
 ## Test Cases
 Location of CADC's test cases.
@@ -555,6 +581,6 @@ https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data
 #### Unit tests
 There are several files included for running unit tests, these can be found in the project folder */testing*.
 
-If the CAOM model definitions change then these *might* need updating too. These have been added to *reduce* the burden of having to update the unit tests programmatically.
+If the CAOM model definitions change, then these *might* need updating too. These have been added to *reduce* the burden of having to update the unit tests programmatically.
 
 *coneTestData.json* contains a target and a radius alongside some coordinates that may or may not be inside that radius. All the true/false values MUST relate to the values in the *target* object if updating.
