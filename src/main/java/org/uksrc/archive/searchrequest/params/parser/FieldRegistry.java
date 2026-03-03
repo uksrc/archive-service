@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import  org.uksrc.archive.searchrequest.params.parser.DescriptorFactory.*;
-import org.uksrc.archive.searchrequest.params.transform.RangeTransformer;
+import org.uksrc.archive.searchrequest.params.transform.Transformer;
 import org.uksrc.archive.searchrequest.params.transform.Transformers;
 
 /**
@@ -65,7 +65,7 @@ public class FieldRegistry {
             FieldType type,
             String minAttribute,
             String maxAttribute,
-            RangeTransformer transformer
+            Transformer transformer
     ) {
         // Convenience constructor for scalar values
         public FieldDefinition(String paramName, String entityPath, FieldType type) {
@@ -143,10 +143,10 @@ public class FieldRegistry {
             "startDate", new FieldDefinition(       //Ignores the upper value (end date in this case)
                     "startDate",
                     "planes.time.bounds",
-                    FieldType.RANGE,
+                    FieldType.DATE,
                     "lower",
                     "upper",
-                   Transformers.STRICT_START_TIME
+                   Transformers.ISO_TO_MJD
             ),
             "cone", new FieldDefinition(
                     "cone",             // Search key

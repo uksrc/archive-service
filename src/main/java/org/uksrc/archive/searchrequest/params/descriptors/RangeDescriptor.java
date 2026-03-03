@@ -3,7 +3,7 @@ package org.uksrc.archive.searchrequest.params.descriptors;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
-import org.uksrc.archive.searchrequest.params.transform.RangeTransformer;
+import org.uksrc.archive.searchrequest.params.transform.Transformer;
 import org.uksrc.archive.searchrequest.query.QueryContext;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class RangeDescriptor implements PredicateDescriptor {
         Path<?> parent = resolvePath(ctx.root(), fieldDef.entityPath());
 
         // Get the logic from the definition
-        RangeTransformer rt = fieldDef.transformer();
+        Transformer rt = fieldDef.transformer();
         Double dbMinVal = rt.transform(min, max, true);
         Double dbMaxVal = rt.transform(min, max, false);
 

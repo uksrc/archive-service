@@ -39,18 +39,27 @@ public class Transformers {
      *       valid non-negative values, otherwise a {@code NumberFormatException} will be thrown.</li>
      * </ul>
      *
-     * @see RangeTransformer
+     * @see Transformer
      */
-    public static final RangeTransformer FREQUENCY_TO_WAVELENGTH = (min, max, lower) -> {
-        double c = 299792458.0;
-        Double fMin = (min != null) ? Double.parseDouble(min) : null;
-        Double fMax = (max != null) ? Double.parseDouble(max) : null;
+    public static final Transformer FREQUENCY_TO_WAVELENGTH = new Transformer() {
+        final double c = 299792458.0;
 
-        //Account for the value flip between frequency and wavelength.
-        if (lower) {
-            return (fMax != null && fMax != 0) ? c / fMax : null;
-        } else {
-            return (fMin != null && fMin != 0) ? c / fMin : null;
+        @Override
+        public Double transform(String value) {
+            return c / Double.parseDouble(value);
+        }
+
+        @Override
+        public Double transform(String min, String max, boolean useLower) {
+            Double fMin = (min != null) ? Double.parseDouble(min) : null;
+            Double fMax = (max != null) ? Double.parseDouble(max) : null;
+
+            //Account for the value flip between frequency and wavelength.
+            if (useLower) {
+                return (fMax != null && fMax != 0) ? c / fMax : null;
+            } else {
+                return (fMin != null && fMin != 0) ? c / fMin : null;
+            }
         }
     };
 
@@ -75,63 +84,23 @@ public class Transformers {
      * The resulting {@code Instant} is converted to seconds since the Modified Julian Date epoch
      * ('1858-11-17T00:00:00Z').
      *
-     * @see RangeTransformer
+     * @see Transformer
      * @see Transformers#toMjdSeconds(Instant)
      */
-    public static final RangeTransformer ISO_TO_MJD = (min, max, lower) -> {
-        String val = lower ? min : max;
-        if (val == null) return null;
+    public static final Transformer ISO_TO_MJD = new Transformer() {
 
-        try {
-            // Try full ISO datetime first
-            OffsetDateTime odt = OffsetDateTime.parse(min);
-            Instant instant = odt.toInstant();
-
-            return toMjdSeconds(instant);
-        } catch (DateTimeParseException e) {
-            // Date-only
-            LocalDate date = LocalDate.parse(min);
-            Instant start = date.atStartOfDay(ZoneOffset.UTC).toInstant();
-
-            return toMjdSeconds(start);
+        @Override
+        public Double transform(String value) {
+            return convertTime(value);
         }
-    };
 
-    /**
-     * A predefined {@code RangeTransformer} implementation that enforces strict lower bound
-     * calculations for temporal data. This transformer converts an ISO-8601 formatted date-time
-     * input into Modified Julian Date (MJD) seconds for the lower bound, and skips the upper
-     * bound calculation by returning {@code null}.
-     *
-     * <ul>
-     *   <li>If {@code lower} is {@code true}, this transformer parses the {@code min} string
-     *       as an ISO-8601 date-time, converts it into an {@code Instant}, and calculates its
-     *       MJD seconds representation.</li>
-     *   <li>If {@code lower} is {@code false}, the transformer returns {@code null}, meaning
-     *       the upper bound should not be applied in range calculations.</li>
-     * </ul>
-     *
-     * This behaviour ensures that it provides a strict boundary for temporal lower bound
-     * queries while allowing conditions to bypass the upper bound filtering logic.
-     * Allowing the {@code RangeDescriptor} to be used to start/lower bounds only (typically '>=')
-     * <p>
-     * Note: The MJD seconds representation is calculated relative to the epoch
-     * '1858-11-17T00:00:00Z'.
-     *
-     * @see Transformers#ISO_TO_MJD
-     * @see Transformers#toMjdSeconds(Instant)
-     */
-    public static final RangeTransformer STRICT_START_TIME = (min, max, lower) -> {
-        // If we are calculating the value to compare against dbMin (lower)
-        if (lower) {
-            OffsetDateTime odt = OffsetDateTime.parse(min);
-            Instant instant = odt.toInstant();
-
-            return toMjdSeconds(instant);
-        } else {
-            // If we return null for the upper bound calculation,
-            // the Predicate logic needs to skip the 'lessThan' check.
-            return null;
+        @Override
+        public Double transform(String min, String max, boolean useLower) {
+            if (useLower) {
+                return convertTime(min);
+            } else {
+                return convertTime(max);
+            }
         }
     };
 
@@ -142,5 +111,33 @@ public class Transformers {
      */
      private static double toMjdSeconds(Instant instant) {
          return Duration.between(MJD_EPOCH, instant).toNanos() / 1_000_000_000.0;
+    }
+
+    /**
+     * Converts a string representation of a date or datetime into Modified Julian Date (MJD) seconds.
+     * The method attempts to parse the input string as a full ISO-8601 datetime first;
+     * if the parsing fails, it falls back to interpreting the string as a date-only value.
+     *
+     * @param value the input string to be converted, representing a datetime or date in ISO-8601 format
+     * @return the corresponding value in Modified Julian Date (MJD) seconds as a double
+     * @throws DateTimeParseException if the input string cannot be parsed as a valid ISO-8601 datetime or date
+     */
+    private static Double convertTime(String value) {
+        if (value != null) {
+            try {
+                // Try full ISO datetime first
+                OffsetDateTime odt = OffsetDateTime.parse(value);
+                Instant instant = odt.toInstant();
+
+                return toMjdSeconds(instant);
+            } catch (DateTimeParseException e) {
+                // Date-only
+                LocalDate date = LocalDate.parse(value);
+                Instant start = date.atStartOfDay(ZoneOffset.UTC).toInstant();
+
+                return toMjdSeconds(start);
+            }
+        }
+        return null;
     }
 }

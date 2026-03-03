@@ -103,6 +103,7 @@ public class DescriptorFactory {
         switch (def.type()) {
             case STRING          -> descriptors.add(new EqualsDescriptor<>(def, value));
             case BAND, COLLECTION -> descriptors.add(new CollectionDescriptor(def, value));
+            case DATE            -> descriptors.add(new RangeDescriptor(def, value, null));
         }
     }
 
