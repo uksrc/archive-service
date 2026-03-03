@@ -114,11 +114,6 @@ public class FieldRegistry {
                     "target.name",
                     FieldType.STRING
             ),
-            "sensitivity", new FieldDefinition(
-                    "sensitivity",
-                    "energy.resolvingPowerBounds",
-                    FieldType.SPECTRAL_RANGE
-            ),
             "band", new FieldDefinition(
                     "band",
                     "planes.energy.energyBands",
