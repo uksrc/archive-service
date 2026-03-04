@@ -303,6 +303,19 @@ public class SearchResourceTest {
         assertEquals (BAD_REQUEST.getStatusCode(), res.getStatusCode());
     }
 
+    /**
+     * Tests the search functionality for a given frequency range.
+     * This method verifies that the search API correctly processes and returns the expected results
+     * when queried with a specific minimum and maximum frequency range.
+     * NOTE: As CAOM2.5 values are stored as wavelength(m), this should also test that the conversion
+     * is handled correctly.
+     * <p>
+     * Preconditions:
+     * - The database contains observation data with frequency ranges outside the search criteria.
+     * <p>
+     * Assertions:
+     * - Should return a resource that matches the specified frequency range.
+     */
     @Test
     @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testSearchFrequency() {
@@ -310,14 +323,24 @@ public class SearchResourceTest {
         searchIncidence(query, 1);
     }
 
+    /**
+     * Tests the behaviour of the search functionality when provided with a frequency range that is outside
+     * the range of the existing resources.
+     * <p>
+     * Preconditions:
+     * - The database contains observation data with dates earlier than the specified query date.
+     * <p>
+     * Postconditions:
+     * - The search functionality should respond without errors and return the expected result,
+     *   which in this case is no records since the frequency range is outside the range of the data.
+     */
     @Test
     @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testSearchInvalidFrequency() {
         String query = "/search?freqMin=130&freqMax=140"; //Hz
         searchIncidence(query, 0);
     }
-
-
+    
     /**
      * Searches for observations based on the given query and verifies the number of results.
      *
