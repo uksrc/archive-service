@@ -9,9 +9,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import jakarta.xml.bind.JAXBElement;
 import org.ivoa.dm.caom2.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
@@ -28,6 +26,7 @@ import static org.uksrc.archive.utils.Utilities.*;
  *  Postgres DB with the CAOM (2.5) models added (as tables). Should be in place automatically via the Quarkus mechanisms.
  */
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ObservationResourceTest {
 
     @Inject
@@ -39,6 +38,7 @@ public class ObservationResourceTest {
     static final String nonResolvableArtifactUri = "uri:TS8004_C_001_20190801_avg_uvplt_a_1331+3030.png";
 
     @BeforeEach
+    @AfterAll
     @Transactional
     public void clearDatabase() {
         // Clear the table(s)
@@ -49,7 +49,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Check that and empty database returns a robust response.")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     public void testGettingObservations() {
         try (Response res = observationResource.getAllObservations(null, null, null)) {
             assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
@@ -61,7 +61,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Add two observation and check two are returned.")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testGettingObservationsNonEmpty() {
         Observation obs1 = createSimpleObservation(OBSERVATION1, COLLECTION1);
         Observation obs2 = createSimpleObservation(OBSERVATION2, COLLECTION1);
@@ -82,7 +82,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Get observations via collection Id")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testGettingObservationsViaCollectionId() {
         Observation obs1 = createSimpleObservation(OBSERVATION1, COLLECTION1);
         Observation obs2 = createSimpleObservation(OBSERVATION2, COLLECTION1);
@@ -110,7 +110,7 @@ public class ObservationResourceTest {
 
     @ParameterizedTest
     @DisplayName("Add an observation and check that part of the response body matches.")
-    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_WRITER_ROLE})
     @ValueSource(strings = {"simple", "derived"})
     public void testAddingObservation(String observation) {
         //As the method enters twice, we need to enforce different observation IDs.
@@ -134,7 +134,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to add an Observation with a MUST property missing.")
-    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_WRITER_ROLE})
     public void testAddingIncompleteObservation() {
         SimpleObservation obs = new SimpleObservation();
         obs.setId(UUID.randomUUID().toString());
@@ -148,7 +148,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Add an observation, update one of its values and update, check it's been updated correctly.")
-    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_WRITER_ROLE})
     public void testUpdatingObservation() {
         Observation observation = createSimpleObservation(OBSERVATION2, COLLECTION1);
 
@@ -183,7 +183,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to update a non-existent observation and check the not found status.")
-    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_WRITER_ROLE})
     public void testUpdatingNonExistingObservation() {
         Observation observation = createSimpleObservation(OBSERVATION2, COLLECTION1);
         observation.setIntent(ObservationIntentType.CALIBRATION);
@@ -195,7 +195,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to delete an observation.")
-    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_WRITER_ROLE})
     public void testDeletingObservation() {
         Observation observation = createSimpleObservation(OBSERVATION1, COLLECTION1);
 
@@ -220,7 +220,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Test paging results, first page")
-    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_WRITER_ROLE})
     public void testPagingResults() {
         for (int i = 0; i < 15; i++){
             Observation observation = createSimpleObservation(OBSERVATION1 + i, COLLECTION1);
@@ -240,7 +240,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Test paging results, second page")
-    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_WRITER_ROLE})
     public void testPagingResults2() {
         for (int i = 0; i < 15; i++){
             Observation observation = createSimpleObservation(OBSERVATION1 + i, COLLECTION1);
@@ -259,7 +259,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Attempt to delete an observation that doesn't exist.")
-    @TestSecurity(user = "testuser", roles = {TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_WRITER_ROLE})
     public void testDeletingNonExistingObservation() {
         try (Response res = observationResource.deleteObservation(OBSERVATION1)) {
             assertEquals(res.getStatus(), Response.Status.NOT_FOUND.getStatusCode());
@@ -277,7 +277,7 @@ public class ObservationResourceTest {
 
     @Test
     @DisplayName("Add an observation with a single artifact and check the response is the same.")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testGettingArtifactObservation() {
         //One plane with one artifact
         Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1, nonResolvableArtifactUri);

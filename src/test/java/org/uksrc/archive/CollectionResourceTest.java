@@ -7,9 +7,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import org.ivoa.dm.caom2.Observation;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.uksrc.archive.utils.Utilities;
 
 import java.util.Arrays;
@@ -21,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.uksrc.archive.utils.Utilities.*;
 
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CollectionResourceTest {
 
     @Inject
@@ -29,6 +28,7 @@ public class CollectionResourceTest {
     @Inject
     ObservationResource observationResource;
 
+    @AfterAll
     @BeforeEach
     @Transactional
     public void clearDatabase() {
@@ -38,7 +38,7 @@ public class CollectionResourceTest {
 
     @Test
     @DisplayName("Test retrieving collection Ids from empty DB")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     public void testRetrieveCollectionIdsFromEmptyDB() {
         String collections = when()
                 .get("/collections/")
@@ -52,7 +52,7 @@ public class CollectionResourceTest {
 
     @Test
     @DisplayName("Test retrieving collection Ids")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testRetrievingCollectionIds() {
         try {
             for (int i = 1; i < 6; i++) {

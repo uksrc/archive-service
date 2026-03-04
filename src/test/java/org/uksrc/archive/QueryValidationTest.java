@@ -5,6 +5,9 @@ import io.quarkus.test.security.TestSecurity;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.Unmarshaller;
@@ -23,18 +26,21 @@ import static jakarta.ws.rs.core.Response.Status.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.uksrc.archive.utils.Utilities.TEST_READER_ROLE;
-import static org.uksrc.archive.utils.Utilities.TEST_WRITER_ROLE;
+import static org.uksrc.archive.utils.Utilities.*;
 
 /**
  * Intended for the use of testing the TAP ADQL service with queries.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class QueryValidationTest {
 
     @Inject
     ObservationResource observationResource;
+
+    @Inject
+    EntityManager em;
 
     private static boolean dataLoaded = false;
 
@@ -48,7 +54,7 @@ public class QueryValidationTest {
      */
     @Test
     @Order(1)
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     void setupData() {
         if (!dataLoaded) {
             try {
@@ -72,6 +78,15 @@ public class QueryValidationTest {
                 fail();
             }
         }
+    }
+
+    @AfterAll
+    @Transactional
+    public void clearDatabase() {
+        // Clear the table(s)
+        em.createQuery("DELETE FROM Artifact").executeUpdate();
+        em.createQuery("DELETE FROM Plane").executeUpdate();
+        em.createQuery("DELETE FROM Observation").executeUpdate();
     }
 
     @Test

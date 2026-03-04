@@ -4,14 +4,15 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.TargetPosition;
 import org.ivoa.dm.caom2.types.Point;
 import org.jastronomy.jsofa.JSOFA;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.uksrc.archive.utils.ObservationListWrapper;
 
 import java.util.List;
@@ -28,10 +29,14 @@ import static org.uksrc.archive.utils.Utilities.*;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SearchMultipleResourceTest {
 
     @Inject
     ObservationResource observationResource;
+
+    @Inject
+    EntityManager em;       //Required for post-test clean-up
 
     private boolean dataLoaded = false;
     private final double RA = 123.456;
@@ -41,7 +46,7 @@ public class SearchMultipleResourceTest {
 
     @Test
     @Order(1)
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     void setupData() {
         if (!dataLoaded) {
             try {
@@ -61,8 +66,17 @@ public class SearchMultipleResourceTest {
         }
     }
 
+    @AfterAll
+    @Transactional
+    public void clearDatabase() {
+        // Clear the table(s)
+        em.createQuery("DELETE FROM Artifact").executeUpdate();
+        em.createQuery("DELETE FROM Plane").executeUpdate();
+        em.createQuery("DELETE FROM Observation").executeUpdate();
+    }
+
     @Test
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testRestrictedSearchCriteriaConeSearch() {
         //Attempts to retrieve the 3 closest to RA & DEC from a total defined by NUM_OBSERVATIONS
         final int NUM_EXPECTED = 3;
@@ -91,7 +105,7 @@ public class SearchMultipleResourceTest {
     }
 
     @Test
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testConeSearchFullResults() {
         String query = "/search/cone?ra=" + RA + "&dec=" + DEC + "&radius=" + 20.0;
 
@@ -116,7 +130,7 @@ public class SearchMultipleResourceTest {
     }
 
     @Test
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testConeSearchPagedResults() {
         int NUM_EXPECTED = 5;
         String query = "/search/cone?ra=" + RA + "&dec=" + DEC + "&radius=" + 20.0 + "&page=0&size=" + NUM_EXPECTED;

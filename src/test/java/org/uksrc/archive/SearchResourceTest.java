@@ -1,9 +1,15 @@
 package org.uksrc.archive;
 
+import io.quarkus.arc.Arc;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.response.Response;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.TargetPosition;
 import org.ivoa.dm.caom2.types.Point;
@@ -17,8 +23,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
+import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 import static jakarta.ws.rs.core.Response.Status.OK;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.uksrc.archive.utils.Utilities.*;
@@ -30,10 +38,14 @@ import static org.uksrc.archive.utils.Utilities.*;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SearchResourceTest {
 
     @Inject
     ObservationResource observationResource;
+
+    @Inject
+    EntityManager em;
 
     private static JSONObject positions;
     private static boolean dataLoaded = false;
@@ -55,7 +67,7 @@ public class SearchResourceTest {
      */
     @Test
     @Order(1)
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     void setupData() {
         if (!dataLoaded) {
             try {
@@ -75,12 +87,21 @@ public class SearchResourceTest {
         }
     }
 
+    @AfterAll
+    @Transactional
+    public void clearDatabase() {
+        // Clear the table(s)
+        em.createQuery("DELETE FROM Artifact").executeUpdate();
+        em.createQuery("DELETE FROM Plane").executeUpdate();
+        em.createQuery("DELETE FROM Observation").executeUpdate();
+    }
+
     /**
      * Tests the functionality of the Cone Search API endpoint.
      * This is for the dedicated cone search API
      */
     @Test
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testConeSearchAPI() {
         testConeSearch("/search/cone");
     }
@@ -90,7 +111,7 @@ public class SearchResourceTest {
      * This is for the filter search API, where parameters other than the cone search can be supplied.
      */
     @Test
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     void testSearchAPI() {
         testConeSearch("/search");
     }
@@ -108,7 +129,7 @@ public class SearchResourceTest {
      * - Asserts that the number of retrieved observations matches the expected value.
      */
     @Test
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testSearchTarget() {
         String query = "/search?target=M31";
 
@@ -128,9 +149,45 @@ public class SearchResourceTest {
      * - Asserts that the number of retrieved observations matches the expected value.
      */
     @Test
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testInvalidSearchTarget() {
         String query = "/search?target=NotPresent";
+
+        searchIncidence(query, 0);
+    }
+
+    /**
+     * Tests the functionality of the Search API for filtering based on the project identifier.
+     * This method verifies that the search endpoint correctly retrieves observations
+     * associated with a specific project.
+     * <p>
+     * Preconditions:
+     * - The database must be preloaded with data containing observations associated with "projectNum1".
+     * <p>
+     * Assertions:
+     * - Verifies that the result of the search matches the expected number of observations.
+     */
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testSearchProject() {
+        String query = "/search?project=projectNum1";
+
+        searchIncidence(query, 1);
+    }
+
+    /**
+     * Tests the behaviour of the Search API when queried with an invalid project identifier.
+     * This method verifies that the search endpoint returns zero observations when the specified
+     * project does not exist in the database.
+     *
+     * Preconditions:
+     * - The database must be preloaded with test data that does not include observations for
+     *   the specified project ("NotPresent").
+     */
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testInvalidSearchProject() {
+        String query = "/search?project=NotPresent";
 
         searchIncidence(query, 0);
     }
@@ -152,7 +209,7 @@ public class SearchResourceTest {
      * - Ensures that the observations filtered by the "UV" band result in the expected count.
      */
     @Test
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testSearchBand() {
         //More than one band can exist in the same observation.
         String query = "/search?band=radio";
@@ -176,7 +233,7 @@ public class SearchResourceTest {
      *   matches the expected value (0 in this case).
      */
     @Test
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testMissingSearchBand() {
         //More than one band can exist in the same observation.
         String query = "/search?band=Infrared";
@@ -185,6 +242,86 @@ public class SearchResourceTest {
         query = "/search?band=Xray";
         searchIncidence(query, 0);
     }
+
+    /**
+     * Tests the Search API functionality for filtering observations based on the start date.
+     * This method verifies that the search endpoint correctly retrieves observations
+     * when the query parameter `startDate` is provided, using both date-only and date-time formats.
+     * <p>
+     * Preconditions:
+     * - Test data containing observations corresponding to the specified dates must be preloaded
+     *   into the database.
+     * <p>
+     * Assertions:
+     * - Should return any resources that have a recorded date beyond the date specified in the query.
+     */
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testSearchStartDate() {
+        //Date and time
+        String query = "/search?startDate=2019-08-02T00:02:06Z";
+        searchIncidence(query, 1);
+
+        //Date only
+        query = "/search?startDate=2019-08-02";
+        searchIncidence(query, 1);
+    }
+
+    /**
+     * Tests the functionality of the Search API for filtering by an expired start date.
+     * This method verifies that the search endpoint correctly handles queries where the start date
+     * is set to a future date beyond the range of the data stored in the database.
+     * <p>
+     * Preconditions:
+     * - The database contains observation data with dates earlier than the specified query date.
+     * <p>
+     * Assertions:
+     * - Should return no resources when the query date is set to a future date.
+     */
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testSearchExpiredDate(){
+        String query = "/search?startDate=2031-08-02T00:02:06Z";
+        searchIncidence(query, 0);
+    }
+
+    /**
+     * Tests the handling of invalid start date format in the Search API.
+     * <p>
+     * Preconditions:
+     * - No specific data loading is required for this test, as it verifies input validation at the API level.
+     * <p>
+     * Assertions:
+     * - Verifies that the response status code matches the HTTP `400 BAD REQUEST` status, indicating that the
+     *   server correctly validates input and rejects the malformed date format.
+     */
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testSearchStartDateInvalidFormat() {
+        String query = "/search?startDate=2001-MAY-13th";
+        Response res = given()
+                .contentType("application/xml")
+                .when()
+                .get(query)
+                .andReturn();
+
+        assertEquals (BAD_REQUEST.getStatusCode(), res.getStatusCode());
+    }
+
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testSearchFrequency() {
+        String query = "/search?freqMin=30&freqMax=40"; //Hz
+        searchIncidence(query, 1);
+    }
+
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testSearchInvalidFrequency() {
+        String query = "/search?freqMin=130&freqMax=140"; //Hz
+        searchIncidence(query, 0);
+    }
+
 
     /**
      * Searches for observations based on the given query and verifies the number of results.
@@ -269,4 +406,13 @@ public class SearchResourceTest {
 
         return tp;
     }
+
+   /* @Test
+    @Order(999)
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    public void clearData() {
+        String id = "2cf99e88-90e1-4fe8-a512-e5cbfdc6ffb4";
+
+        observationResource.deleteObservation(id);
+    }*/
 }

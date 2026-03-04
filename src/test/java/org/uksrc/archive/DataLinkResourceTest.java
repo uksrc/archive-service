@@ -8,9 +8,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import org.ivoa.dm.caom2.Observation;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -28,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.uksrc.archive.utils.Utilities.*;
 
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DataLinkResourceTest {
 
     @Inject
@@ -41,6 +40,7 @@ public class DataLinkResourceTest {
 
     static final String nonResolvableArtifactUri = "file:///imaginaryFolder/imaginaryFile.png";
 
+    @AfterAll
     @BeforeEach
     @Transactional
     public void clearDatabase() {
@@ -52,7 +52,7 @@ public class DataLinkResourceTest {
 
     @Test
     @DisplayName("Add an observation with a single artifact and check the response is the same.")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testGettingArtifactObservation() {
         Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1, nonResolvableArtifactUri);
 
@@ -103,7 +103,7 @@ public class DataLinkResourceTest {
 
     @Test
     @DisplayName("Test getting a resource that is missing from the file system.")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testRetrievingMissingResource() {
         Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1, nonResolvableArtifactUri);
         try(Response res1 = observationResource.addObservation(obs1)) {
@@ -119,7 +119,7 @@ public class DataLinkResourceTest {
 
     @Test
     @DisplayName("Test getting a resource from an Artifact that doesn't exist.")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testRetrievingMissingArtifact() {
         Response res = dataLinkResource.getResource("2cf99e88-90e1-4fe8-a502-1111111111");
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), res.getStatus());
@@ -130,7 +130,7 @@ public class DataLinkResourceTest {
 
     @Test
     @DisplayName("Test resolving a local file")
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     public void testResolvingLocalFile() {
         //Create a temp file on the system for testing
         try {

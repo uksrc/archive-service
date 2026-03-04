@@ -20,6 +20,7 @@ public class Utilities {
     public static final String OBSERVATION2 = "c630c66f-b06b-4fed-bc16-2e4df256";
 
     // Used in testing only, must conform to the @RolesAllowed setting in the APIs
+    public static final String TEST_USER = "testuser";
     public static final String TEST_READER_ROLE = "UKSRC/archive-service/viewer";
     public static final String TEST_WRITER_ROLE = "UKSRC/archive-service/maintainer";
 
