@@ -5,8 +5,6 @@ import io.quarkus.test.security.TestSecurity;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.TargetPosition;
