@@ -80,26 +80,14 @@ public class ResourceSeedLoader {
                 throw new RuntimeException("Resource not found: " + path);
             }
 
-            String xml = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            return readXmlString(xml, clazz);
+            JAXBContext ctx = JAXBContext.newInstance(clazz);
+            Unmarshaller um = ctx.createUnmarshaller();
+
+            Object result = um.unmarshal(is);
+
+            return (result instanceof JAXBElement<?> el)
+                    ? clazz.cast(el.getValue())
+                    : clazz.cast(result);
         }
-    }
-
-    /**
-     * Reads an XML string into a JAXB object.
-     * @param xml The XML string to read.
-     * @param clazz The class to unmarshal into.
-     * @return The unmarshalled object.
-     * @throws Exception If the XML cannot be unmarshalled.
-     */
-    public static  <T> T readXmlString(String xml, Class<T> clazz) throws Exception {
-        JAXBContext ctx = JAXBContext.newInstance(clazz);
-        Unmarshaller um = ctx.createUnmarshaller();
-
-        Object result = um.unmarshal(new StringReader(xml));
-
-        return (result instanceof JAXBElement<?> el)
-                ? clazz.cast(el.getValue())
-                : clazz.cast(result);
     }
 }
