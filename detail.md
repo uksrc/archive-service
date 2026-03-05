@@ -553,25 +553,28 @@ Using the following API endpoint, the user can make specialised queries.
 http://localhost:8080/archive/search
 ```
 
-| Parameter      | Description                                                          |
-|----------------|----------------------------------------------------------------------|
-| `ra`           | Right Ascension (deg)                                                |
-| `dec`          | Declination (deg)                                                    |
-| `radius`       | Radius in degrees                                                    |
-| `page`         | Page number                                                          |
-| `size`         | Number of results per page                                           |
-| `target`       | Target Name                                                          |
-| `startDate`    | For observations present after this date (fractionally or wholly)    |
-| `freqMin`      | Minimum energy bounds                                                |
-| `freqMax`      | Maximum energy bounds (observations within - fractionally or wholly) |
-| `project`      | Project name                                                         |
-| `dateRangeMin` | Minimum date bounds                                                  |
-| `dateRangeMax` | Maximum date bounds (observations within - fractionally or wholly)   |
+| Parameter   | Description                                                          | Data Type | Metric  |
+|-------------|----------------------------------------------------------------------|-----------|---------|
+| `ra`        | Right Ascension                                                      | double    | degrees |
+| `dec`       | Declination                                                          | double    | degrees |
+| `radius`    | Radius                                                               | double    | degrees |  
+| `page`      | Page number                                                          | integer   |         |
+| `size`      | Number of results per page                                           | integer   |         |
+| `target`    | Target Name                                                          | string    |         |
+| `startDate` | For observations present after this date (fractionally or wholly)    | string    | ISO8601 |
+| `freqMin`   | Minimum energy bounds                                                | double    | Hertz   |
+| `freqMax`   | Maximum energy bounds (observations within - fractionally or wholly) | double    | Hertz   |
+| `project`   | Project name                                                         | string    |         |
+| `dateMin`   | Minimum date bounds                                                  | string    | ISO8601 |
+| `dateMax`   | Maximum date bounds (observations within - fractionally or wholly)   | string    | ISO8601 |
 
 - For a cone search, parameters `ra`, `dec` and `radius` are required. 
-- For a date range search, both the `min` and `max` parameters are required.
+- For a date range search, both the `min` and `max` parameters are required. 
+  - ```http://localhost:8080/archive/search?dateMin=2001-08-02T00:02:06Z&dateMax=2019-08-02T00:02:06Z```
 - For a frequency range search, both the `min` and `max` parameters are required.
-- All date parameters are in the ISO 8601 format (either date or date-time).
+  - ```http://localhost:8080/archive/search?freqMin=20&freqMax=40```
+- All date parameters are in the ISO 8601 format (either date or date-time). 
+  - ```http://localhost:8080/archive/search?startDate=2019-08-02T00:02:06Z```
 
 ## Test Cases
 Location of CADC's test cases.

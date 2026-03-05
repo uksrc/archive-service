@@ -340,7 +340,7 @@ public class SearchResourceTest {
         String query = "/search?freqMin=130&freqMax=140"; //Hz
         searchIncidence(query, 0);
     }
-    
+
     /**
      * Searches for observations based on the given query and verifies the number of results.
      *

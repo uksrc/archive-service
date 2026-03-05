@@ -127,8 +127,8 @@ public class FieldRegistry {
                     "upper",
                     Transformers.FREQUENCY_TO_WAVELENGTH
             ),
-            "dateRange", new FieldDefinition(       //Uses the overlap range
-                    "dateRange",
+            "date", new FieldDefinition(       //Uses the overlap range
+                    "date",
                     "planes.time.bounds",
                     FieldType.RANGE,
                     "lower",
