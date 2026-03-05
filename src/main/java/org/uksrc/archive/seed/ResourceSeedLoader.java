@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.Unmarshaller;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.ivoa.dm.caom2.Observation;
 import org.uksrc.archive.ObservationResource;
 
@@ -23,6 +24,9 @@ public class ResourceSeedLoader {
     @Inject
     ObservationResource observationResource;
 
+    @ConfigProperty(name = "testdata.seed.enabled", defaultValue = "false")
+    boolean enabled;
+
     //List of example resource files to load on startup
     //Hard-coded to avoid potential classpath resolution issues when iterating over files in a named folder.
     private static final List<String> FILES = List.of(
@@ -36,13 +40,15 @@ public class ResourceSeedLoader {
     @PostConstruct
     @Transactional
     void load() {
-        for (String file : FILES) {
-            try {
-                Observation obs = readXmlFile(file, Observation.class);
-                observationResource.addObservation(obs);
-            } catch (Exception e) {
-                //Don't block execution of the service if an example resource is missing
-                System.out.println(e.getMessage());
+        if (enabled) {
+            for (String file : FILES) {
+                try {
+                    Observation obs = readXmlFile(file, Observation.class);
+                    observationResource.addObservation(obs);
+                } catch (Exception e) {
+                    //Don't block execution of the service if an example resource is missing
+                    System.out.println(e.getMessage());
+                }
             }
         }
     }
