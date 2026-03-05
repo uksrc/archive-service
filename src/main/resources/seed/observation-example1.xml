@@ -1,0 +1,59 @@
+<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation" caom2:id="0c7a7fe3-7703-4e9d-b367-2df6169c5309">
+<caom2:collection>CY3210</caom2:collection>
+<caom2:uri>https://www.archive-service.org/AB1/AB1234/AB1234_L_001_20160125</caom2:uri>
+<caom2:uriBucket>4e0</caom2:uriBucket>
+<caom2:intent>science</caom2:intent>
+<caom2:metaReadGroups/>
+<caom2:algorithm>
+	<caom2:name>correlator</caom2:name>
+</caom2:algorithm>
+<caom2:telescope>
+<caom2:name>e-MERLIN</caom2:name>
+<caom2:keywords>
+	<caom2:keyword>Lo</caom2:keyword>
+	<caom2:keyword>Mk2</caom2:keyword>
+	<caom2:keyword>Pi</caom2:keyword>
+	<caom2:keyword>Da</caom2:keyword>
+	<caom2:keyword>Kn</caom2:keyword>
+	<caom2:keyword>De</caom2:keyword>
+	<caom2:keyword>Cm</caom2:keyword>
+</caom2:keywords>
+</caom2:telescope>
+<caom2:target>
+	<caom2:name>0955+696</caom2:name>
+	<caom2:targetID>https://archive-service.org/objects/0955+696</caom2:targetID>
+	<caom2:keywords>
+		<caom2:keyword>srcCount:5</caom2:keyword>
+		<caom2:keyword>\"1331+305\"</caom2:keyword>
+		<caom2:keyword>\"0959+695\"</caom2:keyword>
+		<caom2:keyword>\"1407+284\"</caom2:keyword>
+		<caom2:keyword>\"0955+696\"</caom2:keyword>
+		<caom2:keyword>\"0319+415\"</caom2:keyword>
+	</caom2:keywords>
+</caom2:target>
+<caom2:targetPosition>
+	<caom2:coordsys>ICRS</caom2:coordsys>
+	<caom2:coordinates>
+	<caom2:cval1>148.961266635</caom2:cval1>
+	<caom2:cval2>+69.678775223</caom2:cval2>
+	</caom2:coordinates>
+</caom2:targetPosition>
+<caom2:planes>
+	<caom2:energy>
+		<caom2:bandpassName>L</caom2:bandpassName>
+		<caom2:bounds>
+			<caom2:lower>1250000000</caom2:lower>
+			<caom2:upper>1770000000</caom2:upper>
+		</caom2:bounds>
+	</caom2:energy>
+	<caom2:polarisation>
+		<caom2:states>RL</caom2:states>
+	</caom2:polarisation>
+	<caom2:time>
+		<caom2:bounds>
+			<caom2:lower>4960462680</caom2:lower>
+			<caom2:upper>4960607280</caom2:upper>
+		</caom2:bounds>
+	</caom2:time>
+</caom2:planes>	
+</caom2:Observation>
