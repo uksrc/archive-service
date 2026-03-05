@@ -17,6 +17,13 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ *  Loads example resource XML files and loads them into the database upon startup.
+ *  Allows the demonstration of the service with some example resources in place (if required).
+ * <p>
+ *  See /seed folder
+ *  See application.properties' testdata.seed.enabled to enable/disable as required.
+ */
 @Startup
 @ApplicationScoped
 public class ResourceSeedLoader {
@@ -37,6 +44,9 @@ public class ResourceSeedLoader {
             "seed/observation-example5.xml"
     );
 
+    /**
+     * Loads examples from file(s) and deploys them to the database.
+     */
     @PostConstruct
     @Transactional
     void load() {
