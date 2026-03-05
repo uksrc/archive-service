@@ -14,8 +14,6 @@ import org.uksrc.archive.ObservationResource;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 @Startup
@@ -25,6 +23,8 @@ public class ResourceSeedLoader {
     @Inject
     ObservationResource observationResource;
 
+    //List of example resource files to load on startup
+    //Hard-coded to avoid potential classpath resolution issues when iterating over files in a named folder.
     private static final List<String> FILES = List.of(
             "seed/observation-example1.xml",
             "seed/observation-example2.xml",
@@ -40,9 +40,9 @@ public class ResourceSeedLoader {
             try {
                 Observation obs = readXmlFile(file, Observation.class);
                 observationResource.addObservation(obs);
-
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                //Don't block execution of the service if an example resource is missing
+                System.out.println(e.getMessage());
             }
         }
     }
