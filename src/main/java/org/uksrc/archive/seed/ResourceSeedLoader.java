@@ -1,26 +1,26 @@
 package org.uksrc.archive.seed;
 
+import io.quarkus.arc.profile.UnlessBuildProfile;
 import io.quarkus.runtime.Startup;
-import jakarta.annotation.PostConstruct;
+import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.ivoa.dm.caom2.Observation;
-import org.uksrc.archive.ObservationResource;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Enumeration;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 /**
  *  Loads example resource XML files and loads them into the database upon startup.
@@ -31,10 +31,12 @@ import java.util.stream.Stream;
  */
 @Startup
 @ApplicationScoped
+@UnlessBuildProfile("test")     //So we don't load the seed data in test mode.
 public class ResourceSeedLoader {
 
     @Inject
-    ObservationResource observationResource;
+    EntityManager entityManager;
+
 
     @ConfigProperty(name = "testdata.seed.enabled", defaultValue = "false")
     boolean enabled;
@@ -48,81 +50,79 @@ public class ResourceSeedLoader {
      * {@code observationResource}. Any exceptions encountered during the process are
      * logged to prevent interruption of the service.
      */
-    @PostConstruct
     @Transactional
-    void load() {
+    void onStart(@Observes StartupEvent ev) {
         if (enabled) {
+            System.out.println("Loading seed data...");
+
             try {
-                List<String> files = findXmlFiles(FOLDER);
-                for (String file : files) {
-                    Observation obs = readXmlFile(file, Observation.class);
-                    observationResource.addObservation(obs);
+                List<String> fileNames = loadSeedFileNames();
+                for (String fileName : fileNames) {
+                    try (InputStream is = Thread.currentThread()
+                            .getContextClassLoader()
+                            .getResourceAsStream("seed/" + fileName)) {
+
+                        if (is == null) {
+                            throw new IllegalStateException("Resource not found: seed/" + fileName);
+                        }
+                        Observation obs = readXmlStream(is, Observation.class);
+                        entityManager.persist(obs);
+                    }
                 }
-            } catch (Exception e) {
-                //Warn of error to stop blocking of the service itself.
-                System.out.println(e.getMessage());
+            }catch (Exception e){
+                System.out.println("Error loading seed data: " + e.getMessage());
             }
         }
     }
 
     /**
-     * Finds and retrieves the relative paths of all XML files within a given folder
-     * accessible through the class loader.
+     * Loads a list of seed file names from the "seed/manifest.txt" resource located on the classpath.
+     * <p>
+     * The method reads the contents of the manifest file, trims each line, and filters out empty lines
+     * and lines starting with a "#" character (considered as comments). The resulting list of valid file
+     * names is then returned. Throws an exception if the resource is not found or encounters an error
+     * during reading.
      *
-     * @param folder The name of the folder to search for XML files. This should be a
-     *               resource folder accessible within the application classpath.
-     * @return A list of relative paths to the XML files found within the specified folder.
-     * @throws Exception If an error occurs while accessing the resources or reading files.
+     * @return A list of non-empty, valid seed file names extracted from the manifest file.
+     * @throws Exception If an error occurs while accessing or reading the resource.
      */
-    public static List<String> findXmlFiles(String folder) throws Exception {
-
-        List<String> files = new ArrayList<>();
-
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-
-        Enumeration<URL> resources = cl.getResources(folder);
-
-        while (resources.hasMoreElements()) {
-            URL url = resources.nextElement();
-
-            if (url.getProtocol().equals("file")) {
-                Path path = Paths.get(url.toURI());
-
-                try (Stream<Path> stream = Files.list(path)) {
-                    stream.filter(p -> p.toString().endsWith(".xml"))
-                            .forEach(p -> files.add(folder + "/" + p.getFileName()));
-                }
-            }
-        }
-
-        return files;
-    }
-
-    /**
-     * Reads an XML file into a JAXB object.
-     * @param path The path to the XML file.
-     * @param clazz The class to unmarshal into.
-     * @return The unmarshalled object.
-     * @throws Exception If the XML cannot be unmarshalled.
-     */
-    public static <T> T readXmlFile(String path, Class<T> clazz) throws Exception {
-
+    private List<String> loadSeedFileNames() throws Exception {
         try (InputStream is = Thread.currentThread()
                 .getContextClassLoader()
-                .getResourceAsStream(path)) {
+                .getResourceAsStream("seed/manifest.txt")) {
 
             if (is == null) {
-                throw new RuntimeException("Resource not found: " + path);
+                throw new IllegalStateException("seed/files.txt not found on classpath");
             }
 
-            JAXBContext ctx = JAXBContext.newInstance(clazz);
-            Unmarshaller um = ctx.createUnmarshaller();
-
-            Object result = um.unmarshal(is);
-
-            return (result instanceof JAXBElement<?> el)
-                    ? clazz.cast(el.getValue())
-                    : clazz.cast(result);
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                return reader.lines()
+                        .map(String::trim)
+                        .filter(line -> !line.isEmpty())
+                        .filter(line -> !line.startsWith("#"))
+                        .collect(Collectors.toList());
+            }
         }
+    }
+
+    /**
+     * Unmarshal an XML stream into an object of the specified class.
+     *
+     * @param <T>   The type of the object to be deserialized from the XML stream.
+     * @param is    The InputStream from which the XML data will be read.
+     * @param clazz The Class object representing the type T into which the XML data will be deserialized.
+     * @return      An instance of the specified class T populated with data from the XML stream.
+     * @throws JAXBException If an error occurs during the deserialization process.
+     */
+    public static <T> T readXmlStream(InputStream is, Class<T> clazz) throws JAXBException {
+        JAXBContext ctx = JAXBContext.newInstance(clazz);
+        Unmarshaller um = ctx.createUnmarshaller();
+
+        Object result = um.unmarshal(is);
+
+        return (result instanceof JAXBElement<?> jaxbEl)
+                ? clazz.cast(jaxbEl.getValue())
+                : clazz.cast(result);
     }
 }
