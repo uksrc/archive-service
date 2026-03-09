@@ -1,6 +1,5 @@
 package org.uksrc.archive.seed;
 
-import io.quarkus.arc.profile.UnlessBuildProfile;
 import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -14,13 +13,12 @@ import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.ivoa.dm.caom2.Observation;
+import org.uksrc.archive.utils.tools.Tools;
 
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static org.uksrc.archive.utils.tools.Tools.FOLDER;
 
 /**
  *  Loads example resource XML files and loads them into the database upon startup.
@@ -31,17 +29,13 @@ import java.util.stream.Collectors;
  */
 @Startup
 @ApplicationScoped
-@UnlessBuildProfile("test")     //So we don't load the seed data in test mode.
 public class ResourceSeedLoader {
 
     @Inject
     EntityManager entityManager;
 
-
     @ConfigProperty(name = "testdata.seed.enabled", defaultValue = "false")
     boolean enabled;
-
-    private static final String FOLDER = "seed";   // The folder to search for XML files, needs to be on the classpath.
 
     /**
      * Loads and processes XML files containing observation data from a predefined folder.
@@ -56,14 +50,14 @@ public class ResourceSeedLoader {
             System.out.println("Loading seed data...");
 
             try {
-                List<String> fileNames = loadSeedFileNames();
+                List<String> fileNames = Tools.loadSeedFileNames();
                 for (String fileName : fileNames) {
                     try (InputStream is = Thread.currentThread()
                             .getContextClassLoader()
-                            .getResourceAsStream("seed/" + fileName)) {
+                            .getResourceAsStream(FOLDER + "/" + fileName)) {
 
                         if (is == null) {
-                            throw new IllegalStateException("Resource not found: seed/" + fileName);
+                            throw new IllegalStateException("Resource not found: " + FOLDER + "/" + fileName);
                         }
                         Observation obs = readXmlStream(is, Observation.class);
 
@@ -77,37 +71,6 @@ public class ResourceSeedLoader {
                 }
             }catch (Exception e){
                 System.out.println("Error loading seed data: " + e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Loads a list of seed file names from the "seed/manifest.txt" resource located on the classpath.
-     * <p>
-     * The method reads the contents of the manifest file, trims each line, and filters out empty lines
-     * and lines starting with a "#" character (considered as comments). The resulting list of valid file
-     * names is then returned. Throws an exception if the resource is not found or encounters an error
-     * during reading.
-     *
-     * @return A list of non-empty, valid seed file names extracted from the manifest file.
-     * @throws Exception If an error occurs while accessing or reading the resource.
-     */
-    private List<String> loadSeedFileNames() throws Exception {
-        try (InputStream is = Thread.currentThread()
-                .getContextClassLoader()
-                .getResourceAsStream("seed/manifest.txt")) {
-
-            if (is == null) {
-                throw new IllegalStateException("seed/files.txt not found on classpath");
-            }
-
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                return reader.lines()
-                        .map(String::trim)
-                        .filter(line -> !line.isEmpty())
-                        .filter(line -> !line.startsWith("#"))
-                        .collect(Collectors.toList());
             }
         }
     }
