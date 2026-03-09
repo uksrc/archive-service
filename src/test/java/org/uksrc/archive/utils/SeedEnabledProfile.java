@@ -10,7 +10,7 @@ import java.util.Map;
  * is explicitly set to "true", allowing tests to leverage seeded data where applicable.
  * Used so that testing this one process does not affect other tests which are based on a specific number
  * of resources.
- *
+ * <p>
  * The {@code SeedEnabledProfile} class is typically used to ensure consistent test behaviour
  * when test scenarios rely on pre-seeded datasets.
  */
