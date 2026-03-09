@@ -66,7 +66,13 @@ public class ResourceSeedLoader {
                             throw new IllegalStateException("Resource not found: seed/" + fileName);
                         }
                         Observation obs = readXmlStream(is, Observation.class);
-                        entityManager.persist(obs);
+
+                        // Check if the ID already exists in the DB
+                        if (entityManager.find(Observation.class, obs.getId()) == null) {
+                            entityManager.persist(obs);
+                        } else {
+                            System.out.println("Skipping duplicate: " + obs.getId());
+                        }
                     }
                 }
             }catch (Exception e){
