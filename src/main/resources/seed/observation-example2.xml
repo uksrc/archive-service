@@ -1,0 +1,61 @@
+<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation" caom2:id="d93ba155-ca2e-4e7f-9fa7-cb21a4c006cf">
+<caom2:collection>CK2235</caom2:collection>
+<caom2:uri>https://www.archive-service.org/CK2/CK2235/CK2235_L_002_20180714</caom2:uri>
+<caom2:uriBucket>3d0</caom2:uriBucket>
+<caom2:intent>science</caom2:intent>
+<caom2:metaReadGroups/>
+<caom2:algorithm>
+	<caom2:name>correlator</caom2:name>
+</caom2:algorithm>
+<caom2:telescope>
+<caom2:name>e-MERLIN</caom2:name>
+<caom2:keywords>
+	<caom2:keyword>Lo</caom2:keyword>
+	<caom2:keyword>Mk2</caom2:keyword>
+	<caom2:keyword>Pi</caom2:keyword>
+	<caom2:keyword>Da</caom2:keyword>
+	<caom2:keyword>Kn</caom2:keyword>
+	<caom2:keyword>De</caom2:keyword>
+	<caom2:keyword>Cm</caom2:keyword>
+</caom2:keywords>
+</caom2:telescope>
+<caom2:target>
+	<caom2:name>0955+696</caom2:name>
+	<caom2:targetID>https://archive-service.org/objects/0137+334</caom2:targetID>
+	<caom2:keywords>
+		<caom2:keyword>srcCount:5</caom2:keyword>
+		<caom2:keyword>\"1461+328\"</caom2:keyword>
+		<caom2:keyword>\"1056+887\"</caom2:keyword>
+		<caom2:keyword>\"1445+876\"</caom2:keyword>
+		<caom2:keyword>\"2456+234\"</caom2:keyword>
+		<caom2:keyword>\"4676+524\"</caom2:keyword>
+	</caom2:keywords>
+</caom2:target>
+<caom2:targetPosition>
+	<caom2:coordsys>ICRS</caom2:coordsys>
+	<caom2:coordinates>
+		<caom2:cval1>10.6847083</caom2:cval1>
+		<caom2:cval2>+41.2687500</caom2:cval2>
+	</caom2:coordinates>
+</caom2:targetPosition>
+<caom2:planes>
+	<caom2:plane caom2:id="e4a4aeac-29c1-4c5e-85ce-9a7352e59252">
+	<caom2:energy>
+		<caom2:bounds>
+			<caom2:lower>1250000000</caom2:lower>
+			<caom2:upper>1770000000</caom2:upper>
+		</caom2:bounds>
+		<caom2:bandpassNames><caom2:bandpassName>L</caom2:bandpassName></caom2:bandpassNames>
+	</caom2:energy>
+	<caom2:polarization>
+		<caom2:states>RL</caom2:states>
+	</caom2:polarization>
+	<caom2:time>
+		<caom2:bounds>
+			<caom2:lower>5038243200</caom2:lower>
+			<caom2:upper>5038246800</caom2:upper>
+		</caom2:bounds>
+	</caom2:time>
+</caom2:plane>
+</caom2:planes>	
+</caom2:Observation>

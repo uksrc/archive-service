@@ -8,8 +8,13 @@ import org.uksrc.archive.utils.ObservationListWrapper;
 import org.uksrc.archive.utils.responses.Responses;
 
 import javax.xml.namespace.QName;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 /**
  * <p>Utility class providing common helper methods for web requests.
@@ -18,6 +23,9 @@ import java.util.StringJoiner;
  * <p>Intended to contain supportive functionality.</p>
  */
 public final class Tools {
+
+    public static final String FOLDER = "seed";   // The folder to search for XML files, needs to be on the classpath.
+
     /**
      * Performs the supplied query (with or without the pagination parameters)
      * @param page zero-indexed page index
@@ -71,5 +79,36 @@ public final class Tools {
             );
         }
         return entity;
+    }
+
+    /**
+     * Loads a list of seed file names from the "seed/manifest.txt" resource located on the classpath.
+     * <p>
+     * The method reads the contents of the manifest file, trims each line, and filters out empty lines
+     * and lines starting with a "#" character (considered as comments). The resulting list of valid file
+     * names is then returned. Throws an exception if the resource is not found or encounters an error
+     * during reading.
+     *
+     * @return A list of non-empty, valid seed file names extracted from the manifest file.
+     * @throws Exception If an error occurs while accessing or reading the resource.
+     */
+    public static List<String> loadSeedFileNames() throws Exception {
+        try (InputStream is = Thread.currentThread()
+                .getContextClassLoader()
+                .getResourceAsStream(FOLDER + "/manifest.txt")) {
+
+            if (is == null) {
+                throw new IllegalStateException(FOLDER + "/files.txt not found on classpath");
+            }
+
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                return reader.lines()
+                        .map(String::trim)
+                        .filter(line -> !line.isEmpty())
+                        .filter(line -> !line.startsWith("#"))
+                        .collect(Collectors.toList());
+            }
+        }
     }
 }
