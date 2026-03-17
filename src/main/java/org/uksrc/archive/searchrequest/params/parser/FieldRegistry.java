@@ -39,7 +39,8 @@ public class FieldRegistry {
         BAND,
         ENUM,
         COLLECTION,
-        CONE
+        CONE,
+        STRING_ARRAY
     }
 
     /**
@@ -116,8 +117,8 @@ public class FieldRegistry {
             ),
             "band", new FieldDefinition(
                     "band",
-                    "planes.energy.energyBands",
-                    FieldType.COLLECTION
+                    "planes.energy.bandpassName",
+                    FieldType.STRING_ARRAY
             ),
             "freq", new FieldDefinition(
                     "freq",
