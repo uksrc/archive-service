@@ -75,34 +75,29 @@ public class FieldRegistry {
     }
 
     /**
-     * A map that defines metadata for fields used within the field registry. Each key represents
-     * the name of a field, and its corresponding value is an instance of {@link FieldDefinition}
-     * that provides descriptive information about the field, such as its path, type, and optional
-     * constraints.
+     * A map representing the registered field definitions available for querying
+     * parameters and their corresponding metadata in the application domain. Each
+     * entry consists of a parameter name as the key and a {@link FieldDefinition}
+     * as the value, which provides details such as the parameter name, path to the
+     * associated entity, field type, and optional constraints or transformations.
      * <p>
-     * Field definitions included:
+     * Key details for each registered field:
      * <p>
-     * "project":
-     *   - Represents the project associated with the proposal.
-     *   - Path: "proposal.project"
-     *   - Type: {@link FieldType#STRING}
-     *
-     * "target":
-     *   - Represents the name of the target entity.
-     *   - Path: "target.name"
-     *   - Type: {@link FieldType#STRING}
-     *
-     * "band":
-     *   - Represents a collection of energy bands.
-     *   - Path: "planes.energy.energyBands"
-     *   - Type: {@link FieldType#COLLECTION}
-     *
-     * "freq":
-     *   - Represents the spectral range bounds.
-     *   - Path: "planes.energy.bounds"
-     *   - Type: {@link FieldType#SPECTRAL_RANGE}
-     *   - Minimum Attribute: "lower"
-     *   - Maximum Attribute: "upper"
+     * - project: Represents the project field and maps to "proposal.project". Its type is {@link FieldType#STRING}.
+     * - telescope: Represents the telescope field and maps to "telescope.name". Its type is {@link FieldType#STRING}.
+     * - instrument: Represents the instrument field and maps to "instrument.name". Its type is {@link FieldType#STRING}.
+     * - target: Represents the target field and maps to "target.name". Its type is {@link FieldType#STRING}.
+     * - band: Represents the band field and maps to "planes.energy.bandpassName". Its type is {@link FieldType#STRING_ARRAY}.
+     * - freq: Represents the frequency field, mapping to "planes.energy.bounds" with "lower" and "upper" constraints.
+     *         The field type is {@link FieldType#SPECTRAL_RANGE} with a transformation applied: {@link Transformers#FREQUENCY_TO_WAVELENGTH}.
+     *         Should be supplied as freqMin and freqMax in Hz.
+     * - date: Represents the date field using an overlap range, mapping to "planes.time.bounds" with "lower" and "upper" constraints.
+     *         Its type is {@link FieldType#RANGE} with a transformation applied: {@link Transformers#ISO_TO_MJD}.
+     *         Should be supplied as dateMin and dateMax in ISO-8601 format.
+     * - startDate: Represents the startDate field, mapping to "planes.time.bounds" while ignoring the upper constraint.
+     *              Its type is {@link FieldType#DATE} and applies a transformation: {@link Transformers#ISO_TO_MJD}.
+     * - cone: Represents a cone search field, mapping to "targetPosition.coordinates".
+     *         The parameters include "ra" for Right Ascension (RA) and "dec" for Declination (Dec) & "radius", with a {@link FieldType#CONE}.
      */
     private final Map<String, FieldDefinition> fields = Map.of(
             "project", new FieldDefinition(

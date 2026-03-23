@@ -553,20 +553,23 @@ Using the following API endpoint, the user can make specialised queries.
 http://localhost:8080/archive/search
 ```
 
-| Parameter   | Description                                                          | Data Type | Metric  |
-|-------------|----------------------------------------------------------------------|-----------|---------|
-| `ra`        | Right Ascension                                                      | double    | degrees |
-| `dec`       | Declination                                                          | double    | degrees |
-| `radius`    | Radius                                                               | double    | degrees |  
-| `page`      | Page number                                                          | integer   |         |
-| `size`      | Number of results per page                                           | integer   |         |
-| `target`    | Target Name                                                          | string    |         |
-| `startDate` | For observations present after this date (fractionally or wholly)    | string    | ISO8601 |
-| `freqMin`   | Minimum energy bounds                                                | double    | Hertz   |
-| `freqMax`   | Maximum energy bounds (observations within - fractionally or wholly) | double    | Hertz   |
-| `project`   | Project name                                                         | string    |         |
-| `dateMin`   | Minimum date bounds                                                  | string    | ISO8601 |
-| `dateMax`   | Maximum date bounds (observations within - fractionally or wholly)   | string    | ISO8601 |
+| Parameter    | Description                                                          | Data Type | Metric  |
+|--------------|----------------------------------------------------------------------|-----------|---------|
+| `ra`         | Right Ascension                                                      | double    | degrees |
+| `dec`        | Declination                                                          | double    | degrees |
+| `radius`     | Radius                                                               | double    | degrees |
+| `target`     | Target Name                                                          | string    |         |
+| `project`    | Project name                                                         | string    |         |
+| `telescope`  | Telescope name                                                       | string    |         |
+| `instrument` | Instrument name                                                      | string    |         |
+| `band`       | Energy band                                                          | string    |         |
+| `startDate`  | For observations present after this date (fractionally or wholly)    | string    | ISO8601 |
+| `freqMin`    | Minimum energy bounds                                                | double    | Hertz   |
+| `freqMax`    | Maximum energy bounds (observations within - fractionally or wholly) | double    | Hertz   |
+| `dateMin`    | Minimum date bounds                                                  | string    | ISO8601 |
+| `dateMax`    | Maximum date bounds (observations within - fractionally or wholly)   | string    | ISO8601 |
+| `page`       | Page number                                                          | integer   |         |
+| `size`       | Number of results per page                                           | integer   |         |
 
 - For a cone search, parameters `ra`, `dec` and `radius` are required. 
 - For a date range search, both the `min` and `max` parameters are required. 

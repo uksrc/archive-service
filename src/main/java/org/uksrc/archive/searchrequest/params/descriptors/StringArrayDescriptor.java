@@ -26,6 +26,8 @@ public class StringArrayDescriptor implements PredicateDescriptor {
     private final FieldDefinition fieldDef;
     private final String value;
 
+    private static final String SEPARATOR = "#";
+
     public StringArrayDescriptor(FieldDefinition fieldDef, String value) {
         this.fieldDef = fieldDef;
         this.value = value.toUpperCase();
@@ -48,7 +50,7 @@ public class StringArrayDescriptor implements PredicateDescriptor {
         Expression<String> fieldPath = rawPath.as(String.class);
 
         if (fieldDef.type() == FieldType.STRING_ARRAY) {
-            String searchTerm = "#" + value.toUpperCase() + "#";
+            String searchTerm = SEPARATOR + value.toUpperCase() + SEPARATOR;    //Pad the value to allow for an exact match
 
             // Concat '#' to the beginning and end of the column value
             // Resulting SQL: UPPER('#' || col || '#') LIKE '%#VALUE#%'
