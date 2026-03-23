@@ -13,7 +13,7 @@
     </caom2:algorithm>
     <caom2:intent>science</caom2:intent>
     <caom2:telescope>
-        <caom2:name>e-MERLIN</caom2:name>
+        <caom2:name>Lovell</caom2:name>
     </caom2:telescope>
     <caom2:target>
         <caom2:name>M31</caom2:name>

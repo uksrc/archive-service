@@ -424,13 +424,4 @@ public class SearchResourceTest {
 
         return tp;
     }
-
-   /* @Test
-    @Order(999)
-    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
-    public void clearData() {
-        String id = "2cf99e88-90e1-4fe8-a512-e5cbfdc6ffb4";
-
-        observationResource.deleteObservation(id);
-    }*/
 }

@@ -222,11 +222,12 @@ public class DescriptorFactory {
             boolean isRegistered = registry.containsParam(key);
             boolean isSpatial = isConeParameter(key);
             boolean isRange = isMin(key) || isMax(key);
+            boolean isPage = "page".equalsIgnoreCase(key) || "size".equalsIgnoreCase(key);
 
             // Add other global params here (e.g., "limit", "offset", "sort")
             boolean isPagination = "limit".equalsIgnoreCase(key) || "offset".equalsIgnoreCase(key);
 
-            if (!isRegistered && !isSpatial && !isPagination && !isRange) {
+            if (!isRegistered && !isSpatial && !isPagination && !isRange && !isPage) {
                 throw new IllegalArgumentException("Unknown query parameter: " + key);
             }
         }

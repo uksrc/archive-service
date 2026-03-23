@@ -9,6 +9,9 @@
     <caom2:telescope>
         <caom2:name>e-MERLIN</caom2:name>
     </caom2:telescope>
+    <caom2:instrument>
+        <caom2:name>array123</caom2:name>
+    </caom2:instrument>
     <caom2:targetPosition>
         <caom2:coordsys>ICRS</caom2:coordsys>
         <caom2:equinox></caom2:equinox>

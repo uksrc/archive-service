@@ -51,10 +51,20 @@ public class ObsSearchResource {
         MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
 
         try {
+            String pageNum = params.getFirst("page");
+            String pageSize = params.getFirst("size");
+            Integer page = null;
+            Integer size = null;
+
+            if (pageNum != null && pageSize != null) {
+                page = Integer.parseInt(pageNum);
+                size = Integer.parseInt(pageSize);
+            }
+
             List<PredicateDescriptor> descriptors = descriptorFactory.fromQueryParams(params);
 
             TypedQuery<Observation> query = searchService.searchQuery(descriptors);
-            return Tools.performQuery(0, 10, query);
+            return Tools.performQuery(page, size, query);
         } catch (Exception e) {
             return Responses.errorResponse(e);
         }
