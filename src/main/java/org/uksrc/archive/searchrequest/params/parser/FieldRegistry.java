@@ -110,6 +110,16 @@ public class FieldRegistry {
                     "proposal.project",
                     FieldType.STRING
             ),
+            "telescope", new FieldDefinition(
+                    "telescope",
+                    "telescope.name",
+                    FieldType.STRING
+            ),
+            "instrument", new FieldDefinition(
+                    "instrument",
+                    "instrument.name",
+                    FieldType.STRING
+            ),
             "target", new FieldDefinition(
                     "target",
                     "target.name",
