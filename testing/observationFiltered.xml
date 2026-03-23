@@ -51,7 +51,7 @@
                 </caom2:samples>
                 <caom2:dimension>512</caom2:dimension>
                 <caom2:sampleSize>299.792458</caom2:sampleSize>
-                <caom2:bandpassName>C</caom2:bandpassName>
+                <caom2:bandpassNames><caom2:bandpassName>L</caom2:bandpassName><caom2:bandpassName>C</caom2:bandpassName></caom2:bandpassNames>
                 <caom2:energyBands>
                     <caom2:energyBand>UV</caom2:energyBand>
                     <caom2:energyBand>Radio</caom2:energyBand>

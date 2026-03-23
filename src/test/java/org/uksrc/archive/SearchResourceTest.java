@@ -207,10 +207,10 @@ public class SearchResourceTest {
     @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testSearchBand() {
         //More than one band can exist in the same observation.
-        String query = "/search?band=radio";
+        String query = "/search?band=C";
         searchIncidence(query, 1);
 
-        query = "/search?band=UV";
+        query = "/search?band=L";
         searchIncidence(query, 1);
     }
 
@@ -338,6 +338,34 @@ public class SearchResourceTest {
     @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testSearchInvalidFrequency() {
         String query = "/search?freqMin=130&freqMax=140"; //Hz
+        searchIncidence(query, 0);
+    }
+
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testTelescopeName() {
+        String query = "/search?telescope=e-MERLIN";
+        searchIncidence(query, 1);
+    }
+
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testIncorrectTelescopeName() {
+        String query = "/search?telescope=VLBI";
+        searchIncidence(query, 0);
+    }
+
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testInstrumentName() {
+        String query = "/search?instrument=array123";
+        searchIncidence(query, 1);
+    }
+
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testIncorrectInstrumentName() {
+        String query = "/search?instrument=not-found";
         searchIncidence(query, 0);
     }
 
