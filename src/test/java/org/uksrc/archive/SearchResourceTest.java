@@ -341,6 +341,19 @@ public class SearchResourceTest {
         searchIncidence(query, 0);
     }
 
+    /**
+     * Tests the behaviour of the telescope name query parameter in the search endpoint.
+     * <p>
+     * This test validates that searching for a specific telescope, in this case "e-MERLIN",
+     * returns the expected result. The method asserts that the search operation successfully
+     * identifies and matches the provided telescope parameter.
+     * <p>
+     * Preconditions:
+     * - The database contains observation data with a telescope named "e-MERLIN".
+     * <p>
+     * Postconditions:
+     * - The search functionality should respond without errors and return the expected observation.
+     */
     @Test
     @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testTelescopeName() {
@@ -348,6 +361,18 @@ public class SearchResourceTest {
         searchIncidence(query, 1);
     }
 
+    /**
+     * Tests the behaviour of the telescope name query parameter in the search endpoint.
+     * <p>
+     * This test validates that searching for a specific telescope, in this case "VLBI",
+     * returns nothing.
+     * <p>
+     * Preconditions:
+     * - The database contains observation data without a telescope named "VLBI".
+     * <p>
+     * Postconditions:
+     * - The search functionality should respond without errors and return no observations.
+     */
     @Test
     @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testIncorrectTelescopeName() {
@@ -355,6 +380,19 @@ public class SearchResourceTest {
         searchIncidence(query, 0);
     }
 
+    /**
+     * Tests the behaviour of the instrument name query parameter in the search endpoint.
+     * <p>
+     * This test validates that searching for a specific instrument, in this case "array123",
+     * returns the expected result. The method asserts that the search operation successfully
+     * identifies and matches the provided instrument parameter.
+     * <p>
+     * Preconditions:
+     * - The database contains observation data with an instrument named "array123".
+     * <p>
+     * Postconditions:
+     * - The search functionality should respond without errors and return the expected observation.
+     */
     @Test
     @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testInstrumentName() {
@@ -362,6 +400,18 @@ public class SearchResourceTest {
         searchIncidence(query, 1);
     }
 
+    /**
+     * Tests the behaviour of the instrument name query parameter in the search endpoint.
+     * <p>
+     * This test validates that searching for a specific instrument, in this case "not-found",
+     * returns nothing.
+     * <p>
+     * Preconditions:
+     * - The database contains observation data without an instrument named "not-found".
+     * <p>
+     * Postconditions:
+     * - The search functionality should respond without errors and return no observations.
+     */
     @Test
     @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
     void testIncorrectInstrumentName() {
