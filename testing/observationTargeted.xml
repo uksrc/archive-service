@@ -1,0 +1,20 @@
+<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation" caom2:id="0de64108-69e5-4748-8f63-9bf8f4d7e6dc">
+    <caom2:collection>EMERLIN</caom2:collection>
+    <caom2:uri>TS8004_C_001_99999999</caom2:uri>
+    <caom2:uriBucket>e36</caom2:uriBucket>
+    <caom2:algorithm>
+        <caom2:name>correlator</caom2:name>
+    </caom2:algorithm>
+    <caom2:intent>science</caom2:intent>
+    <caom2:telescope>
+        <caom2:name>e-MERLIN</caom2:name>
+    </caom2:telescope>
+    <caom2:targetPosition>
+        <caom2:coordsys>ICRS</caom2:coordsys>
+        <caom2:equinox></caom2:equinox>
+        <caom2:coordinates>
+            <caom2:cval1>10.6847083</caom2:cval1>
+            <caom2:cval2>41.26875</caom2:cval2>
+        </caom2:coordinates>
+    </caom2:targetPosition>
+</caom2:Observation>

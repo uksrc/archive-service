@@ -22,7 +22,7 @@ dependencyResolutionManagement {
 
         // Our repository
         maven {
-            url= uri("https://repo.dev.uksrc.org/repository/maven-snapshots/")
+            url= uri("https://repo.dev.uksrc.org/repository/maven-public/")
         }
     }
 }
