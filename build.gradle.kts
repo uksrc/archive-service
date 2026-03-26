@@ -60,6 +60,12 @@ dependencies {
     //Identity Management
     implementation("io.quarkus:quarkus-oidc")
 
+    //Basic Auth
+    implementation("io.quarkus:quarkus-security")
+    implementation("io.quarkus:quarkus-security-jpa")
+    implementation("io.quarkus:quarkus-hibernate-orm-panache")
+    implementation("io.quarkus:quarkus-elytron-security-properties-file")
+
     //Datalink
     implementation("org.apache.tika:tika-core:3.2.2")
 
