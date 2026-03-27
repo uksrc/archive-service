@@ -260,6 +260,7 @@ public class ObservationResource {
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @ConditionalRolesAllowed("resource.roles.view")
+    @Transactional
     public Response getAllObservations(@QueryParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         return observationService.getAllObservations(collection, page, size);
     }
@@ -297,6 +298,7 @@ public class ObservationResource {
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @ConditionalRolesAllowed("resource.roles.view")
+    @Transactional
     public Response getObservation(@PathParam("id") String id) {
         return observationService.getObservation(id);
     }
