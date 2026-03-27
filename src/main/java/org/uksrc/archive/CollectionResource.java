@@ -39,6 +39,7 @@ public class CollectionResource {
             description = "Internal error whilst retrieving collectionIds."
     )
     @Produces(MediaType.TEXT_PLAIN)
+    @ConditionalRolesAllowed("resource.roles.view")
     public Response getCollections(){
         try {
             TypedQuery<String> query = em.createQuery("SELECT DISTINCT o.collection FROM Observation o", String.class);
