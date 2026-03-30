@@ -3,7 +3,6 @@ package org.uksrc.archive;
  * Created on 21/08/2024 by Paul Harrison (paul.harrison@manchester.ac.uk).
  */
 
-import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
@@ -11,7 +10,6 @@ import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
-import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.beanutils.BeanUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -27,19 +25,15 @@ import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.SimpleObservation;
 import org.uksrc.archive.auth.ConditionalRolesAllowed;
-import org.uksrc.archive.service.ObservationService;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
-
-import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 @Path("/observations")
 public class ObservationResource {
 
-    @Inject
-    ObservationService observationService;
-
+    @PersistenceContext
+    protected EntityManager em;  // exists for the application lifetime no need to close
 
     @POST
     @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique and XML namespace/JSON type supplied.")
@@ -121,7 +115,7 @@ public class ObservationResource {
     @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response addObservation(Observation observation) {
-        return observationService.submitObservation(observation);
+        return Tools.submitObservation(em, observation);
     }
 
     @PUT
@@ -215,7 +209,31 @@ public class ObservationResource {
     @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response updateObservation(@PathParam("id") String id, Observation observation) {
-        return observationService.updateObservation(id, observation);
+        try {
+            if(id == null || id.isEmpty()) {
+                return Responses.errorResponse("Invalid ID");
+            }
+            else if (!id.equals(observation.getId())){
+                return Responses.errorResponse("id MUST be the same as observation.id");
+            }
+
+            //Only update IF found
+            Observation existing = Tools.findObservation(em, id);
+            if (existing != null) {
+                //Copy all properties from the supplied observation over the existing observation.
+                //Observation.uri MUST remain the same and won't be affected.
+                BeanUtils.copyProperties(existing, observation);
+                Object formattedObs = Tools.formatObservation(existing);
+                return Response.ok(formattedObs).build();
+            }
+        } catch (Exception e) {
+            return Responses.errorResponse(e);
+        }
+
+        return Response.status(Response.Status.NOT_FOUND)
+                .type(MediaType.TEXT_PLAIN)
+                .entity("Observation not found")
+                .build();
     }
 
     @GET
@@ -260,9 +278,26 @@ public class ObservationResource {
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @ConditionalRolesAllowed("resource.roles.view")
-    @Transactional
     public Response getAllObservations(@QueryParam("collectionId") String collection, @QueryParam("page") Integer page, @QueryParam("size") Integer size) {
-        return observationService.getAllObservations(collection, page, size);
+        //Both page and size need to be supplied OR neither
+        if ((page != null) ^ (size != null)) {
+            return Responses.errorResponse("Both 'page' and 'size' must be provided together or neither.");
+        } else if ((page != null && page < 0) || (size != null && size < 1)) {
+            return Responses.errorResponse("Page must be 0 or greater and size must be greater than 0.");
+        }
+
+        try {
+            TypedQuery<Observation> query;
+            if (collection != null && !collection.isEmpty()) {
+                query = em.createQuery("SELECT o FROM Observation o WHERE o.collection = :collection", Observation.class);
+                query.setParameter("collection", collection);
+            } else {
+                query = em.createQuery("SELECT o FROM Observation o", Observation.class);
+            }
+            return Tools.performQuery(page, size, query);
+        } catch (Exception e) {
+            return Responses.errorResponse(e);
+        }
     }
 
     @GET
@@ -298,9 +333,22 @@ public class ObservationResource {
     )
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @ConditionalRolesAllowed("resource.roles.view")
-    @Transactional
     public Response getObservation(@PathParam("id") String id) {
-        return observationService.getObservation(id);
+        try {
+            Observation observation = Tools.findObservation(em, id);
+            if (observation != null) {
+                Object formattedObs = Tools.formatObservation(observation);
+
+                return Response.status(Response.Status.OK)
+                        .entity(formattedObs).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MediaType.TEXT_PLAIN)
+                        .entity("Observation with ID " + id + " not found").build();
+            }
+        } catch (Exception e) {
+            return Responses.errorResponse(e);
+        }
     }
 
     @DELETE
@@ -329,11 +377,21 @@ public class ObservationResource {
     @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response deleteObservation(@PathParam("id") String id) {
-        return observationService.deleteObservation(id);
+        try {
+            Observation observation = Tools.findObservation(em, id);
+            if (observation != null) {
+                em.remove(observation);
+                return Response.status(Response.Status.NO_CONTENT).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MediaType.TEXT_PLAIN)
+                        .entity("Observation with ID " + id + " not found")
+                        .build();
+            }
+        } catch (Exception e) {
+            return Responses.errorResponse(e);
+        }
     }
-
-
-
 
 
     /**
@@ -342,7 +400,7 @@ public class ObservationResource {
      * @param observation The single observation to rename
      * @return A JAXBElement of either SimpleObservation or DerivedObservation
      */
-  /*  private Object specialiseObservation(Observation observation) {
+   /* private Object specialiseObservation(Observation observation) {
         Object entity = null;
         if (observation instanceof SimpleObservation) {
             entity = new JAXBElement<>(

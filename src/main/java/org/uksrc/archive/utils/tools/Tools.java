@@ -1,5 +1,7 @@
 package org.uksrc.archive.utils.tools;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import jakarta.ws.rs.core.Response;
 import jakarta.xml.bind.JAXBElement;
@@ -109,6 +111,48 @@ public final class Tools {
                         .filter(line -> !line.startsWith("#"))
                         .collect(Collectors.toList());
             }
+        }
+    }
+
+    /**
+     * Adds an observation to the database
+     * @param observation Either a SimpleObservation or a DerivedObservation
+     * @return Response containing status code and added observation (if successful)
+     */
+    public static Response submitObservation(EntityManager em, Observation observation) {
+        if (findObservation(em, observation.getId()) != null) {
+            return Responses.errorResponse("Observation.id " + observation.getId() + " already exists.");
+        }
+
+        try {
+            em.persist(observation);
+            em.flush();
+
+            Object formattedObs = Tools.formatObservation(observation);
+            return Response.status(Response.Status.CREATED)
+                    .entity(formattedObs)
+                    .build();
+
+        } catch (Exception e) {
+            return Responses.errorResponse(e);
+        }
+    }
+
+    /**
+     * Checks to see if an observation with the supplied ID already exists
+     * @param id Observation.id
+     * @return The observation if found, null if not
+     */
+    public static Observation findObservation(EntityManager em, String id) {
+        TypedQuery<Observation> existsQuery = em.createQuery(
+                "SELECT o FROM Observation o WHERE o.id = :id", Observation.class
+        );
+
+        try {
+            existsQuery.setParameter("id", id);
+            return existsQuery.getSingleResult();
+        } catch (NoResultException e){
+            return null;
         }
     }
 }

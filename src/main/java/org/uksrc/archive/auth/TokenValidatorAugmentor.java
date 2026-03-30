@@ -41,17 +41,15 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
                     .map(cred -> (TokenCredential) cred)
                     .findFirst();
 
-            if (tokenCredentialOpt.isEmpty()) {
-                throw new ForbiddenException("Access denied: no access token credential found");
-            }
+            if (tokenCredentialOpt.isPresent()) {
+                String token = tokenCredentialOpt.get().getToken();
+                String clientId = extractClaim(token)
+                        .orElseThrow(() -> new ForbiddenException("Access denied: client_id not present in token"));
 
-            String token = tokenCredentialOpt.get().getToken();
-            String clientId = extractClaim(token)
-                    .orElseThrow(() -> new ForbiddenException("Access denied: client_id not present in token"));
-
-            if (expectedClientId.compareToIgnoreCase(clientId) != 0) {
-                LOG.warnf("Invalid client_id: %s", clientId);
-                throw new ForbiddenException("Access denied: incorrect client_id in token");
+                if (expectedClientId.compareToIgnoreCase(clientId) != 0) {
+                    LOG.warnf("Invalid client_id: %s", clientId);
+                    throw new ForbiddenException("Access denied: incorrect client_id in token");
+                }
             }
         }
 
@@ -89,7 +87,8 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
     private boolean validationRequired(SecurityIdentity identity){
         String profile = ConfigProvider.getConfig().getOptionalValue("quarkus.profile", String.class).orElse("prod");
 
-        return securityEnabled && !"test".equalsIgnoreCase(profile) && !identity.isAnonymous();
+        boolean test = securityEnabled && !"test".equalsIgnoreCase(profile);// && !identity.isAnonymous();
+        return securityEnabled && !"test".equalsIgnoreCase(profile);// && !identity.isAnonymous();
     }
 
     @Override
