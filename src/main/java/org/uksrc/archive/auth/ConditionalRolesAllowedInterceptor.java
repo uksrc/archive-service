@@ -46,7 +46,7 @@ public class ConditionalRolesAllowedInterceptor {
         SecurityIdentity identity = identityInstance.get();
 
         if (identity == null || identity.isAnonymous()) {
-            throw new ForbiddenException("Authentication required");
+            throw new AuthenticationFailedException("Authentication required");
         }
 
         ConditionalRolesAllowed annotation =
