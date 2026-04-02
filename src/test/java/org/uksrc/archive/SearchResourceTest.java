@@ -420,6 +420,50 @@ public class SearchResourceTest {
     }
 
     /**
+     * Tests the functionality of the Search API for a specific collection.
+     * This method verifies that the search endpoint correctly retrieves observations
+     * related to the specified collection, such as "EMERLIN" or "VLBI".
+     * <p>
+     * Preconditions:
+     * - observationFiltered.xml is loaded into the database.
+     * - observationTargeted.xml is loaded into the database.
+     * <p>
+     * Test Details:
+     * - Sends a search query for the collection "EMERLIN".
+     * - Asserts that the number of retrieved observations matches the expected value.
+     */
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testSearchCollection() {
+        String query = "/search?collection=EMERLIN";
+
+        searchIncidence(query, 2);
+    }
+
+    /**
+     * Tests the functionality of the Search API for a specific collection and target to check that more than one parameter can
+     * be filtered at once.
+     * This method verifies that the search endpoint correctly retrieves observations
+     * related to the specified collection, such as "EMERLIN" or "VLBI" and target.
+     * <p>
+     * Preconditions:
+     * - observationFiltered.xml is loaded into the database.
+     * - observationTargeted.xml is loaded into the database.
+     * <p>
+     * Test Details:
+     * - Sends a search query for the collection "EMERLIN".
+     * - Sends a search query targeting the object "M31".
+     * - Asserts that the number of retrieved observations matches the expected value.
+     */
+    @Test
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE})
+    void testSearchCollectionAndTarget() {
+        String query = "/search?collection=EMERLIN&target=M31";
+
+        searchIncidence(query, 1);
+    }
+
+    /**
      * Searches for observations based on the given query and verifies the number of results.
      *
      * @param query The API endpoint query string used to search for observations.

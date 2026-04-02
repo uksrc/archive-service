@@ -156,6 +156,11 @@ public class FieldRegistry {
                     "cval1",            // RA column
                     "cval2",                        // Dec column
                     null
+            ),
+            "collection", new FieldDefinition(
+                    "collection",
+                    "collection",
+                    FieldType.STRING
             )
     );
 
