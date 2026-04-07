@@ -578,6 +578,11 @@ http://localhost:8080/archive/search
   - ```http://localhost:8080/archive/search?freqMin=20&freqMax=40```
 - All date parameters are in the ISO 8601 format (either date or date-time). 
   - ```http://localhost:8080/archive/search?startDate=2019-08-02T00:02:06Z```
+- Frequency bounds are in Hertz; however, the model itself stores the values as WaveLength. This means that any resources
+- returned conform to the CAOM2 model and will contain wavelength rather than frequency.
+
+## Model Definitions
+The model currently used is defined in the [CAOM2](https://github.com/uksrc/CAOM) project.
 
 ## Test Cases
 Location of CADC's test cases.
