@@ -35,21 +35,40 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
 
     @Override
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context) {
+        // Don't validate token for anonymouse requests
+        if (identity.isAnonymous()) {
+            return Uni.createFrom().item(identity);
+        }
+
+        // Check if this is a Basic Auth user (Username/Password)
+        // Basic Auth users usually don't have TokenCredentials
+        boolean hasToken = identity.getCredentials().stream()
+                .anyMatch(cred -> cred instanceof TokenCredential);
+
+        if (!hasToken) {
+            // If it's an authenticated user but NOT via token (e.g., Basic Auth),
+            // just let them through without JWT validation.
+            return Uni.createFrom().item(identity);
+        }
+
+        // OIDC user with an (expected) bearer token
         if (validationRequired(identity)) {
             Optional<TokenCredential> tokenCredentialOpt = identity.getCredentials().stream()
                     .filter(cred -> cred instanceof TokenCredential)
                     .map(cred -> (TokenCredential) cred)
                     .findFirst();
 
-            if (tokenCredentialOpt.isPresent()) {
-                String token = tokenCredentialOpt.get().getToken();
-                String clientId = extractClaim(token)
-                        .orElseThrow(() -> new ForbiddenException("Access denied: client_id not present in token"));
+            if (tokenCredentialOpt.isEmpty()) {
+                throw new ForbiddenException("Access denied: no access token credential found");
+            }
 
-                if (expectedClientId.compareToIgnoreCase(clientId) != 0) {
-                    LOG.warnf("Invalid client_id: %s", clientId);
-                    throw new ForbiddenException("Access denied: incorrect client_id in token");
-                }
+            String token = tokenCredentialOpt.get().getToken();
+            String clientId = extractClaim(token)
+                    .orElseThrow(() -> new ForbiddenException("Access denied: client_id not present in token"));
+
+            if (expectedClientId.compareToIgnoreCase(clientId) != 0) {
+                LOG.warnf("Invalid client_id: %s", clientId);
+                throw new ForbiddenException("Access denied: incorrect client_id in token");
             }
         }
 
@@ -86,9 +105,10 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
      */
     private boolean validationRequired(SecurityIdentity identity){
         String profile = ConfigProvider.getConfig().getOptionalValue("quarkus.profile", String.class).orElse("prod");
-
-        boolean test = securityEnabled && !"test".equalsIgnoreCase(profile);// && !identity.isAnonymous();
-        return securityEnabled && !"test".equalsIgnoreCase(profile);// && !identity.isAnonymous();
+        if (identity.isAnonymous()) {
+            return false;
+        }
+        return securityEnabled && !"test".equalsIgnoreCase(profile);
     }
 
     @Override
