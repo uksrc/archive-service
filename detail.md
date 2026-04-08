@@ -7,7 +7,9 @@
 5. [DataLink](#datalink)
 6. [Spherical Queries](#spherical-queries)
 7. [Searching](#optional-search-parameters)
-8. [Test Cases](#test-cases)
+    - [Techical details](#technical-details)
+8. [Model Defintions](#model-definitions)
+9. [Test Cases](#test-cases)
 
 
 ------------------------------------------------------------------------------------------
@@ -580,6 +582,15 @@ http://localhost:8080/archive/search
   - ```http://localhost:8080/archive/search?startDate=2019-08-02T00:02:06Z```
 - Frequency bounds are in Hertz; however, the model itself stores the values as WaveLength. This means that any resources
 - returned conform to the CAOM2 model and will contain wavelength rather than frequency.
+
+### Technical Details
+Basic sequence of steps for a filtered search.
+
+![Filtered Search Sequence](docs/FilteredSearchProcess.jpg)
+
+Details of the structure of the components of the filtered search process are shown below.
+
+![Filtered Search Components](docs/filteredsearchwml1.jpg)
 
 ## Model Definitions
 The model currently used is defined in the [CAOM2](https://github.com/uksrc/CAOM) project.
