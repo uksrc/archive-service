@@ -21,9 +21,9 @@ dependencies {
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation ("io.quarkus:quarkus-core")
     implementation("io.quarkus:quarkus-undertow")
-    implementation("io.quarkus:quarkus-resteasy-reactive")
-    implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
-    implementation("io.quarkus:quarkus-resteasy-reactive-jaxb")
+    implementation("io.quarkus:quarkus-rest")
+    implementation("io.quarkus:quarkus-rest-jackson")
+    implementation("io.quarkus:quarkus-rest-jaxb")
     implementation("io.quarkus:quarkus-hibernate-orm")
     implementation("io.quarkus:quarkus-smallrye-openapi")
     implementation("io.quarkus:quarkus-kubernetes")
@@ -48,7 +48,7 @@ dependencies {
 
 
     //Model(s)
-    implementation("org.opencadc:CAOM:2.5.6-SNAPSHOT:quarkus")
+    implementation("org.opencadc:CAOM:2.5.7-SNAPSHOT:quarkus")
 
     //Required by Vollt
     // TAP lib upload func.
