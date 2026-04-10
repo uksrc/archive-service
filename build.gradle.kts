@@ -38,6 +38,10 @@ dependencies {
     implementation("commons-beanutils:commons-beanutils:1.9.4")
     implementation("io.quarkus:quarkus-kubernetes-config")
     implementation("org.json:json:20250517")
+    implementation(platform("org.apache.logging.log4j:log4j-bom:2.25.3"))
+
+    implementation("org.apache.logging.log4j:log4j-api")
+    implementation("org.apache.logging.log4j:log4j-core")
 
     //Vollt TAP
     implementation("fr.unistra.cds:ADQLlib:2.1-SNAPSHOT")
@@ -71,8 +75,6 @@ dependencies {
 
     //UserAgent evaluation
     implementation("nl.basjes.parse.useragent:yauaa:7.31.0")
-    implementation("org.apache.logging.log4j:log4j-api:2.25.2")
-    implementation("org.apache.logging.log4j:log4j-core:2.23.1")
 
     testImplementation("io.quarkus:quarkus-test-security")
     testImplementation("org.javastro:jsofa:20210512")
