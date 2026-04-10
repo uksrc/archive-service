@@ -558,3 +558,8 @@ There are several files included for running unit tests, these can be found in t
 If the CAOM model definitions change then these *might* need updating too. These have been added to *reduce* the burden of having to update the unit tests programmatically.
 
 *coneTestData.json* contains a target and a radius alongside some coordinates that may or may not be inside that radius. All the true/false values MUST relate to the values in the *target* object if updating.
+
+
+## Using the Javastro IVOA Core libraries
+
+The code is in the process of being moved to use the https://github.com/Javastro/ivoacore libraries to implement the UWS and TAP services, so that the code can be used as a reference implementation for those libraries. The code is currently on a branch but will be merged to main once the libraries are stable.
