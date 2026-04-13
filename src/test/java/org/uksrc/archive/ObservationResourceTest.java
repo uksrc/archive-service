@@ -1,6 +1,7 @@
 package org.uksrc.archive;
 
 import io.quarkus.security.AuthenticationFailedException;
+import io.quarkus.security.ForbiddenException;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
@@ -272,12 +273,13 @@ public class ObservationResourceTest {
         Observation observation = createSimpleObservation(OBSERVATION1, COLLECTION1);
 
         // Expected response
-        assertThrows(AuthenticationFailedException.class, () -> observationResource.addObservation(observation));
+        assertThrows(ForbiddenException.class, () -> observationResource.addObservation(observation));
     }
 
     @Test
     @DisplayName("Add an observation with a single artifact and check the response is the same.")
     @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @Transactional
     public void testGettingArtifactObservation() {
         //One plane with one artifact
         Observation obs1 = createArtifactObservation(OBSERVATION1, COLLECTION1, nonResolvableArtifactUri);

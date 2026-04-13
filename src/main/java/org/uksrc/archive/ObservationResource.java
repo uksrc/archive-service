@@ -10,7 +10,6 @@ import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
-import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.beanutils.BeanUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -28,8 +27,6 @@ import org.ivoa.dm.caom2.SimpleObservation;
 import org.uksrc.archive.auth.ConditionalRolesAllowed;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
-
-import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 @Path("/observations")
@@ -118,7 +115,7 @@ public class ObservationResource {
     @ConditionalRolesAllowed("resource.roles.edit")
     @Transactional
     public Response addObservation(Observation observation) {
-        return submitObservation(observation);
+        return Tools.submitObservation(em, observation);
     }
 
     @PUT
@@ -221,7 +218,7 @@ public class ObservationResource {
             }
 
             //Only update IF found
-            Observation existing = findObservation(id);
+            Observation existing = Tools.findObservation(em, id);
             if (existing != null) {
                 //Copy all properties from the supplied observation over the existing observation.
                 //Observation.uri MUST remain the same and won't be affected.
@@ -338,7 +335,7 @@ public class ObservationResource {
     @ConditionalRolesAllowed("resource.roles.view")
     public Response getObservation(@PathParam("id") String id) {
         try {
-            Observation observation = findObservation(id);
+            Observation observation = Tools.findObservation(em, id);
             if (observation != null) {
                 Object formattedObs = Tools.formatObservation(observation);
 
@@ -381,7 +378,7 @@ public class ObservationResource {
     @Transactional
     public Response deleteObservation(@PathParam("id") String id) {
         try {
-            Observation observation = findObservation(id);
+            Observation observation = Tools.findObservation(em, id);
             if (observation != null) {
                 em.remove(observation);
                 return Response.status(Response.Status.NO_CONTENT).build();
@@ -394,67 +391,5 @@ public class ObservationResource {
         } catch (Exception e) {
             return Responses.errorResponse(e);
         }
-    }
-
-    /**
-     * Adds an observation to the database
-     * @param observation Either a SimpleObservation or a DerivedObservation
-     * @return Response containing status code and added observation (if successful)
-     */
-    private Response submitObservation(Observation observation) {
-        if (findObservation(observation.getId()) != null) {
-            return Responses.errorResponse("Observation.id " + observation.getId() + " already exists.");
-        }
-
-        try {
-            em.persist(observation);
-            em.flush();
-
-            Object formattedObs = Tools.formatObservation(observation);
-            return Response.status(Response.Status.CREATED)
-                    .entity(formattedObs)
-                    .build();
-
-        } catch (Exception e) {
-            return Responses.errorResponse(e);
-        }
-    }
-
-    /**
-     * Checks to see if an observation with the supplied ID already exists
-     * @param id Observation.id
-     * @return The observation if found, null if not
-     */
-    private Observation findObservation(String id) {
-        TypedQuery<Observation> existsQuery = em.createQuery(
-                "SELECT o FROM Observation o WHERE o.id = :id", Observation.class
-        );
-
-        try {
-            existsQuery.setParameter("id", id);
-            return existsQuery.getSingleResult();
-        } catch (NoResultException e){
-            return null;
-        }
-    }
-
-    /**
-     * Enforces the specialization of certain Observation types.
-     * Converts the name to Pascal-case suitable for XML responses.
-     * @param observation The single observation to rename
-     * @return A JAXBElement of either SimpleObservation or DerivedObservation
-     */
-    private Object specialiseObservation(Observation observation) {
-        Object entity = null;
-        if (observation instanceof SimpleObservation) {
-            entity = new JAXBElement<>(
-                    new QName("SimpleObservation"), SimpleObservation.class, (SimpleObservation) observation
-            );
-        } else if (observation instanceof DerivedObservation) {
-            entity = new JAXBElement<>(
-                    new QName("DerivedObservation"), DerivedObservation.class, (DerivedObservation) observation
-            );
-        }
-        return entity;
     }
 }
