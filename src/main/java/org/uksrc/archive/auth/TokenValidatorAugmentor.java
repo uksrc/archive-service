@@ -35,7 +35,7 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
 
     @Override
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context) {
-        // Don't validate token for anonymouse requests
+        // Don't validate token for anonymous requests
         if (identity.isAnonymous()) {
             return Uni.createFrom().item(identity);
         }

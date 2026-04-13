@@ -1,8 +1,10 @@
 package org.uksrc.archive.auth;
 
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
@@ -28,15 +30,22 @@ public class AdminUserInitialiser {
      * with the specified username exists in the database. If no such user is found, it creates
      * a new admin user with the credentials defined in the configuration and assigns the "admin"
      * role to that user.
+     * <p>
+     * NOTE: If the admin user already exists, the initialisation will skip and the credentials are not updated automatically.
      *
      * @param ev the startup event that triggers this method. Provides context for application startup.
      */
     void onStart(@Observes StartupEvent ev) {
+        createAdminIfNeeded();
+    }
+
+    @Transactional
+    void createAdminIfNeeded() {
         if (AdminUser.count(USERNAME_KEY, username) == 0) {
             AdminUser.add(username, password, ADMIN_ROLE);
-            System.out.println("✅ Admin user created: " + username);
+            Log.infof("Admin user created: %s", username);
         } else {
-            System.out.println("✅ Admin user already exists.");
+            Log.info("Admin user already exists; skipping initialization (credentials are not updated automatically)");
         }
     }
 }

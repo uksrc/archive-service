@@ -46,7 +46,7 @@ public class ConditionalRolesAllowedInterceptor {
         SecurityIdentity identity = identityInstance.get();
 
         if (identity == null || identity.isAnonymous()) {
-            throw new AuthenticationFailedException("Authentication required");
+            throw new ForbiddenException("Access denied: required roles not present");
         }
 
         ConditionalRolesAllowed annotation =
@@ -60,13 +60,11 @@ public class ConditionalRolesAllowedInterceptor {
 
         if (annotation != null && !annotation.value().isEmpty()) {
 
-            Optional<String> rolesCsvOpt =
-                    config.getOptionalValue(annotation.value(), String.class);
+            Optional<String> rolesCsvOpt = config.getOptionalValue(annotation.value(), String.class);
 
             if (rolesCsvOpt.isPresent()) {
 
-                Set<String> requiredRoles =
-                        Set.of(rolesCsvOpt.get().split("\\s*,\\s*"));
+                Set<String> requiredRoles = Set.of(rolesCsvOpt.get().split("\\s*,\\s*"));
 
                 for (String role : requiredRoles) {
                     if (identity.hasRole(role)) {
@@ -74,6 +72,9 @@ public class ConditionalRolesAllowedInterceptor {
                     }
                 }
 
+                throw new ForbiddenException("Access denied: required roles not present");
+            }
+            else {
                 throw new ForbiddenException("Access denied: required roles not present");
             }
         }

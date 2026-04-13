@@ -1,6 +1,7 @@
 package org.uksrc.archive;
 
 import io.quarkus.security.AuthenticationFailedException;
+import io.quarkus.security.ForbiddenException;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
@@ -272,7 +273,7 @@ public class ObservationResourceTest {
         Observation observation = createSimpleObservation(OBSERVATION1, COLLECTION1);
 
         // Expected response
-        assertThrows(AuthenticationFailedException.class, () -> observationResource.addObservation(observation));
+        assertThrows(ForbiddenException.class, () -> observationResource.addObservation(observation));
     }
 
     @Test

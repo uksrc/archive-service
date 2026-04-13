@@ -31,10 +31,10 @@ The application is now runnable using `java -jar build/quarkus-app/quarkus-run.j
 Add the profile to run in different states:
 'prod', 'dev' or 'test'
 ```shell script
-// Windows has to be quoted.
+# Windows has to be quoted.
 java '-Dquarkus.profile=prod' -jar build/quarkus-app/quarkus-run.jar
 
-// Linux does not need to be quoted.
+# Linux does not need to be quoted.
 java -Dquarkus.profile=prod -jar build/quarkus-app/quarkus-run.jar 
 ```
 
