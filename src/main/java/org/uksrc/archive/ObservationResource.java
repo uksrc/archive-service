@@ -392,25 +392,4 @@ public class ObservationResource {
             return Responses.errorResponse(e);
         }
     }
-
-
-    /**
-     * Enforces the specialization of certain Observation types.
-     * Converts the name to Pascal-case suitable for XML responses.
-     * @param observation The single observation to rename
-     * @return A JAXBElement of either SimpleObservation or DerivedObservation
-     */
-   /* private Object specialiseObservation(Observation observation) {
-        Object entity = null;
-        if (observation instanceof SimpleObservation) {
-            entity = new JAXBElement<>(
-                    new QName("SimpleObservation"), SimpleObservation.class, (SimpleObservation) observation
-            );
-        } else if (observation instanceof DerivedObservation) {
-            entity = new JAXBElement<>(
-                    new QName("DerivedObservation"), DerivedObservation.class, (DerivedObservation) observation
-            );
-        }
-        return entity;
-    }*/
 }
