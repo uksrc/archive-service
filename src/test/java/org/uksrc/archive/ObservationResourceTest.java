@@ -10,9 +10,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import jakarta.xml.bind.JAXBElement;
 import org.ivoa.dm.caom2.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.uksrc.archive.utils.ObservationListWrapper;
@@ -275,7 +273,7 @@ public class ObservationResourceTest {
         Observation observation = createSimpleObservation(OBSERVATION1, COLLECTION1);
 
         // Expected response
-        assertThrows(AuthenticationFailedException.class, () -> observationResource.addObservation(observation));
+        assertThrows(ForbiddenException.class, () -> observationResource.addObservation(observation));
     }
 
     @Test
