@@ -4,6 +4,7 @@ import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.ForbiddenException;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
@@ -33,40 +34,51 @@ public class ConditionalRolesAllowedInterceptor {
     Config config;
 
     @Inject
-    SecurityIdentity identity;
+    Instance<SecurityIdentity> identityInstance;
 
     @AroundInvoke
     public Object enforceRoles(InvocationContext ctx) throws Exception {
-        if (rolesEnabled) {
-            if (identity != null && !identity.isAnonymous()) {
-                ConditionalRolesAllowed annotation = ctx.getMethod().getAnnotation(ConditionalRolesAllowed.class);
-                if (annotation == null) {
-                    annotation = ctx.getMethod().getDeclaringClass().getAnnotation(ConditionalRolesAllowed.class);
-                }
 
-                if (annotation != null && !annotation.value().isEmpty()) {
-                    String configKey = annotation.value();
-                    Optional<String> rolesCsvOpt = config.getOptionalValue(configKey, String.class);
+        if (!rolesEnabled) {
+            return ctx.proceed();
+        }
 
-                    if (rolesCsvOpt.isPresent()) {
-                        Set<String> requiredRoles = Set.of(rolesCsvOpt.get().split("\\s*,\\s*"));
+        SecurityIdentity identity = identityInstance.get();
 
-                        for (String role : requiredRoles) {
-                            if (identity.hasRole(role)) {
-                                return ctx.proceed();
-                            }
-                        }
-                        throw new ForbiddenException("Access denied: required roles not present");
+        if (identity == null || identity.isAnonymous()) {
+            throw new ForbiddenException("Access denied: required roles not present");
+        }
+
+        ConditionalRolesAllowed annotation =
+                ctx.getMethod().getAnnotation(ConditionalRolesAllowed.class);
+
+        if (annotation == null) {
+            annotation = ctx.getMethod()
+                    .getDeclaringClass()
+                    .getAnnotation(ConditionalRolesAllowed.class);
+        }
+
+        if (annotation != null && !annotation.value().isEmpty()) {
+
+            Optional<String> rolesCsvOpt = config.getOptionalValue(annotation.value(), String.class);
+
+            if (rolesCsvOpt.isPresent()) {
+
+                Set<String> requiredRoles = Set.of(rolesCsvOpt.get().split("\\s*,\\s*"));
+
+                for (String role : requiredRoles) {
+                    if (identity.hasRole(role)) {
+                        return ctx.proceed();
                     }
                 }
+
+                throw new ForbiddenException("Access denied: required roles not present");
             }
             else {
-                throw new AuthenticationFailedException("Bearer token required");
-
+                throw new ForbiddenException("Access denied: required roles not present");
             }
         }
 
-        // Catch all, no API restriction, enforcement disabled in application.properties
         return ctx.proceed();
     }
 }

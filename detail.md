@@ -416,6 +416,10 @@ The following env vars are required to allow the IAM process to succeed.
 
 - *OIDC_AUTH_CALLBACK*: URI of the service that handles authentication callbacks.
 
+Basic Authentication can be used by setting the following env vars.
+- *ADMIN_USER*: The username of the admin user.
+- *ADMIN_PASSWORD*: The password of the admin user.
+
 ### DataLink
 
 Retrieve a DataLink object for a specific Artifact.

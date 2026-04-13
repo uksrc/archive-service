@@ -35,6 +35,23 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
 
     @Override
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context) {
+        // Don't validate token for anonymous requests
+        if (identity.isAnonymous()) {
+            return Uni.createFrom().item(identity);
+        }
+
+        // Check if this is a Basic Auth user (Username/Password)
+        // Basic Auth users usually don't have TokenCredentials
+        boolean hasToken = identity.getCredentials().stream()
+                .anyMatch(cred -> cred instanceof TokenCredential);
+
+        if (!hasToken) {
+            // If it's an authenticated user but NOT via token (e.g., Basic Auth),
+            // just let them through without JWT validation.
+            return Uni.createFrom().item(identity);
+        }
+
+        // OIDC user with an (expected) bearer token
         if (validationRequired(identity)) {
             Optional<TokenCredential> tokenCredentialOpt = identity.getCredentials().stream()
                     .filter(cred -> cred instanceof TokenCredential)
@@ -88,8 +105,10 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
      */
     private boolean validationRequired(SecurityIdentity identity){
         String profile = ConfigProvider.getConfig().getOptionalValue("quarkus.profile", String.class).orElse("prod");
-
-        return securityEnabled && !"test".equalsIgnoreCase(profile) && !identity.isAnonymous();
+        if (identity.isAnonymous()) {
+            return false;
+        }
+        return securityEnabled && !"test".equalsIgnoreCase(profile);
     }
 
     @Override
