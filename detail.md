@@ -48,7 +48,8 @@ Namespace details must conform with the current vo-dml model used.
 ```
 ------------------------------------------------------------------------------------------
 ### REST API details
-Details of the functionality of the archive-service endpoints.
+Details of the services that are available at the /archive endpoint of the application. 
+These services are used to manage the observations in the archive and to perform searches.
 
 #### Retrieving observations
 
