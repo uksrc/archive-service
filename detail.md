@@ -6,7 +6,10 @@
 4. [Authentication](#authentication)
 5. [DataLink](#datalink)
 6. [Spherical Queries](#spherical-queries)
-7. [Test Cases](#test-cases)
+7. [Searching](#optional-search-parameters)
+    - [Techical details](#technical-details)
+8. [Model Defintions](#model-definitions)
+9. [Test Cases](#test-cases)
 
 
 ------------------------------------------------------------------------------------------
@@ -45,7 +48,8 @@ Namespace details must conform with the current vo-dml model used.
 ```
 ------------------------------------------------------------------------------------------
 ### REST API details
-Details of the functionality of the archive-service endpoints.
+Details of the services that are available at the /archive endpoint of the application. 
+These services are used to manage the observations in the archive and to perform searches.
 
 #### Retrieving observations
 
@@ -474,7 +478,7 @@ Note: The /archive/datalink/resource API determines the actual Artifact.uri via 
 
 The link_authorized property value needs updating once there's a mechanism in place to send the current user's status.
 
-### Spherical Queries
+## Spherical Queries
 
 The postgres database that is currently used has the [pgSphere extension](https://github.com/postgrespro/pgsphere) installed and can be used with the following approach. Hibernate 6+
 
@@ -549,7 +553,52 @@ query.setParameter("radiusInDegrees", radius);
 List<Observation> observations = query.getResultList();
 ```
 
+## Optional Search Parameters
 
+Using the following API endpoint, the user can make specialised queries.
+```
+http://localhost:8080/archive/search
+```
+
+| Parameter    | Description                                                          | Data Type | Metric  | Model  Property - CAOM2.5                      |
+|--------------|----------------------------------------------------------------------|-----------|---------|------------------------------------------------|
+| `ra`         | Right Ascension                                                      | double    | degrees | *Observation.targetPosition.coordinates.cval1* |
+| `dec`        | Declination                                                          | double    | degrees | *Observation.targetPosition.coordinates.cval2* |
+| `radius`     | Radius                                                               | double    | degrees |                                                |
+| `target`     | Target Name                                                          | string    |         | *Observation.target.name*                      |
+| `project`    | Project name                                                         | string    |         | *Observation.proposal.project*                 |
+| `telescope`  | Telescope name                                                       | string    |         | *Observation.telescope.name*                   |
+| `instrument` | Instrument name                                                      | string    |         | *Observation.instrument.name*                  |
+| `band`       | Energy band                                                          | string    |         | *Observation.planes.energy.bandpassName*       |
+| `startDate`  | For observations present after this date (fractionally or wholly)    | string    | ISO8601 | *Observation.planes.time.bounds.lower*         |
+| `freqMin`    | Minimum energy bounds                                                | double    | Hertz   | *Observation.planes.energy.bounds.lower*       |
+| `freqMax`    | Maximum energy bounds (observations within - fractionally or wholly) | double    | Hertz   | *Observation.planes.energy.bounds.upper*       |
+| `dateMin`    | Minimum date bounds                                                  | string    | ISO8601 | *Observation.planes.time.bounds.lower*         |
+| `dateMax`    | Maximum date bounds (observations within - fractionally or wholly)   | string    | ISO8601 | *Observation.planes.time.bounds.upper*         |
+| `page`       | Page number                                                          | integer   |         |                                                |
+| `size`       | Number of results per page                                           | integer   |         |                                                |
+
+- For a cone search, parameters `ra`, `dec` and `radius` are required. 
+- For a date range search, both the `min` and `max` parameters are required. 
+  - ```http://localhost:8080/archive/search?dateMin=2001-08-02T00:02:06Z&dateMax=2019-08-02T00:02:06Z```
+- For a frequency range search, both the `min` and `max` parameters are required.
+  - ```http://localhost:8080/archive/search?freqMin=20&freqMax=40```
+- All date parameters are in the ISO 8601 format (either date or date-time). 
+  - ```http://localhost:8080/archive/search?startDate=2019-08-02T00:02:06Z```
+- Frequency bounds are in Hertz; however, the model itself stores the values as WaveLength. This means that any resources
+- returned conform to the CAOM2 model and will contain wavelength rather than frequency.
+
+### Technical Details
+Basic sequence of steps for a filtered search.
+
+![Filtered Search Sequence](docs/FilteredSearchProcess.jpg)
+
+Details of the structure of the components of the filtered search process are shown below.
+
+![Filtered Search Components](docs/filteredsearchwml1.jpg)
+
+## Model Definitions
+The model currently used is defined in the [CAOM2](https://github.com/uksrc/CAOM) project.
 
 ## Test Cases
 Location of CADC's test cases.
@@ -559,6 +608,6 @@ https://github.com/opencadc/caom2tools/tree/CAOM25/caom2/caom2/tests/data
 #### Unit tests
 There are several files included for running unit tests, these can be found in the project folder */testing*.
 
-If the CAOM model definitions change then these *might* need updating too. These have been added to *reduce* the burden of having to update the unit tests programmatically.
+If the CAOM model definitions change, then these *might* need updating too. These have been added to *reduce* the burden of having to update the unit tests programmatically.
 
 *coneTestData.json* contains a target and a radius alongside some coordinates that may or may not be inside that radius. All the true/false values MUST relate to the values in the *target* object if updating.
