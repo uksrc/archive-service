@@ -174,7 +174,7 @@ public class SearchResourceTest {
      * Tests the behaviour of the Search API when queried with an invalid project identifier.
      * This method verifies that the search endpoint returns zero observations when the specified
      * project does not exist in the database.
-     *
+     * <p>
      * Preconditions:
      * - The database must be preloaded with test data that does not include observations for
      *   the specified project ("NotPresent").

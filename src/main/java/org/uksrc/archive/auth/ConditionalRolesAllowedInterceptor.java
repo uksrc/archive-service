@@ -1,6 +1,5 @@
 package org.uksrc.archive.auth;
 
-import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.ForbiddenException;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Priority;

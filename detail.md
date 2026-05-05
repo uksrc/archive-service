@@ -259,13 +259,13 @@ with JSON response also
 
 ##### Parameters
 
-> | name   | type     | data type | description                     |
-> |--------|----------|-----------|---------------------------------|
-> | ra     | required | double    | Right ascension                 |
-> | dec    | required | double    | Declination                     |
-> | radius | required | double    | Spherical radius of the search. |
-> | page         | optional | integer   | The page index, zero-indexed                                                   |
-> | size         | optional | integer   | The number of observations to return for each page, must be greater than zero. |
+> | name   | type     | data type | description                                                                    |
+> |--------|----------|-----------|--------------------------------------------------------------------------------|
+> | ra     | required | double    | Right ascension                                                                |
+> | dec    | required | double    | Declination                                                                    |
+> | radius | required | double    | Spherical radius of the search.                                                |
+> | page   | optional | integer   | The page index, zero-indexed                                                   |
+> | size   | optional | integer   | The number of observations to return for each page, must be greater than zero. |
 
 
 
