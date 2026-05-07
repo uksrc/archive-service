@@ -100,10 +100,6 @@ public class AuthenticationResource {
                 .entity(accessToken)
                 .build();
     }
-//        else {
- //           return Response.status(Response.Status.UNAUTHORIZED).entity("Failed to exchange code for token").build();
- //       }
- //   }
 
     /**
      * Request a bearer token with the supplied authentication code.
@@ -130,7 +126,7 @@ public class AuthenticationResource {
                     .POST(HttpRequest.BodyPublishers.ofString(formBody))
                     .build();
 
-            // Send request and get response
+            // Send a request and get a response
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 try (JsonReader reader = Json.createReader(new StringReader(response.body()))) {

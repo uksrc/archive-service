@@ -70,7 +70,7 @@ public class LoginResource {
                 </script>""", loginUrl);
 
         // Store verifier in a temporary cookie so the callback can read it
-       //NewCookie pkceCookie = new NewCookie("pkce_verifier", verifier, "/auth-callback", null, null, 300, false);
+        //NewCookie pkceCookie = new NewCookie("pkce_verifier", verifier, "/auth-callback", null, null, 300, false);
         NewCookie pkceCookie = new NewCookie.Builder("pkce_verifier")
                 .value(verifier)
                 .path("/")             // Set path to root so all resources can see it
