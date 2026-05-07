@@ -2,6 +2,8 @@ package org.uksrc.archive;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
@@ -81,26 +83,22 @@ public class AuthenticationResource {
             responseCode = "401",
             description = "If the user is unauthorised."
     )
-    public Response handleOAuthCallback(@QueryParam("code") String code, @QueryParam("state") String state) {
-        if (code == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Missing authorisation code").build();
+    public Response handleOAuthCallback(
+            @QueryParam("code") String code,
+            @QueryParam("state") String state,
+            @CookieParam("pkce_verifier") String verifier) { // Read the cookie here
+
+        if (code == null || verifier == null) {
+            return Response.status(400).entity("Missing code or PKCE verifier").build();
         }
 
-        // Process the authorization code (exchange it for an access token)
-        String accessToken = exchangeAuthorizationCodeForToken(code);
-        if (accessToken != null) {
-            JsonObject jsonObject = Json.createReader(new StringReader(accessToken)).readObject();
-            String bearerToken = jsonObject.getString("access_token");
-            System.out.println(bearerToken);
+        String accessToken = exchangeAuthorizationCodeForToken(code, verifier);
+        System.out.println(accessToken);
 
-            return Response.ok()
-                    .type(MediaType.TEXT_PLAIN)
-                    .entity(bearerToken)
-                    .build();
-        }
-        else {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Failed to exchange code for token").build();
-        }
+        return Response.ok()
+                .type(MediaType.TEXT_PLAIN)
+                .entity(accessToken)
+                .build();
     }
 
     /**
@@ -108,14 +106,15 @@ public class AuthenticationResource {
      * @param code The authentication code returned from the OIDC authority.
      * @return The bearer token (or null if request failed).
      */
-    private String exchangeAuthorizationCodeForToken(String code) {
+    private String exchangeAuthorizationCodeForToken(String code, String verifier) {
         try {
             String tokenEndpoint = tokenServerUrl + "/token";
 
+            // IMPORTANT: No client_secret here for Public PKCE clients
             String formBody = "grant_type=authorization_code"
                     + "&code=" + URLEncoder.encode(code, StandardCharsets.UTF_8)
                     + "&client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
-                    + "&client_secret=" + URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)
+                    + "&code_verifier=" + URLEncoder.encode(verifier, StandardCharsets.UTF_8)
                     + "&redirect_uri=" + URLEncoder.encode(authUrl, StandardCharsets.UTF_8);
 
             HttpClient client = HttpClient.newHttpClient();
@@ -127,10 +126,13 @@ public class AuthenticationResource {
                     .POST(HttpRequest.BodyPublishers.ofString(formBody))
                     .build();
 
-            // Send request and get response
+            // Send a request and get a response
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
-                return response.body();
+                try (JsonReader reader = Json.createReader(new StringReader(response.body()))) {
+                    JsonObject jsonObject = reader.readObject();
+                    return jsonObject.getString("access_token");
+                }
             }
             return null;
         } catch (Exception e) {
