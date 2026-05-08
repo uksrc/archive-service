@@ -66,8 +66,11 @@ public class TokenValidatorAugmentor implements SecurityIdentityAugmentor {
             String clientId = extractClaim(token)
                     .orElseThrow(() -> new ForbiddenException("Access denied: client_id not present in token"));
 
+            expectedClientId = expectedClientId.trim();
+            clientId = clientId.trim();
+
             if (expectedClientId.compareToIgnoreCase(clientId) != 0) {
-                LOG.warnf("Invalid client_id: %s", clientId);
+                LOG.warnf("Invalid client_id: %s should be %s", clientId, expectedClientId);
                 throw new ForbiddenException("Access denied: incorrect client_id in token");
             }
         }

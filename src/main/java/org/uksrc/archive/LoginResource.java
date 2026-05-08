@@ -49,7 +49,7 @@ public class LoginResource {
         String loginUrl = UriBuilder.fromUri(tokenServerUrl)
                 .path("authorize")
                 .queryParam("response_type", "code")
-                .queryParam("client_id", clientId)
+                .queryParam("client_id", clientId.trim())
                 .queryParam("redirect_uri", redirectUri)
                 .queryParam("scope", "openid profile")
                 .queryParam("code_challenge", challenge)

@@ -113,7 +113,7 @@ public class AuthenticationResource {
             // IMPORTANT: No client_secret here for Public PKCE clients
             String formBody = "grant_type=authorization_code"
                     + "&code=" + URLEncoder.encode(code, StandardCharsets.UTF_8)
-                    + "&client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
+                    + "&client_id=" + URLEncoder.encode(clientId.trim(), StandardCharsets.UTF_8)
                     + "&code_verifier=" + URLEncoder.encode(verifier, StandardCharsets.UTF_8)
                     + "&redirect_uri=" + URLEncoder.encode(authUrl, StandardCharsets.UTF_8);
 
