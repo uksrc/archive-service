@@ -48,7 +48,13 @@ public class TapPropertiesRenderer {
             rootPath = configDir.toString();
         }
         else {
-            rootPath = outputPath;
+            String envPath = System.getenv("VOLLT_TAP_CONFIG_PATH");
+            if (envPath != null) {
+                rootPath = envPath;
+            }
+            else {
+                rootPath = outputPath;
+            }
         }
 
         var config = ConfigProvider.getConfig();
