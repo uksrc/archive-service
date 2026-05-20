@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      VOLLT_TAP_CONFIG_FILE: ${{ vars.VOLLT_TAP_CONFIG_FILE }}
+      VOLLT_TAP_CONFIG_FILE: ${{ secrets.VOLLT_TAP_CONFIG_FILE }}
 
     steps:
       - name: Checkout source
