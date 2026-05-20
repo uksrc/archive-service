@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      VOLLT_TAP_CONFIG_FILE: ${{ secrets.VOLLT_TAP_CONFIG_FILE }}
+      VOLLT_TAP_CONFIG_PATH: ${{ secrets.VOLLT_TAP_CONFIG_PATH }}
 
     steps:
       - name: Checkout source
@@ -41,7 +41,7 @@ jobs:
       - name: Build Image (Test only)
         if: github.event_name == 'pull_request'
         env:
-          VOLLT_TAP_CONFIG_FILE: ${{ secrets.VOLLT_TAP_CONFIG_FILE }}
+          VOLLT_TAP_CONFIG_PATH: ${{ secrets.VOLLT_TAP_CONFIG_PATH }}
         run: |
           ./gradlew build -Dquarkus.container-image.build=true
 
@@ -50,7 +50,7 @@ jobs:
       - name: Build and Push Image to Harbor
         if: startsWith(github.ref, 'refs/tags/')
         env:
-          VOLLT_TAP_CONFIG_FILE: ${{ secrets.VOLLT_TAP_CONFIG_FILE }}
+          VOLLT_TAP_CONFIG_PATH: ${{ secrets.VOLLT_TAP_CONFIG_PATH }}
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
           ./gradlew build \
