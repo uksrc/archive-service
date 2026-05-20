@@ -21,7 +21,7 @@ jobs:
       contents: read
 
     env:
-      VOLLT_TAP_CONFIG_FILE: ${{ vars.VOLLT_TAP_CONFIG_FILE }}
+      VOLLT_TAP_CONFIG_PATH: ${{ secrets.VOLLT_TAP_CONFIG_PATH }}
 
     steps:
     - uses: actions/checkout@v4
