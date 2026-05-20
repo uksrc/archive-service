@@ -10,42 +10,30 @@ tasks.register("generateTapProperties") {
     description = "Generates tap.properties from template (profile-aware)"
 
     doLast {
-        val props = Properties()
+        val appPropsFile = file("src/main/resources/application.properties")
+        val appProps = Properties()
+        if (appPropsFile.exists()) appProps.load(appPropsFile.inputStream())
 
-        // Load base application.properties
-        val baseProps = file("src/main/resources/application.properties")
-        if (baseProps.exists()) props.load(baseProps.inputStream())
+        //Set VOLLT_TAP_CONFIG_PATH for production builds
+        val envPath: String? = System.getenv("VOLLT_TAP_CONFIG_PATH")
 
-        // Detect active profile
-        val profile = System.getenv("QUARKUS_PROFILE")
-            ?: props.getProperty("quarkus.profile")
-            ?: "dev"
-
-        // Merge profile-specific file if it exists
-        val profileFile = file("src/main/resources/application-$profile.properties")
-        if (profileFile.exists()) props.load(profileFile.inputStream())
-
-        // Add support for Quarkus-style %profile. keys inside base props
-        val expandedProps = Properties()
-        props.forEach { k, v ->
-            val key = k.toString()
-            if (key.startsWith("%$profile.")) {
-                expandedProps[key.removePrefix("%$profile.")] = v
-            } else if (!key.startsWith("%")) {
-                expandedProps[key] = v
-            }
-        }
-
-        val outputPath = expandedProps.getProperty("vollt.tap.config.path")
-            ?: System.getenv("VOLLT_TAP_CONFIG_PATH")
+        val outputPath: String = envPath
+            ?: appProps.getProperty("vollt.tap.config.path")
             ?: throw GradleException("vollt.tap.config.path not found")
 
         val templatePath = file("src/main/resources/templates/tap.properties.template").toPath()
         if (!Files.exists(templatePath)) throw GradleException("Template not found: $templatePath")
 
-        val home = System.getenv("HOME") ?: System.getProperty("user.home")
-        val configDir = Paths.get(home, ".config", outputPath)
-        Files.createDirectories(configDir)
+        var configDir: java.nio.file.Path
+        if (envPath == null) {
+            val home = System.getenv("HOME") ?: System.getProperty("user.home")
+            configDir = Paths.get(home, ".config", outputPath)
+            Files.createDirectories(configDir)
+        }
+        else {
+            configDir = Paths.get(envPath)
+            Files.createDirectories(configDir)
+        }
 
         val template = Files.readString(templatePath)
         val pattern = Pattern.compile("\\$\\{([^}]+)}")
@@ -54,7 +42,7 @@ tasks.register("generateTapProperties") {
 
         while (matcher.find()) {
             val key = matcher.group(1)
-            val value = expandedProps.getProperty(key)
+            val value = appProps.getProperty(key)
                 ?: System.getenv(key)
                 ?: throw GradleException("Missing value for template variable: $key")
             matcher.appendReplacement(result, Matcher.quoteReplacement(value))
@@ -64,6 +52,6 @@ tasks.register("generateTapProperties") {
         val targetFile = configDir.resolve("tap.properties")
         Files.writeString(targetFile, result.toString())
 
-        println("✅ Generated TAP properties for profile '$profile': $targetFile")
+        println("✅ Generated TAP properties $targetFile")
     }
 }

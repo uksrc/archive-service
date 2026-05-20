@@ -11,6 +11,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      VOLLT_TAP_CONFIG_FILE: ${{ vars.VOLLT_TAP_CONFIG_FILE }}
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
