@@ -40,6 +40,8 @@ jobs:
       # This verifies that the Docker image builds correctly without trying to push.
       - name: Build Image (Test only)
         if: github.event_name == 'pull_request'
+        env:
+          VOLLT_TAP_CONFIG_FILE: ${{ secrets.VOLLT_TAP_CONFIG_FILE }}
         run: |
           ./gradlew build -Dquarkus.container-image.build=true
 
@@ -47,6 +49,8 @@ jobs:
       # This performs the actual deployment to Harbor.
       - name: Build and Push Image to Harbor
         if: startsWith(github.ref, 'refs/tags/')
+        env:
+          VOLLT_TAP_CONFIG_FILE: ${{ secrets.VOLLT_TAP_CONFIG_FILE }}
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
           ./gradlew build \
