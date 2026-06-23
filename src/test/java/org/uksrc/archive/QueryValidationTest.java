@@ -26,16 +26,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.uksrc.archive.utils.Utilities.TEST_READER_ROLE;
 import static org.uksrc.archive.utils.Utilities.TEST_WRITER_ROLE;
+import static org.uksrc.archive.utils.Utilities.TEST_USER;
 
 /**
  * Intended for the use of testing the TAP ADQL service with queries.
- *
+ * <p>
  * NOTE: Disabled only on this branch as the tap service has been removed pending the addition
  * of the new version.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
 @Disabled("Temporarily disabled due to TAP service not available yet")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class QueryValidationTest {
 
     @Inject
