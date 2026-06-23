@@ -5,6 +5,7 @@ import io.quarkus.test.security.TestSecurity;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.Unmarshaller;
@@ -40,6 +41,9 @@ public class QueryValidationTest {
     @Inject
     ObservationResource observationResource;
 
+    @Inject
+    EntityManager em;
+
     private static boolean dataLoaded = false;
 
     //http://localhost:8080/archive/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=VOTABLE&QUERY=SELECT%20*%20FROM%20caom2.Observation%20WHERE%20DISTANCE(160.0%2C%200%2C%20180.0%2C%200.0)%20%3C%201.0
@@ -52,7 +56,7 @@ public class QueryValidationTest {
      */
     @Test
     @Order(1)
-    @TestSecurity(user = "testuser", roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
+    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
     void setupData() {
         if (!dataLoaded) {
             try {
@@ -76,6 +80,15 @@ public class QueryValidationTest {
                 fail();
             }
         }
+    }
+
+    @AfterAll
+    @Transactional
+    public void clearDatabase() {
+        // Clear the table(s)
+        em.createQuery("DELETE FROM Artifact").executeUpdate();
+        em.createQuery("DELETE FROM Plane").executeUpdate();
+        em.createQuery("DELETE FROM Observation").executeUpdate();
     }
 
     @Test

@@ -20,6 +20,9 @@ jobs:
     permissions:
       contents: read
 
+    env:
+      VOLLT_TAP_CONFIG_PATH: ${{ secrets.VOLLT_TAP_CONFIG_PATH }}
+
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 17

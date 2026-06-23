@@ -28,6 +28,16 @@ Be aware that it’s not an _über-jar_ as the dependencies are copied into the 
 
 The application is now runnable using `java -jar build/quarkus-app/quarkus-run.jar`.
 
+Add the profile to run in different states:
+'prod', 'dev' or 'test'
+```shell script
+# Windows has to be quoted.
+java '-Dquarkus.profile=prod' -jar build/quarkus-app/quarkus-run.jar
+
+# Linux does not need to be quoted.
+java -Dquarkus.profile=prod -jar build/quarkus-app/quarkus-run.jar 
+```
+
 ## Quarkus
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
