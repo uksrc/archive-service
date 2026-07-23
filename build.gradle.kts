@@ -35,7 +35,7 @@ dependencies {
     implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation("org.javastro:jaxbjpa-utils:0.2.3")
     implementation("io.quarkus:quarkus-agroal")
-    implementation("commons-beanutils:commons-beanutils:1.9.4")
+    implementation("commons-beanutils:commons-beanutils:1.11.0")
     implementation("io.quarkus:quarkus-kubernetes-config")
     implementation("org.json:json:20250517")
 
@@ -60,10 +60,15 @@ dependencies {
     //UserAgent evaluation
     implementation("nl.basjes.parse.useragent:yauaa:7.31.0")
     implementation("org.apache.logging.log4j:log4j-api:2.25.2")
-    implementation("org.apache.logging.log4j:log4j-core:2.23.1")
+    implementation("org.apache.logging.log4j:log4j-core:2.25.4")
 
     testImplementation("io.quarkus:quarkus-test-security")
     testImplementation("org.javastro:jsofa:20210512")
+
+    //Tap service
+    implementation("org.javastro.ivoa.core:tap:0.1.0-SNAPSHOT")
+    implementation("org.javastro.ivoa.core:dal:0.1.0-SNAPSHOT")
+    implementation("org.javastro.ivoa.core:pgsphere:0.9.1-SNAPSHOT")
 }
 
 tasks.withType<Test> {
