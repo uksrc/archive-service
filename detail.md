@@ -421,6 +421,9 @@ Basic Authentication can be used by setting the following env vars.
 - *ADMIN_USER*: The username of the admin user.
 - *ADMIN_PASSWORD*: The password of the admin user.
 
+Seed data can be loaded by setting the following env vars.
+- *LOAD_SEED_DATA*: If set to true (true by default), the application will load seed data into the database on startup. This is useful for testing and development purposes.
+
 ### DataLink
 
 Retrieve a DataLink object for a specific Artifact.
