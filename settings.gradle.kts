@@ -8,6 +8,7 @@ pluginManagement {
     }
     plugins {
         id(quarkusPluginId) version quarkusPluginVersion
+        id("org.javastro.build") version "0.2.6"
     }
 }
 rootProject.name="archive-service"

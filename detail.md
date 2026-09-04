@@ -311,12 +311,7 @@ Navigate to the <host>/tap endpoint (http://localhost:8080/tap for example), the
 along with a textbox to run experimental queries.
 
 #### Deployment Settings
-Update ``resources/templates/tap.properties.template`` as required. Any properties can be 'imported' from application.properties
-if required using ${value}
 
-One setting that may need changing is ``file_root_path`` it should resolve to a local folder (Windows requires full path too)
-
-``file_root_path = /some/linux/path``
 
 #### Testing
 Using [Stilts TapLint utility](https://www.star.bris.ac.uk/mbt/stilts/sun256/taplint.html), any issues can be highlighted.

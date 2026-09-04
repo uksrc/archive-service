@@ -21,9 +21,9 @@ dependencies {
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation ("io.quarkus:quarkus-core")
     implementation("io.quarkus:quarkus-undertow")
-    implementation("io.quarkus:quarkus-resteasy-reactive")
-    implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
-    implementation("io.quarkus:quarkus-resteasy-reactive-jaxb")
+    implementation("io.quarkus:quarkus-rest")
+    implementation("io.quarkus:quarkus-rest-jackson")
+    implementation("io.quarkus:quarkus-rest-jaxb")
     implementation("io.quarkus:quarkus-hibernate-orm")
     implementation("io.quarkus:quarkus-smallrye-openapi")
     implementation("io.quarkus:quarkus-kubernetes")
@@ -32,16 +32,16 @@ dependencies {
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
     implementation ("jakarta.validation:jakarta.validation-api:3.0.2")
-    implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation("org.javastro:jaxbjpa-utils:0.2.3")
     implementation("io.quarkus:quarkus-agroal")
     implementation("commons-beanutils:commons-beanutils:1.11.0")
     implementation("io.quarkus:quarkus-kubernetes-config")
     implementation("org.json:json:20250517")
 
+
     //Model(s)
-    implementation("org.javastro.ivoa.dm:tapschema:0.9.5")
-    implementation("org.opencadc:CAOM:2.5.6-SNAPSHOT:quarkus")
+    implementation("org.javastro.ivoa.dm:tapschema:0.9.7")
+    implementation("org.opencadc:CAOM:2.5.7-SNAPSHOT:quarkus")
 
     implementation ("uk.ac.starlink:stil:4.3.1")
 
@@ -66,9 +66,10 @@ dependencies {
     testImplementation("org.javastro:jsofa:20210512")
 
     //Tap service
-    implementation("org.javastro.ivoa.core:tap:0.1.0-SNAPSHOT")
-    implementation("org.javastro.ivoa.core:dal:0.1.0-SNAPSHOT")
-    implementation("org.javastro.ivoa.core:pgsphere:0.9.1-SNAPSHOT")
+    implementation("org.javastro.ivoa.core:tap:0.9.0")
+    implementation("org.javastro.ivoa.core:dal:0.9.0")
+    implementation("org.javastro.ivoa.core:pgsphere:0.9.1")
+    implementation("org.javastro.ivoa.core.quarkus:quarkus-tap-lib:0.9.0")
 }
 
 tasks.withType<Test> {
@@ -78,3 +79,26 @@ tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
 }
+
+tasks.test {
+   // testLogging.showStandardStreams = true
+    useJUnitPlatform()
+    systemProperty("quarkus.profile", "test")
+}
+
+sourceSets {
+    named("main") {
+        resources {
+            srcDir("build/generated-resources")
+        }
+    }
+}
+
+
+// Optionally ensure this all happens before compile/resources
+/*tasks.named("classes") {
+    dependsOn("generateTapProperties", "generateWebXml")
+}*/
+
+
+
