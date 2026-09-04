@@ -36,7 +36,7 @@ import static org.uksrc.archive.utils.Utilities.TEST_USER;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @QuarkusTest
-@Disabled("Temporarily disabled due to TAP service not available yet")
+//@Disabled("Temporarily disabled due to TAP service not available yet")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class QueryValidationTest {
 
@@ -50,8 +50,10 @@ public class QueryValidationTest {
 
     //http://localhost:8080/archive/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=VOTABLE&QUERY=SELECT%20*%20FROM%20caom2.Observation%20WHERE%20DISTANCE(160.0%2C%200%2C%20180.0%2C%200.0)%20%3C%201.0
 
-    private static final String TAP_QUERY = "/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=%s&QUERY=";
+    private static final String TAP_QUERY = "/tap/sync?LANG=ADQL&QUERY=";
 
+    //TODO - make sure FORMAT is still accepted even though it's deprecated
+    //TODO - RESPONSEFORMAT instead for CSV/TAP
     /**
      * Unfortunately, BeforeAll & BeforeEach cannot be used to add an Observation due to security and API startup timing.
      * Needs to be called before ALL tests, so testing an individual test would require a called to SetupData() first.
@@ -84,6 +86,26 @@ public class QueryValidationTest {
         }
     }
 
+    @Test
+    public void testSyncQuery() {
+        given()
+                .formParam("QUERY", "select * from TAP_SCHEMA.columns")
+                .when().post("/tap/sync")
+                .then()
+                .log().body()
+                .statusCode(200); //TODO validate the VOTable
+    }
+
+    @Test
+    public void testSyncQuery2() {
+        given()
+                .formParam("QUERY", "select * from TAP_SCHEMA.columns")
+                .when().get("/tap/sync")
+                .then()
+                .log().body()
+                .statusCode(200); //TODO validate the VOTable
+    }
+
     @AfterAll
     @Transactional
     public void clearDatabase() {
@@ -96,7 +118,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Select the standard TAP_SCHEMA tables")
     public void testSchemas() {
-        String request = String.format(TAP_QUERY, "VOTABLE") + "SELECT * FROM TAP_SCHEMA.tables";
+        String request = TAP_QUERY + "SELECT * FROM TAP_SCHEMA.tables";
         Response res = queryRequest(request);
         res.then()
                 .statusCode(OK.getStatusCode())
@@ -107,21 +129,18 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Distance with individual values (No Points)")
     public void testDistance() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM caom2.\"point\" as po WHERE DISTANCE(po.cval1, po.cval2, 150.0, 2.5) < 90.0;";
+        String request = TAP_QUERY + "FORMAT=JSON" + "SELECT * FROM caom2.\"point\" as po WHERE DISTANCE(po.cval1, po.cval2, 150.0, 2.5) < 90.0;";
         Response res = queryRequest(request);
-
-        //String jsonPathExpression = "metadata.find { it.name == 'ID' }.datatype";
 
         res.then()
                 .statusCode(OK.getStatusCode())
                 .body("data.size()", equalTo(2));
-                //.body(jsonPathExpression, equalTo("LONG"));
     }
 
     @Test
     @DisplayName("BOX with individual values and no geometric co-ord system defined")
     public void testBox() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(cval1, cval2), BOX(190.0, 56.0, 10.0, 10.0));";
+        String request = TAP_QUERY + "FORMAT=JSON" + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(cval1, cval2), BOX(190.0, 56.0, 10.0, 10.0));";
 
         Response res = queryRequest(request);
         res.then()
@@ -132,7 +151,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("CIRCLE with individual values and no geometric co-ord system defined")
     public void testCircle() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM point as po WHERE CONTAINS(POINT(po.cval1, po.cval2), CIRCLE(195.0, 57.0, 5.0)) = 1;";
+        String request = TAP_QUERY + "SELECT * FROM point as po WHERE CONTAINS(POINT(po.cval1, po.cval2), CIRCLE(195.0, 57.0, 5.0)) = 1;";
 
         Response res = queryRequest(request);
         res.then()
@@ -144,7 +163,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("POLYGON with individual values and no geometric co-ord system defined")
     public void testPolygon() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(180.0, 50.0, 200.0, 50.0, 200.0, 70.0, 180.0, 70.0));";
+        String request =  TAP_QUERY + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(180.0, 50.0, 200.0, 50.0, 200.0, 70.0, 180.0, 70.0));";
 
         Response res = queryRequest(request);
         res.then()
@@ -156,7 +175,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("POLYGON with individual values and no geometric co-ord system defined (no results)")
     public void testPolygonFailure() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(100.0, 50.0, 110.0, 50.0, 110.0, 70.0, 100.0, 70.0));";
+        String request = TAP_QUERY +  "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(100.0, 50.0, 110.0, 50.0, 110.0, 70.0, 100.0, 70.0));";
 
         Response res = queryRequest(request);
         res.then()
@@ -168,7 +187,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("REGION with POINT")
     public void testPolygonWithPoint() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), REGION('CIRCLE ICRS 190.0 50.0 7.0'));";
+        String request = TAP_QUERY + "SELECT * FROM \"point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), REGION('CIRCLE ICRS 190.0 50.0 7.0'));";
         double expectedCval1 = 193.109524583333;        //Must match the value from the test file (observation1.xml)
         double tolerance = 0.00001;
 
@@ -183,7 +202,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("REGION (with an incorrect geometric co-ord system defined) with POINT")
     public void testRegionWithIncorrectGeometricCoOrd() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" WHERE CONTAINS(POINT(180.0, 0.0), REGION('CIRCLE MADE_UP 180.0 0.0 5.0')) = 1;";
+        String request = TAP_QUERY + "SELECT * FROM \"point\" WHERE CONTAINS(POINT(180.0, 0.0), REGION('CIRCLE MADE_UP 180.0 0.0 5.0')) = 1;";
 
         Response res = queryRequest(request);
         res.then()
@@ -194,7 +213,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Cone search using Distance")
     public void testConeSearchWithDistance() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE DISTANCE(po.cval1, po.cval2, 180.0, 0.0) < 2.5";
+        String request = TAP_QUERY + "SELECT * FROM \"point\" as po WHERE DISTANCE(po.cval1, po.cval2, 180.0, 0.0) < 2.5";
 
         //Expected miss
         Response res = queryRequest(request);
@@ -207,7 +226,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Cone search using Distance 2")
     public void testConeSearchWithDistance2() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" as po WHERE DISTANCE(po.cval1, po.cval2, 195.5, 56.0) < 2.5";
+        String request = TAP_QUERY + "SELECT * FROM \"point\" as po WHERE DISTANCE(po.cval1, po.cval2, 195.5, 56.0) < 2.5";
         double expectedCval2 = 56.57208;        //Must match the value from the test file (observation1.xml)
         double tolerance = 0.00001;
 
@@ -222,7 +241,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Attempt at a crossmatch using Distance")
     public void testCrossMatchWithDistance() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT a.id AS src_id, b.id AS cat_id, DISTANCE(POINT(a.cval1, a.cval2), POINT(b.cval1, b.cval2)) AS dist_deg " +
+        String request = TAP_QUERY + "SELECT a.id AS src_id, b.id AS cat_id, DISTANCE(POINT(a.cval1, a.cval2), POINT(b.cval1, b.cval2)) AS dist_deg " +
                 "FROM caom2.\"point\" AS a JOIN caom2.\"point\" AS b ON a.id != b.id AND DISTANCE(POINT(a.cval1, a.cval2), POINT(b.cval1, b.cval2)) < 10.0;";
         double expectedCval2 = 1.8791494589752562;        //Must match the value from the test file (observation1.xml)
         double tolerance = 0.00001;
@@ -249,7 +268,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Return first non-null value")
     public void testCoalesce() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT COALESCE(collection, 'Unknown') FROM Observation;";
+        String request = TAP_QUERY + "SELECT COALESCE(collection, 'Unknown') FROM Observation;";
 
         Response res = queryRequest(request);
         res.then()
@@ -261,7 +280,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Cast to a doublw value from ?")
     public void testDoubleCast() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT CAST(contentLength AS DOUBLE) AS doubleValue FROM Artifact;";
+        String request = TAP_QUERY + "SELECT CAST(contentLength AS DOUBLE) AS doubleValue FROM Artifact;";
 
         Response res = queryRequest(request);
         res.then()
@@ -273,7 +292,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Cast to varchar value from a numeric value")
     public void testVarcharCast() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT CAST(contentLength AS VARCHAR) AS charValue FROM Artifact;";
+        String request = TAP_QUERY + "SELECT CAST(contentLength AS VARCHAR) AS charValue FROM Artifact;";
 
         Response res = queryRequest(request);
         res.then()
@@ -285,7 +304,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("UNION of both tables, removing duplicates")
     public void testUnionNoDuplicates() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT a.cval1 AS ra, a.cval2 AS dec FROM caom2.\"point\" AS a" +
+        String request = TAP_QUERY + "SELECT a.cval1 AS ra, a.cval2 AS dec FROM caom2.\"point\" AS a" +
                 " UNION SELECT b.cval1 AS ra, b.cval2 AS dec FROM caom2.\"point\" AS b;";
 
         Response res = queryRequest(request);
@@ -297,7 +316,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("INTERSECTion of both tables, retuning rows that only appear in both results")
     public void testIntersectingTables() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT ID FROM \"shape\" INTERSECT SELECT ID FROM \"point\";";
+        String request = TAP_QUERY + "SELECT ID FROM \"shape\" INTERSECT SELECT ID FROM \"point\";";
 
         Response res = queryRequest(request);
         res.then()
@@ -308,7 +327,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("EXCEPTion of first table, retuning rows that only appear in first result")
     public void testExceptionTable() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT ID FROM shape EXCEPT SELECT id FROM \"point\";";
+        String request = TAP_QUERY + "SELECT ID FROM shape EXCEPT SELECT id FROM \"point\";";
 
         Response res = queryRequest(request);
         res.then()
@@ -319,7 +338,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Chaining of SET operators")
     public void testChaining() {
-        String request = String.format(TAP_QUERY, "JSON") + "(SELECT id, cval1, cval2 FROM \"point\" UNION SELECT id, dimension_naxis1, dimension_naxis2 FROM \"position\") EXCEPT SELECT id, dimension_naxis1, dimension_naxis2 FROM \"position\";";
+        String request = TAP_QUERY + "(SELECT id, cval1, cval2 FROM \"point\" UNION SELECT id, dimension_naxis1, dimension_naxis2 FROM \"position\") EXCEPT SELECT id, dimension_naxis1, dimension_naxis2 FROM \"position\";";
 
         Response res = queryRequest(request);
         res.then()
@@ -331,7 +350,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("ORDER_BY a specific qualified column")
     public void testOrderingByAQualifiedColumn() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT contentType, contentLength FROM artifact ORDER BY contentLength;";
+        String request = TAP_QUERY + "SELECT contentType, contentLength FROM artifact ORDER BY contentLength;";
 
         Response res = queryRequest(request);
         res.then()
@@ -354,7 +373,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("ORDER_BY with an expression")
     public void testOrderingWithAnExpression() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT contentType, contentLength, (contentLength / 10) AS sort_key FROM Artifact ORDER BY sort_key DESC;";
+        String request = TAP_QUERY + "SELECT contentType, contentLength, (contentLength / 10) AS sort_key FROM Artifact ORDER BY sort_key DESC;";
 
         Response res = queryRequest(request);
         res.then()
@@ -379,7 +398,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Commments inside a query")
     public void testComments() {
-        String request = String.format(TAP_QUERY, "JSON") + "-- A header comment\n" +
+        String request = TAP_QUERY + "-- A header comment\n" +
                 "      SELECT * -- a sub-comment\n" +
                 "      FROM Plane;";
 
@@ -392,7 +411,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Simple use of a string literal including an enclosed quote")
     public void testStringLiteral() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM algorithm WHERE name = 'correlator';";
+        String request = TAP_QUERY + "SELECT * FROM algorithm WHERE name = 'correlator';";
 
         Response res = queryRequest(request);
         res.then()
@@ -404,7 +423,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Geometric functions MUST use string literals")
     public void testGeometricStringLiteral() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT 1 FROM \"point\" as po WHERE CONTAINS(POINT(po.cval1, po.cval2), CIRCLE('ICRS', 195.0, 56.0, 5.0)) = 1;";
+        String request = TAP_QUERY + "SELECT 1 FROM \"point\" as po WHERE CONTAINS(POINT(po.cval1, po.cval2), CIRCLE('ICRS', 195.0, 56.0, 5.0)) = 1;";
 
         Response res = queryRequest(request);
         res.then()
@@ -416,7 +435,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Accept NULL as a valid expression value")
     public void testNullExpressionValue() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" WHERE POLYGON_ID IS NULL;";
+        String request = TAP_QUERY + "SELECT * FROM \"point\" WHERE POLYGON_ID IS NULL;";
 
         Response res = queryRequest(request);
         res.then()
@@ -430,7 +449,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Accept NULL as a valid expression value in COALESCE")
     public void testNullCoalesceExpressionValue() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT COALESCE(calibration_namespace, NULL, 'No namespace defined') AS namespace FROM \"position\";";
+        String request = TAP_QUERY + "SELECT COALESCE(calibration_namespace, NULL, 'No namespace defined') AS namespace FROM \"position\";";
 
         Response res = queryRequest(request);
         res.then()
@@ -442,7 +461,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("COORDSYS usage as a deprecated method. (Remove when usage finally removed)")
     public void testDeprecatedMethod() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT POINT('ICRS', 25.0, -19.5) from caom2.point;";
+        String request = TAP_QUERY + "SELECT POINT('ICRS', 25.0, -19.5) from caom2.point;";
 
         Response res = queryRequest(request);
         res.then()
@@ -456,7 +475,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("UPPER and LOWER for values")
     public void testCapitalisationMethods() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT UPPER(name) AS name_upper, LOWER(name) AS name_lower FROM Telescope;";
+        String request = TAP_QUERY + "SELECT UPPER(name) AS name_upper, LOWER(name) AS name_lower FROM Telescope;";
 
         Response res = queryRequest(request);
         res.then()
@@ -469,7 +488,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("UPPER against a real value")
     public void testMatchingAnUpper() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM algorithm WHERE UPPER(name) = 'CORRELATOR';";
+        String request =  TAP_QUERY + "SELECT * FROM algorithm WHERE UPPER(name) = 'CORRELATOR';";
 
         Response res = queryRequest(request);
         res.then()
@@ -481,7 +500,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("LOWER against a value that doesn't match")
     public void testMatchingANonExistentLower() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM algorithm WHERE LOWER(name) = 'SUBARU';";
+        String request = TAP_QUERY + "SELECT * FROM algorithm WHERE LOWER(name) = 'SUBARU';";
 
         Response res = queryRequest(request);
         res.then()
@@ -492,7 +511,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("ILIKE to perform a case-insentive match with wildcards/patterns")
     public void testWildcardsWithILike() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM Provenance WHERE name ILIKE 'eMERL%';";
+        String request = TAP_QUERY + "SELECT * FROM Provenance WHERE name ILIKE 'eMERL%';";
 
         Response res = queryRequest(request);
         res.then()
@@ -504,7 +523,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("WITH to create a temporary value to use as a subquery")
     public void testTemporarySubquery() {
-        String request = String.format(TAP_QUERY, "JSON") + "WITH \"point\" AS (SELECT * FROM artifact WHERE MOD(contentLength,10) = 0) SELECT cval1, cval2 FROM caom2.\"point\" WHERE cval1 > 10 AND cval2 < 100";
+        String request = TAP_QUERY + "WITH \"point\" AS (SELECT * FROM artifact WHERE MOD(contentLength,10) = 0) SELECT cval1, cval2 FROM caom2.\"point\" WHERE cval1 > 10 AND cval2 < 100";
         double expectedCval2 = 56.57208;        //Must match the value from the test file (observation1.xml)
         double tolerance = 0.00001;
 
@@ -523,7 +542,7 @@ public class QueryValidationTest {
      */
     private Response queryRequest(String query) {
         return given()
-                .contentType("application/xml")
+              //  .contentType("application/xml")
                 .when()
                 .get(query)
                 .andReturn();

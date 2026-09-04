@@ -1,7 +1,6 @@
 package org.uksrc.archive;
 
 import com.fasterxml.jackson.databind.jsontype.NamedType;
-import io.quarkus.hibernate.orm.PersistenceUnit;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
@@ -35,6 +34,26 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.List;
 
+/**
+ * The TapConfiguration class is a configuration class for managing and producing
+ * necessary services and components required by a TAP (Table Access Protocol) server.
+ * It leverages CDI (Context and Dependency Injection) for injecting dependencies and
+ * provides configuration properties using MicroProfile Config API.
+ * <p>
+ * The following configuration is supported:
+ * <p>
+ * - `ivoa.tap.schema`: Defines the TAP schema resource used by the server.
+ * - `ivoa.tap.dbCaseSensitive`: A flag indicating whether the database is case-sensitive. Defaults to `false`.
+ * - `ivoa.baseAddress`: The base address for the TAP service. Defaults to `http://localhost:8080/`.
+ * <p>
+ * This class produces key components for the TAP server, such as:
+ * <p>
+ * - A {@link ServiceLocator} for resolving the base URI of TAP-related services.
+ * - A {@link VOSIProvider} for providing standard VOSI (Virtual Observatory Support Interfaces) capabilities.
+ * - A {@link SchemaProvider} for managing TAP schema-related operations.
+ * - A {@link JobManager} for managing asynchronous TAP jobs and tasks.
+ * - A {@link TAPHelper} for encapsulating TAP-related functionality across the server.
+ */
 @ApplicationScoped
 public class TapConfiguration {
 
@@ -97,7 +116,7 @@ public class TapConfiguration {
     @Singleton
     JobManager uws(SchemaProvider schemaProvider) {
 
-        File tmpdir = null;
+        File tmpdir;
         try {
             tmpdir = Files.createTempDirectory("tapserver").toFile();
         } catch (IOException e) {
@@ -108,11 +127,8 @@ public class TapConfiguration {
 
         TAPJob.JobFactory tapJobFactory = new TAPJob.JobFactory(ds, schemaProvider, env);
 
-
         JobStore store = new CachedJobStore(
-                new DatabaseJobStore(em,
-                        List.of(new NamedType(TAPJobSpecification.class, TAPJob.JOB_TYPE))
-                )
+                new DatabaseJobStore(em, List.of(new NamedType(TAPJobSpecification.class, TAPJob.JOB_TYPE)))
         );
         DefaultExecutionPolicy policy = new DefaultExecutionPolicy();
         return new JobManager(tapJobFactory, store, policy);
@@ -123,6 +139,4 @@ public class TapConfiguration {
     TAPHelper tapHelper(JobManager jobManager, ServiceLocator serviceLocator) {
         return new TAPHelper(jobManager, serviceLocator);
     }
-
 }
-
