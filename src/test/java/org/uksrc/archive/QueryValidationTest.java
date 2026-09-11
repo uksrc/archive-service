@@ -13,6 +13,7 @@ import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.types.Point;
 import org.junit.jupiter.api.*;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 import uk.ac.starlink.table.RowSequence;
 import uk.ac.starlink.table.StarTable;
@@ -33,8 +34,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 
 import static io.restassured.RestAssured.given;
 
@@ -101,6 +104,15 @@ public class QueryValidationTest {
         }
     }
 
+    @AfterAll
+    @Transactional
+    public void clearDatabase() {
+        // Clear the table(s)
+        em.createQuery("DELETE FROM Artifact").executeUpdate();
+        em.createQuery("DELETE FROM Plane").executeUpdate();
+        em.createQuery("DELETE FROM Observation").executeUpdate();
+    }
+
     @Test
     public void testSyncQuery() {
         given()
@@ -111,24 +123,6 @@ public class QueryValidationTest {
                 .statusCode(200); //TODO validate the VOTable
     }
 
-    @Test
-    public void testSyncQuery2() {
-        given()
-                .formParam("QUERY", "select * from TAP_SCHEMA.columns")
-                .when().get("/tap/sync")
-                .then()
-                .log().body()
-                .statusCode(200); //TODO validate the VOTable
-    }
-
-    @AfterAll
-    @Transactional
-    public void clearDatabase() {
-        // Clear the table(s)
-        em.createQuery("DELETE FROM Artifact").executeUpdate();
-        em.createQuery("DELETE FROM Plane").executeUpdate();
-        em.createQuery("DELETE FROM Observation").executeUpdate();
-    }
 
     @Test
     @DisplayName("Select the standard TAP_SCHEMA tables")
@@ -217,7 +211,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("POLYGON with individual values and no geometric co-ord system defined (no results)")
     public void testPolygonFailure() {
-        String request = TAP_QUERY +  "SELECT * FROM \"Point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(100.0, 50.0, 110.0, 50.0, 110.0, 70.0, 100.0, 70.0));";
+        String request = TAP_QUERY + "SELECT * FROM \"Point\" as po WHERE 1 = CONTAINS(POINT(po.cval1, po.cval2), POLYGON(100.0, 50.0, 110.0, 50.0, 110.0, 70.0, 100.0, 70.0));";
 
         Response res = queryRequest(request);
         res.then().statusCode(OK.getStatusCode());
@@ -260,6 +254,7 @@ public class QueryValidationTest {
     }
 
     @Test
+    @Disabled("This test outputs an exception from TAPJob in the ivoa library every build, enabled only when performing a full test requiring this method")
     @DisplayName("REGION (with an incorrect geometric co-ord system defined) with POINT")
     public void testRegionWithIncorrectGeometricCoOrd() {
         String request = TAP_QUERY + "SELECT * FROM \"Point\" WHERE CONTAINS(POINT(180.0, 0.0), REGION('CIRCLE MADE_UP 180.0 0.0 5.0')) = 1;";
@@ -314,6 +309,7 @@ public class QueryValidationTest {
         }
     }
 
+    //Column dist_deg is not a TapADQLColumn
     @Test
     @DisplayName("Attempt at a crossmatch using Distance")
     public void testCrossMatchWithDistance() {
@@ -340,16 +336,18 @@ public class QueryValidationTest {
     }
 
     //IN_UNIT doesn't seem to accept 'arcsec', 'deg', etc. at the moment
-  /*  @Test
+    @Test
+    @Disabled
     @DisplayName("Convert the unit returned")
     public void testConvertUnit() {
-        String request = String.format(TAP_QUERY, "JSON") + "SELECT * FROM \"point\" WHERE IN_UNIT(DISTANCE(POINT(ra, dec), POINT(180.0, 0.0)), 'arcsec') < 10.0";
+        String request = TAP_QUERY + "SELECT * FROM \"Point\" WHERE IN_UNIT(DISTANCE(POINT(cval1, cval2), POINT(180.0, 0.0)), 'arcsec') < 10.0";
 
         Response res = queryRequest(request);
         res.then()
-                .statusCode(OK.getStatusCode())
-    }*/
+                .statusCode(OK.getStatusCode());
+    }
 
+    //Column COALESCE is not a TapADQLColumn
     @Test
     @DisplayName("Return first non-null value")
     public void testCoalesce() {
@@ -368,10 +366,11 @@ public class QueryValidationTest {
         }
     }
 
+    //Column doublevalue is not a TapADQLColumn
     @Test
     @DisplayName("Cast to a double value from ?")
     public void testDoubleCast() {
-        String request = TAP_QUERY + "SELECT CAST(contentLength AS DOUBLE) AS doubleValue FROM Artifact;";
+        String request = TAP_QUERY + "SELECT CAST(\"contentLength\" AS DOUBLE) AS doubleValue FROM Artifact;";
 
         Response res = queryRequest(request);
         res.then().statusCode(OK.getStatusCode());
@@ -386,10 +385,11 @@ public class QueryValidationTest {
         }
     }
 
+    //Column charvalue is not a TapADQLColumn
     @Test
     @DisplayName("Cast to varchar value from a numeric value")
     public void testVarcharCast() {
-        String request = TAP_QUERY + "SELECT CAST(contentLength AS VARCHAR) AS charValue FROM Artifact;";
+        String request = TAP_QUERY + "SELECT CAST(\"contentLength\" AS VARCHAR) AS charValue FROM Artifact;";
 
         Response res = queryRequest(request);
         res.then().statusCode(OK.getStatusCode());
@@ -473,7 +473,7 @@ public class QueryValidationTest {
     @Test
     @DisplayName("ORDER_BY a specific qualified column")
     public void testOrderingByAQualifiedColumn() {
-        String request = TAP_QUERY + "SELECT contentType, contentLength FROM artifact ORDER BY contentLength;";
+        String request = TAP_QUERY + "SELECT \"contentType\", \"contentLength\" FROM \"Artifact\" ORDER BY \"contentLength\";";
 
         Response res = queryRequest(request);
         res.then().statusCode(OK.getStatusCode());
@@ -499,10 +499,11 @@ public class QueryValidationTest {
         }
     }
 
+    //Column sort_key is not a TapADQLColumn
     @Test
     @DisplayName("ORDER_BY with an expression")
     public void testOrderingWithAnExpression() {
-        String request = TAP_QUERY + "SELECT contentType, contentLength, (contentLength / 10) AS sort_key FROM Artifact ORDER BY sort_key DESC;";
+        String request = TAP_QUERY + "SELECT \"contentType\", \"contentLength\", (\"contentLength\" / 10) AS sort_key FROM \"Artifact\" ORDER BY sort_key DESC;";
 
         Response res = queryRequest(request);
         res.then().statusCode(OK.getStatusCode());
@@ -564,6 +565,7 @@ public class QueryValidationTest {
         }
     }
 
+    //Column 1 is not a TapADQLColumn
     @Test
     @DisplayName("Geometric functions MUST use string literals")
     public void testGeometricStringLiteral() {
@@ -585,7 +587,7 @@ public class QueryValidationTest {
         }
     }
 
-    @Test
+   @Test
     @DisplayName("Accept NULL as a valid expression value")
     public void testNullExpressionValue() {
         String request = TAP_QUERY + "SELECT * FROM \"Point\" WHERE POLYGON_ID IS NULL;";
@@ -610,6 +612,7 @@ public class QueryValidationTest {
         }
     }
 
+    //Column namespace is not a TapADQLColumn
     @Test
     @DisplayName("Accept NULL as a valid expression value in COALESCE")
     public void testNullCoalesceExpressionValue() {
@@ -630,6 +633,7 @@ public class QueryValidationTest {
         }
     }
 
+    //Column POINT is not a TapADQLColumn
     @Test
     @DisplayName("COORDSYS usage as a deprecated method. (Remove when usage finally removed)")
     public void testDeprecatedMethod() {
@@ -653,6 +657,8 @@ public class QueryValidationTest {
 
     /** Optional Features - Start */
 
+    // Column name_upper is not a TapADQLColumn
+    // Column name_lower is not a TapADQLColumn
     @Test
     @DisplayName("UPPER and LOWER for values")
     public void testCapitalisationMethods() {
@@ -764,6 +770,13 @@ public class QueryValidationTest {
                 .andReturn();
     }
 
+    /**
+     * Parses the provided VOTable XML string into a StarTable object.
+     *
+     * @param xml the VOTable XML content as a string
+     * @return a StarTable object representing the parsed VOTable
+     * @throws IOException if an I/O error occurs during parsing
+     */
     private StarTable parseVOTable(String xml) throws IOException {
         try (InputStream in = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
 

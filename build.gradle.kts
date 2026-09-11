@@ -70,6 +70,7 @@ dependencies {
     implementation("org.javastro.ivoa.core:dal:0.9.0")
     implementation("org.javastro.ivoa.core:pgsphere:0.9.1")
     implementation("org.javastro.ivoa.core.quarkus:quarkus-tap-lib:0.9.0")
+    testImplementation("org.awaitility:awaitility:4.3.0")
 }
 
 tasks.withType<Test> {

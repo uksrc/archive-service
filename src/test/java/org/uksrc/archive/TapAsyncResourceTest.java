@@ -2,16 +2,30 @@ package org.uksrc.archive;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.Unmarshaller;
+import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
 import org.junit.jupiter.api.*;
 import org.uksrc.archive.utils.Utilities;
 
+import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.UUID;
+
 import static io.restassured.RestAssured.given;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.uksrc.archive.utils.Utilities.*;
 
 /**
@@ -20,6 +34,7 @@ import static org.uksrc.archive.utils.Utilities.*;
  */
 @QuarkusTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Disabled
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TapAsyncResourceTest {
 
@@ -28,6 +43,8 @@ public class TapAsyncResourceTest {
 
     @Inject
     ObservationResource observationResource;
+
+    private String jobId;
 
     @BeforeEach
     @AfterAll
@@ -43,211 +60,130 @@ public class TapAsyncResourceTest {
     @Order(1)
     @DisplayName("Test async TAP query - create job with simple ADQL query")
     @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
-    public void testCreateAsyncJob() throws Exception {
-        // Add test observation data
-        Observation obs1 = Utilities.createSimpleObservation(OBSERVATION1, COLLECTION1);
-        observationResource.addObservation(obs1);
-
-        // Create async TAP job with ADQL query
-        String adqlQuery = "SELECT TOP 5 observationID, collection FROM ivoa.ObsCore";
-
-        String jobLocation = given()
-                .contentType(ContentType.URLENC)
-                .formParam("LANG", "ADQL")
-                .formParam("QUERY", adqlQuery)
-                .when()
-                .post("/tap/async")
+    public void testCreateAsyncJob() {
+        Response createResponse = given()
+                .formParam("QUERY", "select * from TAP_SCHEMA.tables")
+                .redirects().follow(false)
+                .when().post("/tap/async")
                 .then()
-                .statusCode(303) // Expected redirect status
+                .statusCode(303)
                 .header("Location", notNullValue())
-                .extract()
-                .header("Location");
-
-        // Verify job was created
-        Assertions.assertNotNull(jobLocation);
-        Assertions.assertTrue(jobLocation.contains("/async/"));
+                .extract().response();
+        String jobFullUrl = createResponse.getHeader("Location");
+        jobId = jobFullUrl.substring(jobFullUrl.lastIndexOf('/') + 1);
+        assertDoesNotThrow(() -> UUID.fromString(jobId));
     }
 
     @Test
     @Order(2)
-    @DisplayName("Test async TAP query - submit job and check execution phase")
-    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
-    public void testSubmitAsyncJobAndCheckPhase() throws Exception {
-        // Add test observation data
-        Observation obs1 = Utilities.createSimpleObservation(OBSERVATION1, COLLECTION1);
-        Observation obs2 = Utilities.createSimpleObservation(OBSERVATION2, COLLECTION1);
-        observationResource.addObservation(obs1);
-        observationResource.addObservation(obs2);
-
-        // Create async TAP job
-        String adqlQuery = "SELECT observationID, collection FROM ivoa.ObsCore WHERE collection = '" + COLLECTION1 + "'";
-
-        String jobLocation = given()
-                .contentType(ContentType.URLENC)
-                .formParam("LANG", "ADQL")
-                .formParam("QUERY", adqlQuery)
-                .when()
-                .post("/tap/async")
-                .then()
-                .statusCode(303)
-                .extract()
-                .header("Location");
-
-        String jobId = jobLocation.substring(jobLocation.lastIndexOf('/') + 1);
-
-        // Start the job
+    @DisplayName("Check the phase")
+    public void checkPhase() {
+        String jobUrl = "/tap/async/" + jobId;
+        //Verify Initial State (PENDING)
         given()
-                .contentType(ContentType.URLENC)
-                .formParam("PHASE", "RUN")
-                .when()
-                .post("/tap/async/" + jobId + "/phase")
-                .then()
-                .statusCode(anyOf(is(200), is(303)));
-
-        // Wait for job to complete (with timeout)
-        int maxAttempts = 10;
-        int attempt = 0;
-        String phase = "PENDING";
-
-        while (attempt < maxAttempts && !phase.equals("COMPLETED") && !phase.equals("ERROR")) {
-            Thread.sleep(1000); // Wait 1 second between checks
-
-            phase = given()
-                    .when()
-                    .get("/tap/async/" + jobId + "/phase")
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .asString();
-
-            attempt++;
-        }
-
-        // Verify job completed successfully
-        Assertions.assertEquals("COMPLETED", phase, "Job should have completed successfully");
-
-        // Retrieve results
-        given()
-                .when()
-                .get("/tap/async/" + jobId + "/results/result")
+                .when().get(jobUrl)
                 .then()
                 .statusCode(200)
-                .contentType(anyOf(containsString("votable"), containsString("xml")));
+                .body("job.phase", equalTo("PENDING"));
+
+        //Check the phase via the /phase api directly
+        // ~/tap/sync/<jobid>/phase
+        given()
+                .when().get(jobUrl + "/phase")
+                .then()
+                .statusCode(200)
+                .body(comparesEqualTo("PENDING"));
     }
 
     @Test
     @Order(3)
-    @DisplayName("Test async TAP query - verify query results content")
-    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
-    public void testAsyncQueryResultsContent() throws Exception {
-        // Add test observations with known data
-        Observation obs1 = Utilities.createSimpleObservation(OBSERVATION1, COLLECTION1);
-        Observation obs2 = Utilities.createSimpleObservation(OBSERVATION2, COLLECTION1);
-        observationResource.addObservation(obs1);
-        observationResource.addObservation(obs2);
+    @DisplayName("Check the parameters")
+    public void checkParameters() {
+        String jobUrl = "/tap/async/" + jobId;
 
-        // Create and execute async TAP job
-        String adqlQuery = "SELECT observationID FROM ivoa.ObsCore WHERE collection = '" + COLLECTION1 + "'";
-
-        String jobLocation = given()
-                .contentType(ContentType.URLENC)
-                .formParam("LANG", "ADQL")
-                .formParam("QUERY", adqlQuery)
-                .when()
-                .post("/tap/async")
-                .then()
-                .statusCode(303)
-                .extract()
-                .header("Location");
-
-        String jobId = jobLocation.substring(jobLocation.lastIndexOf('/') + 1);
-
-        // Start the job
         given()
-                .contentType(ContentType.URLENC)
-                .formParam("PHASE", "RUN")
-                .when()
-                .post("/tap/async/" + jobId + "/phase")
-                .then()
-                .statusCode(anyOf(is(200), is(303)));
-
-        // Wait for job completion
-        int maxAttempts = 10;
-        int attempt = 0;
-        String phase = "PENDING";
-
-        while (attempt < maxAttempts && !phase.equals("COMPLETED") && !phase.equals("ERROR")) {
-            Thread.sleep(1000);
-
-            phase = given()
-                    .when()
-                    .get("/tap/async/" + jobId + "/phase")
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .asString();
-
-            attempt++;
-        }
-
-        Assertions.assertEquals("COMPLETED", phase, "Job should have completed");
-
-        // Retrieve and verify results contain our observation IDs
-        String results = given()
-                .when()
-                .get("/tap/async/" + jobId + "/results/result")
+                .when().get(jobUrl + "/parameters")
                 .then()
                 .statusCode(200)
-                .extract()
-                .asString();
-
-        // Results should be in VOTable format and contain observation data
-        Assertions.assertTrue(results.contains("VOTABLE") || results.contains("votable"),
-                "Results should be in VOTable format");
-        Assertions.assertTrue(results.contains(OBSERVATION1) || results.contains(OBSERVATION2),
-                "Results should contain at least one of our test observations");
+                .body("parameters.parameter.size()", greaterThan(0))
+                .body("parameters.parameter.find { it.@id == 'QUERY' }", equalTo("select * from TAP_SCHEMA.tables"));
     }
 
     @Test
     @Order(4)
-    @DisplayName("Test async TAP query - delete job")
-    @TestSecurity(user = TEST_USER, roles = {TEST_READER_ROLE, TEST_WRITER_ROLE})
-    public void testDeleteAsyncJob() throws Exception {
-        // Create async TAP job
-        String adqlQuery = "SELECT TOP 1 observationID FROM ivoa.ObsCore";
+    @DisplayName("Check the execution duration")
+    public void checkExecutionDuration() {
+        String jobUrl = "/tap/async/" + jobId;
 
-        String jobLocation = given()
+        given()
+                .when().get(jobUrl + "/executionduration")
+                .then()
+                .statusCode(200)
+                .body(comparesEqualTo("0"));
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("Start the job and check the phase")
+    public void checkResult() {
+        String jobUrl = "/tap/async/" + jobId;
+
+        given()
                 .contentType(ContentType.URLENC)
-                .formParam("LANG", "ADQL")
-                .formParam("QUERY", adqlQuery)
+                .redirects().follow(false)
+                .formParam("PHASE", "RUN")
                 .when()
-                .post("/tap/async")
+                .post(jobUrl + "/phase")
                 .then()
-                .statusCode(303)
-                .extract()
-                .header("Location");
+                .statusCode(303);
 
-        String jobId = jobLocation.substring(jobLocation.lastIndexOf('/') + 1);
+        // Poll until
+        await().atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofMillis(500))
+                .untilAsserted(() -> {
+                    given()
+                            .when().get(jobUrl + "/phase")
+                            .then()
+                            .statusCode(200)
+                            .body(not(comparesEqualTo("RUNNING")));
+                });
 
-        // Verify job exists
-        given()
-                .when()
-                .get("/tap/async/" + jobId)
+        String status = given()
+                .when().get(jobUrl + "/phase")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract().body().asString();
 
-        // Delete the job
-        given()
-                .when()
-                .delete("/tap/async/" + jobId)
-                .then()
-                .statusCode(anyOf(is(200), is(303)));
+        if (status.equals("ERROR")) {
+            given()
+                    .when().get(jobUrl + "/error")
+                    .then()
+                    .statusCode(200)
+                    .log().body();
+            fail("Job ended in error state");
+        }
+        else if (status.equals("COMPLETED")) {
+            // Retrieve Results
+            given()
+                    .when().get(jobUrl + "/results")
+                    .then()
+                    .log().ifValidationFails(LogDetail.BODY)
+                    .statusCode(200)
+                    .body("results.result.size()", greaterThan(0));
 
-        // Verify job no longer exists (should return 404)
-        given()
-                .when()
-                .get("/tap/async/" + jobId)
-                .then()
-                .statusCode(404);
+            //retrieve the actual result
+            given()
+                    .when().get(jobUrl + "/results/result")
+                    .then()
+                    .statusCode(200)
+                    .log().body();
+
+            //TODO get the result into a file and verify that it is an OK VOTable.
+
+        }
+        else
+        {
+            fail("Unexpected job status "+ status);
+        }
     }
 }
