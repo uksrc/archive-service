@@ -117,8 +117,6 @@ public class AuthenticationResource {
                     + "&code_verifier=" + URLEncoder.encode(verifier, StandardCharsets.UTF_8)
                     + "&redirect_uri=" + URLEncoder.encode(authUrl, StandardCharsets.UTF_8);
 
-            HttpClient client = HttpClient.newHttpClient();
-
             // Build request
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(tokenEndpoint))
@@ -127,11 +125,13 @@ public class AuthenticationResource {
                     .build();
 
             // Send a request and get a response
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                try (JsonReader reader = Json.createReader(new StringReader(response.body()))) {
-                    JsonObject jsonObject = reader.readObject();
-                    return jsonObject.getString("access_token");
+            try (HttpClient client = HttpClient.newHttpClient()) {
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == 200) {
+                    try (JsonReader reader = Json.createReader(new StringReader(response.body()))) {
+                        JsonObject jsonObject = reader.readObject();
+                        return jsonObject.getString("access_token");
+                    }
                 }
             }
             return null;

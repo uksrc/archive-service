@@ -26,11 +26,6 @@ public class AdminResource {
     @PersistenceContext
     protected EntityManager em;
 
-    @GET
-    public String test() {
-        return "Admin utilities";
-    }
-
     @POST
     @Path("/addObservation")
     @Operation(summary = "Create a new Observation", description = "Creates a new observation in the database, note the supplied ID needs to be unique and XML namespace/JSON type supplied.")

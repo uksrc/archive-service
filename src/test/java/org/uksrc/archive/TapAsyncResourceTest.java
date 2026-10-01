@@ -140,13 +140,11 @@ public class TapAsyncResourceTest {
         // Poll until
         await().atMost(Duration.ofSeconds(30))
                 .pollInterval(Duration.ofMillis(500))
-                .untilAsserted(() -> {
-                    given()
-                            .when().get(jobUrl + "/phase")
-                            .then()
-                            .statusCode(200)
-                            .body(not(comparesEqualTo("RUNNING")));
-                });
+                .untilAsserted(() -> given()
+                        .when().get(jobUrl + "/phase")
+                        .then()
+                        .statusCode(200)
+                        .body(not(comparesEqualTo("RUNNING"))));
 
         String status = given()
                 .when().get(jobUrl + "/phase")

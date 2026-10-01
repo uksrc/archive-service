@@ -77,31 +77,23 @@ public class TapConfiguration {
     @Produces
     @Singleton
     ServiceLocator serviceLocator() {
-        return new ServiceLocator() {
-            @Override
-            public URI serviceURI() {
-                return baseURI;
-            }
-        };
+        return () -> baseURI;
     }
 
     @Produces
     @Singleton
     VOSIProvider vosi() {
-        return new VOSIProvider() {
-            @Override
-            public Capabilities getCapabilities() {
-                URL url = null;
-                try {
-                    url = new URL(baseURI.toURL(), "VOSI");//IMPL - this needs to be the same as the root in {@see org.javastro.ivoa.tap.VOSIResource }
-                    // standard VOSI ones
-                    final List<Capability> capabilities = CapabilityBuilder.createVOSICapabilities(url);
-                    capabilities.addAll(CapabilityBuilder.createTAPCapabilities(baseURI.toURL()));
+        return () -> {
+            URL url;
+            try {
+                url = new URL(baseURI.toURL(), "VOSI");//IMPL - this needs to be the same as the root in {@see org.javastro.ivoa.tap.VOSIResource }
+                // standard VOSI ones
+                final List<Capability> capabilities = CapabilityBuilder.createVOSICapabilities(url);
+                capabilities.addAll(CapabilityBuilder.createTAPCapabilities(baseURI.toURL()));
 
-                    return Capabilities.builder().addCapabilities(capabilities).build();
-                } catch (MalformedURLException e) {
-                    throw new RuntimeException("base URL is malformed", e);
-                }
+                return Capabilities.builder().addCapabilities(capabilities).build();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException("base URL is malformed", e);
             }
         };
     }
