@@ -23,7 +23,7 @@ import org.javastro.ivoa.quarkus.tap.TAPHelper;
  */
 @Tag(name = "TAP Query", description = "the TAP query endpoints")
 @ApplicationScoped
-@Path("tap/sync")
+@Path("/tap/sync")
 public class TapSyncResource extends BaseSyncTAPResource {
 
     @ConfigProperty(name="ivoa.tap.sync-timeout-seconds", defaultValue = "5")

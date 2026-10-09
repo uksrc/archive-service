@@ -20,7 +20,7 @@ import org.javastro.ivoa.quarkus.tap.TAPHelper;
  */
 @Tag(name="TAP Query", description = "the TAP query endpoints")
 @ApplicationScoped
-@Path("tap/async")
+@Path("/tap/async")
 public class TapAsyncResource extends BaseAsyncTAPResource {
 
     @Inject
