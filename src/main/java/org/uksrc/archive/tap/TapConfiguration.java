@@ -1,4 +1,4 @@
-package org.uksrc.archive;
+package org.uksrc.archive.tap;
 
 import com.fasterxml.jackson.databind.jsontype.NamedType;
 import jakarta.enterprise.context.ApplicationScoped;

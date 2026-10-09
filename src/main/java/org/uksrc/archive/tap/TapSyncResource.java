@@ -1,4 +1,4 @@
-package org.uksrc.archive;
+package org.uksrc.archive.tap;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

@@ -1,4 +1,4 @@
-package org.uksrc.archive;
+package org.uksrc.archive.tap;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
