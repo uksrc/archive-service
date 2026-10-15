@@ -23,8 +23,8 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.ivoa.dm.caom2.Artifact;
+import org.javastro.ivoa.quarkus.aai.ConditionalRolesAllowed;
 import org.jboss.logging.Logger;
-import org.uksrc.archive.auth.ConditionalRolesAllowed;
 import org.uksrc.archive.datalink.VOTableGenerator;
 
 import java.io.IOException;

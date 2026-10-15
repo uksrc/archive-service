@@ -23,7 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
 import org.ivoa.dm.caom2.SimpleObservation;
-import org.uksrc.archive.auth.ConditionalRolesAllowed;
+import org.javastro.ivoa.quarkus.aai.ConditionalRolesAllowed;
 import org.uksrc.archive.utils.responses.Responses;
 import org.uksrc.archive.utils.tools.Tools;
 
