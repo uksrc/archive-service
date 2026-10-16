@@ -20,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jboss.logging.Logger;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -126,17 +127,21 @@ public class AuthenticationResource {
 
             // Send a request and get a response
             HttpClient client = HttpClient.newHttpClient();
+
             try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
                 if (response.statusCode() == 200) {
                     try (JsonReader reader = Json.createReader(new StringReader(response.body()))) {
                         JsonObject jsonObject = reader.readObject();
                         return jsonObject.getString("access_token");
                     }
                 }
-            }
-            finally {
-                client.close();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while requesting access token", e);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to request access token", e);
             }
             return null;
         } catch (Exception e) {
