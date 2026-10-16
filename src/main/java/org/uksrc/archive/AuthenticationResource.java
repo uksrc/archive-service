@@ -125,7 +125,8 @@ public class AuthenticationResource {
                     .build();
 
             // Send a request and get a response
-            try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpClient client = HttpClient.newHttpClient();
+            try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() == 200) {
                     try (JsonReader reader = Json.createReader(new StringReader(response.body()))) {
@@ -133,6 +134,8 @@ public class AuthenticationResource {
                         return jsonObject.getString("access_token");
                     }
                 }
+            } finally {
+                client.close();
             }
             return null;
         } catch (Exception e) {
