@@ -21,6 +21,7 @@ public class VOTableXMLWriter {
     private final Logger logger;
 
     private static final String VERSION_TAG = "ivo://ivoa.net/std/DataLink#links-1.1";
+    private static final String VOTABLE_NS = "http://www.ivoa.net/xml/VOTable/v1.3";
 
     /**
      * Types of errors supported by IVOA DataLink
@@ -46,23 +47,24 @@ public class VOTableXMLWriter {
     public Document createVOTableDoc() throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
+
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document doc = builder.newDocument();
 
         // Root <VOTABLE> element
-        Element votable = doc.createElementNS("http://www.ivoa.net/xml/VOTable/v1.3", "VOTABLE");
+        Element votable = doc.createElementNS(VOTABLE_NS, "VOTABLE");
         votable.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
         votable.setAttribute("xmlns:stc", "http://www.ivoa.net/xml/STC/v1.30");
         votable.setAttribute("version", "1.3");
         doc.appendChild(votable);
 
         // <RESOURCE> element
-        Element resource = doc.createElement("RESOURCE");
+        Element resource = doc.createElementNS(VOTABLE_NS, "RESOURCE");
         resource.setAttribute("type", "results");
         votable.appendChild(resource);
 
-        //<RESOURCE><INFO> element (1.1 compliance)
-        Element info = doc.createElement("INFO");
+        // <RESOURCE><INFO> element (1.1 compliance)
+        Element info = doc.createElementNS(VOTABLE_NS, "INFO");
         info.setAttribute("name", "standardID");
         info.setAttribute("value", VERSION_TAG);
         resource.appendChild(info);
@@ -95,25 +97,30 @@ public class VOTableXMLWriter {
      * @param hostPath The host used in the access_url
      * @param resources The list of resources to add to the form.
      */
-    public void addResources(Document doc, Element parent, String hostPath, List<ArtifactDetails> resources){
+    public void addResources(Document doc, Element parent, String hostPath, List<ArtifactDetails> resources) {
         // Add rows (one for each Artifact initially)
         for (ArtifactDetails details : resources) {
-            Element tr = doc.createElement("TR");
+            Element tr = doc.createElementNS(VOTABLE_NS, "TR");
             Artifact artifact = details.artifact();
-            //Resolvable URI to the actual resource
+
+            // Resolvable URI to the actual resource
             ArtifactTableRow row;
-            //Only output a valid access_url if all the component parts are there.
+
+            // Only output a valid access_url if all the component parts are there.
             if (isValidArtifact(hostPath, artifact)) {
                 row = createArtifactTableRow(hostPath, details);
+            } else {
+                String id = artifact != null ? artifact.getId() : "";
+                row = new ArtifactTableRow(
+                        id, null, null, null, ErrorType.FatalFault
+                        + ": unable to construct access_url for this resource", details.planeId());
             }
-            else {
-                String id = artifact != null  ? artifact.getId() : "";
-                row = new ArtifactTableRow(id, null, null, null, ErrorType.FatalFault + ": unable to construct access_url for this resource", details.planeId());
-            }
+
             try {
                 addRow(doc, tr, row);
             } catch (Exception e) {
-                logger.error("DataLink: Error whilst attempting to construct resource row for Artifact ID = " + (artifact != null ? artifact.getId() : "{missing}"), e);
+                logger.error("DataLink: Error whilst attempting to construct resource row for Artifact ID = "
+                                + (artifact != null ? artifact.getId() : "{missing}"), e);
             }
             parent.appendChild(tr);
         }
@@ -127,15 +134,18 @@ public class VOTableXMLWriter {
      * @param type The IVOA error type @see ErrorType
      * @param message The human-readable error message
      */
-    public void addError(Document doc, Element parent, String observationId, ErrorType type, String message){
-        //Errors assumed to be referring to this dataset (adjust semantics value if required)
-        ArtifactTableRow row = new ArtifactTableRow(observationId, "#this", null, null, type.toString() + ": " + message, null);
-        Element tr = doc.createElement("TR");
+    public void addError(Document doc, Element parent, String observationId, ErrorType type, String message) {
+        ArtifactTableRow row = new ArtifactTableRow(
+                observationId, "#this", null, null, type.toString() + ": " + message, null);
+
+        Element tr = doc.createElementNS(VOTABLE_NS, "TR");
+
         try {
             addRow(doc, tr, row);
         } catch (Exception e) {
             logger.error("DataLink: Error whilst attempting to construct an error row for message: " + message, e);
         }
+
         parent.appendChild(tr);
     }
 
@@ -146,16 +156,19 @@ public class VOTableXMLWriter {
      * @param fieldDetails The actual data to add to the field.
      */
     private void addField(Document doc, Element tableEl, FieldDetails fieldDetails) {
-        Element newField = doc.createElement("FIELD");
+        Element newField = doc.createElementNS(VOTABLE_NS, "FIELD");
         newField.setAttribute("name", fieldDetails.name());
         newField.setAttribute("datatype", fieldDetails.dataType());
         newField.setAttribute("arraysize", fieldDetails.arraySize());
+
         if (fieldDetails.ucd() != null) {
             newField.setAttribute("ucd", fieldDetails.ucd());
         }
+
         if (fieldDetails.unit() != null) {
             newField.setAttribute("unit", fieldDetails.unit());
         }
+
         tableEl.appendChild(newField);
     }
 
@@ -168,16 +181,19 @@ public class VOTableXMLWriter {
      */
     private void addRow(Document doc, Element parent, DataLinkRow row) throws Exception {
         List<String> displayable = FieldOrder.getAllFieldsOrder();
+
         for (String fieldName : displayable) {
             String getterName = "get" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
 
             Method getter = row.getClass().getMethod(getterName);
             Object val = getter.invoke(row);
 
-            Element td = doc.createElement("TD");
+            Element td = doc.createElementNS(VOTABLE_NS, "TD");
+
             if (val != null) {
                 td.setTextContent(val.toString());
             }
+
             parent.appendChild(td);
         }
     }

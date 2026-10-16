@@ -35,6 +35,8 @@ public class VOTableGenerator {
     final Logger logger;
     final VOTableXMLWriter xmlGenerator;
 
+    private static final String VOTABLE_NS = "http://www.ivoa.net/xml/VOTable/v1.3";
+
 
     public VOTableGenerator() {
          logger = Logger.getLogger(VOTableGenerator.class);
@@ -92,32 +94,40 @@ public class VOTableGenerator {
     private Document buildVOTableDocument(String observationId) throws Exception {
         Document doc = xmlGenerator.createVOTableDoc();
 
-        Element resource = (Element) doc.getElementsByTagName("RESOURCE").item(0);
-        Element table = doc.createElement("TABLE");
+        Element resource = (Element) doc
+                .getElementsByTagNameNS(VOTABLE_NS, "RESOURCE")
+                .item(0);
+
+        Element table = doc.createElementNS(VOTABLE_NS, "TABLE");
         resource.appendChild(table);
 
         // Add table fields
         xmlGenerator.addTableFields(doc, table, FieldOrder.FIELD_ORDER);
         xmlGenerator.addTableFields(doc, table, FieldOrder.OPTIONAL_FIELD_ORDER);
+
         table.appendChild(doc.createComment("Custom properties for this service"));
+
         xmlGenerator.addTableFields(doc, table, FieldOrder.CUSTOM_FIELD_ORDER);
 
         // Add data
-        Element data = doc.createElement("DATA");
+        Element data = doc.createElementNS(VOTABLE_NS, "DATA");
         table.appendChild(data);
 
-        Element tableData = doc.createElement("TABLEDATA");
+        Element tableData = doc.createElementNS(VOTABLE_NS, "TABLEDATA");
         data.appendChild(tableData);
 
         Observation obs = em.find(Observation.class, observationId);
+
         if (obs != null) {
             List<ArtifactDetails> artifacts = findArtifactsForObservation(observationId);
+
             xmlGenerator.addResources(doc, tableData, hostpath, artifacts);
         } else {
             xmlGenerator.addError(doc, tableData, observationId,
                     VOTableXMLWriter.ErrorType.NotFoundFault,
                     "Supplied ID not recognised");
         }
+
         return doc;
     }
 }

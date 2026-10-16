@@ -20,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jboss.logging.Logger;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -117,8 +118,6 @@ public class AuthenticationResource {
                     + "&code_verifier=" + URLEncoder.encode(verifier, StandardCharsets.UTF_8)
                     + "&redirect_uri=" + URLEncoder.encode(authUrl, StandardCharsets.UTF_8);
 
-            HttpClient client = HttpClient.newHttpClient();
-
             // Build request
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(tokenEndpoint))
@@ -127,12 +126,22 @@ public class AuthenticationResource {
                     .build();
 
             // Send a request and get a response
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                try (JsonReader reader = Json.createReader(new StringReader(response.body()))) {
-                    JsonObject jsonObject = reader.readObject();
-                    return jsonObject.getString("access_token");
+            HttpClient client = HttpClient.newHttpClient();
+
+            try {
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() == 200) {
+                    try (JsonReader reader = Json.createReader(new StringReader(response.body()))) {
+                        JsonObject jsonObject = reader.readObject();
+                        return jsonObject.getString("access_token");
+                    }
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while requesting access token", e);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to request access token", e);
             }
             return null;
         } catch (Exception e) {

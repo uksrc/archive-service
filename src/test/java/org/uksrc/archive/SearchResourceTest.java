@@ -14,7 +14,6 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 import org.uksrc.archive.utils.ObservationListWrapper;
 
-import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;

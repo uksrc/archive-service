@@ -8,14 +8,14 @@ import java.util.stream.Stream;
  */
 public class DataLinkRow extends VOTableRow {
 
-    protected String id;                       // Required
-    protected String accessUrl;                // ┐
-    protected String serviceDef;               // ├ One of these three must be set
-    protected String errorMessage;             // ┘
-    protected String description;              // Field required, value not required
-    protected String semantics;                // Required
-    protected String contentType;              // Field required, value not required
-    protected Long contentLength;              // Field required, value not required
+    protected final String id;                  // Required
+    protected final String accessUrl;           // ┐
+    protected final String serviceDef;          // ├ One of these three must be set
+    protected final String errorMessage;        // ┘
+    protected String description;               // Field required, value not required
+    protected final String semantics;           // Required
+    protected String contentType;               // Field required, value not required
+    protected Long contentLength;               // Field required, value not required
 
     //Additional Optional fields
     protected String contentQualifier;

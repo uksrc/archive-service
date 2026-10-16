@@ -8,6 +8,7 @@ pluginManagement {
     }
     plugins {
         id(quarkusPluginId) version quarkusPluginVersion
+        id("org.javastro.build") version "0.2.6"
     }
 }
 rootProject.name="archive-service"
@@ -20,7 +21,7 @@ dependencyResolutionManagement {
             url= uri("https://central.sonatype.com/repository/maven-snapshots/")
         }
 
-        //TODO - Vollt TAP dependencies from our repo (updated to Jakarta)
+        // Our repository
         maven {
             url= uri("https://repo.dev.uksrc.org/repository/maven-public/")
         }

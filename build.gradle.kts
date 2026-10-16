@@ -21,9 +21,9 @@ dependencies {
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation ("io.quarkus:quarkus-core")
     implementation("io.quarkus:quarkus-undertow")
-    implementation("io.quarkus:quarkus-resteasy-reactive")
-    implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
-    implementation("io.quarkus:quarkus-resteasy-reactive-jaxb")
+    implementation("io.quarkus:quarkus-rest")
+    implementation("io.quarkus:quarkus-rest-jackson")
+    implementation("io.quarkus:quarkus-rest-jaxb")
     implementation("io.quarkus:quarkus-hibernate-orm")
     implementation("io.quarkus:quarkus-smallrye-openapi")
     implementation("io.quarkus:quarkus-kubernetes")
@@ -32,28 +32,16 @@ dependencies {
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
     implementation ("jakarta.validation:jakarta.validation-api:3.0.2")
-    implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation("org.javastro:jaxbjpa-utils:0.2.3")
     implementation("io.quarkus:quarkus-agroal")
-    implementation("commons-beanutils:commons-beanutils:1.9.4")
+    implementation("commons-beanutils:commons-beanutils:1.11.0")
     implementation("io.quarkus:quarkus-kubernetes-config")
     implementation("org.json:json:20250517")
 
-    //Vollt TAP
-    implementation("fr.unistra.cds:ADQLlib:2.1-SNAPSHOT")
-    implementation("fr.unistra.cds:TAPlib:2.4.5-SNAPSHOT")
-    implementation("fr.unistra.cds:UWSlib:4.4-SNAPSHOT")
-
-    implementation("org.javastro.ivoa.dm:tapschema:0.9.7")
-
 
     //Model(s)
-    implementation("org.opencadc:CAOM:2.5.6-SNAPSHOT:quarkus")
-
-    //Required by Vollt
-    // TAP lib upload func.
-    implementation("org.apache.commons:commons-fileupload2-javax:2.0.0-M2")
-    implementation("org.apache.commons:commons-fileupload2-jakarta-servlet6:2.0.0-M2")
+    implementation("org.javastro.ivoa.dm:tapschema:0.9.7")
+    implementation("org.opencadc:CAOM:2.5.7-SNAPSHOT:quarkus")
 
     implementation ("uk.ac.starlink:stil:4.3.1")
 
@@ -72,10 +60,17 @@ dependencies {
     //UserAgent evaluation
     implementation("nl.basjes.parse.useragent:yauaa:7.31.0")
     implementation("org.apache.logging.log4j:log4j-api:2.25.2")
-    implementation("org.apache.logging.log4j:log4j-core:2.23.1")
+    implementation("org.apache.logging.log4j:log4j-core:2.25.4")
 
     testImplementation("io.quarkus:quarkus-test-security")
     testImplementation("org.javastro:jsofa:20210512")
+
+    //Tap service
+    implementation("org.javastro.ivoa.core:tap:0.9.0")
+    implementation("org.javastro.ivoa.core:dal:0.9.0")
+    implementation("org.javastro.ivoa.core:pgsphere:0.9.1")
+    implementation("org.javastro.ivoa.core.quarkus:quarkus-tap-lib:0.9.0")
+    testImplementation("org.awaitility:awaitility:4.3.0")
 }
 
 tasks.withType<Test> {
@@ -89,8 +84,6 @@ tasks.withType<JavaCompile> {
 tasks.test {
    // testLogging.showStandardStreams = true
     useJUnitPlatform()
-    //To make available to Vollt itself during unit tests only (as the servlet path doesn't get setup automatically).
-    environment("VOLLT_BASE_PATH", file("src/main/resources/META-INF/resources").absolutePath)
     systemProperty("quarkus.profile", "test")
 }
 
@@ -102,17 +95,6 @@ sourceSets {
     }
 }
 
-apply(from = "src/main/kotlin/generateVolltWebXml.gradle.kts")
-apply(from = "src/main/kotlin/generateTapProperties.gradle.kts")
-
-tasks.named("processResources") {
-    dependsOn("generateWebXml")
-}
-
-// Make sure web.xml generation waits for tap.properties
-tasks.named("generateWebXml") {
-    dependsOn("generateTapProperties")
-}
 
 // Optionally ensure this all happens before compile/resources
 /*tasks.named("classes") {

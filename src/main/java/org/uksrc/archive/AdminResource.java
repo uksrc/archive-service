@@ -27,7 +27,7 @@ public class AdminResource {
     protected EntityManager em;
 
     @GET
-    public String test() {
+    public String defaultPage() {
         return "Admin utilities";
     }
 
