@@ -59,7 +59,7 @@ dependencies {
 
     //UserAgent evaluation
     implementation("nl.basjes.parse.useragent:yauaa:7.31.0")
-    implementation("org.apache.logging.log4j:log4j-api:2.25.2")
+    implementation("org.apache.logging.log4j:log4j-api:2.26.1")
     implementation("org.apache.logging.log4j:log4j-core:2.25.4")
 
     testImplementation("io.quarkus:quarkus-test-security")
@@ -72,7 +72,7 @@ dependencies {
     implementation("org.javastro.ivoa.core.quarkus:quarkus-tap-lib:0.9.0")
     testImplementation("org.awaitility:awaitility:4.3.0")
 
-    implementation("org.javastro.ivoa.core.quarkus:quarkus-aai:0.9.0-aai_additions-SNAPSHOT")
+    implementation("org.javastro.ivoa.core.quarkus:quarkus-aai:0.9.0-SNAPSHOT")
 }
 
 tasks.withType<Test> {
