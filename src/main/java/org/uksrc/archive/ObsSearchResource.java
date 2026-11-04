@@ -15,7 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.ivoa.dm.caom2.Observation;
-import org.uksrc.archive.auth.ConditionalRolesAllowed;
+import org.javastro.ivoa.quarkus.aai.ConditionalRolesAllowed;
 import org.uksrc.archive.searchrequest.params.descriptors.PredicateDescriptor;
 import org.uksrc.archive.searchrequest.params.parser.DescriptorFactory;
 import org.uksrc.archive.searchrequest.service.ObservationSearchService;

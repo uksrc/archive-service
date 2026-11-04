@@ -130,7 +130,6 @@ public class AuthenticationResource {
 
             try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
                 if (response.statusCode() == 200) {
                     try (JsonReader reader = Json.createReader(new StringReader(response.body()))) {
                         JsonObject jsonObject = reader.readObject();
