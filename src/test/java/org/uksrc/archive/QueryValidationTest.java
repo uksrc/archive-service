@@ -11,18 +11,10 @@ import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.Unmarshaller;
 import org.ivoa.dm.caom2.DerivedObservation;
 import org.ivoa.dm.caom2.Observation;
-import org.ivoa.dm.caom2.types.Point;
 import org.junit.jupiter.api.*;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.InputSource;
 import uk.ac.starlink.table.RowSequence;
 import uk.ac.starlink.table.StarTable;
 import uk.ac.starlink.table.StarTableFactory;
-import uk.ac.starlink.table.StoragePolicy;
-import uk.ac.starlink.util.ByteArrayDataSource;
-import uk.ac.starlink.util.DataSource;
-import uk.ac.starlink.votable.VOElement;
-import uk.ac.starlink.votable.VOElementFactory;
 import uk.ac.starlink.votable.VOTableBuilder;
 
 import java.io.ByteArrayInputStream;
@@ -32,17 +24,13 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 
 import static io.restassured.RestAssured.given;
 
-import static io.restassured.config.RestAssuredConfig.newConfig;
-import static io.restassured.config.XmlConfig.xmlConfig;
 import static jakarta.ws.rs.core.Response.Status.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
