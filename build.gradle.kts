@@ -56,9 +56,9 @@ dependencies {
     testImplementation("org.javastro:jsofa:20210512")
 
     //Tap service
-    implementation("org.javastro.ivoa.core:tap:0.9.0")
-    implementation("org.javastro.ivoa.core:dal:0.9.0")
-    implementation("org.javastro.ivoa.core:pgsphere:0.9.1")
+    implementation("org.javastro.ivoa.core:tap:0.9.3")
+    implementation("org.javastro.ivoa.core:dal:0.9.2")
+    implementation("org.javastro.ivoa.core:pgsphere:0.9.2")
     implementation("org.javastro.ivoa.core.quarkus:quarkus-tap-lib:0.9.0")
     testImplementation("org.awaitility:awaitility:4.3.0")
 

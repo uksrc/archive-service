@@ -6,6 +6,7 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.UserTransaction;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.javastro.ivoa.entities.resource.Capability;
 import org.javastro.ivoa.entities.vosi.capabilities.Capabilities;
@@ -89,7 +90,7 @@ public class TapConfiguration {
                 url = new URL(baseURI.toURL(), "VOSI");//IMPL - this needs to be the same as the root in {@see org.javastro.ivoa.tap.VOSIResource }
                 // standard VOSI ones
                 final List<Capability> capabilities = CapabilityBuilder.createVOSICapabilities(url);
-                capabilities.addAll(CapabilityBuilder.createTAPCapabilities(baseURI.toURL()));
+                capabilities.addAll(CapabilityBuilder.createTAPCapabilities(baseURI.toURL(), 600L, 1000L, 6000L, 600L));
 
                 return Capabilities.builder().addCapabilities(capabilities).build();
             } catch (MalformedURLException e) {
@@ -101,13 +102,12 @@ public class TapConfiguration {
     @Produces
     @Singleton
     SchemaProvider schema(){
-        return new VODMLSchemaProvider(tapSchemaResource, isDbCaseSensitive);
+        return new VODMLSchemaProvider(tapSchemaResource, isDbCaseSensitive, true);
     }
 
     @Produces
     @Singleton
-    JobManager uws(SchemaProvider schemaProvider) {
-
+    JobManager uws(SchemaProvider schemaProvider, UserTransaction userTransaction) {
         File tmpdir;
         try {
             tmpdir = Files.createTempDirectory("tapserver").toFile();
@@ -117,11 +117,12 @@ public class TapConfiguration {
 
         EnvironmentFactory env = new DefaultEnvironmentFactory(tmpdir);
 
-        TAPJob.JobFactory tapJobFactory = new TAPJob.JobFactory(ds, schemaProvider, env);
+        ArchiveTapExecutionPolicy tapExecutionPolicy = new ArchiveTapExecutionPolicy();
+        TAPJob.JobFactory tapJobFactory = new TAPJob.JobFactory(ds, schemaProvider, env, tapExecutionPolicy);
 
-        JobStore store = new CachedJobStore(
-                new DatabaseJobStore(em, List.of(new NamedType(TAPJobSpecification.class, TAPJob.JOB_TYPE)))
-        );
+        JobStore databaseStore = new DatabaseJobStore(em, List.of(new NamedType(TAPJobSpecification.class, TAPJob.JOB_TYPE)));
+        JobStore store = new CachedJobStore(new TransactionalJobStore(databaseStore, userTransaction));
+
         DefaultExecutionPolicy policy = new DefaultExecutionPolicy();
         return new JobManager(tapJobFactory, store, policy);
     }
