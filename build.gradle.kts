@@ -1,26 +1,16 @@
 
 plugins {
-    java
-    id("io.quarkus")
+    id("org.javastro.build.module.quarkus-app")
 }
-
-val quarkusPlatformGroupId: String by project
-val quarkusPlatformArtifactId: String by project
-val quarkusPlatformVersion: String by project
 
 group = "org.uksrc.archive"
 version = "0.1-SNAPSHOT"
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
+
 
 dependencies {
     implementation("io.quarkus:quarkus-container-image-docker")
-    implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation ("io.quarkus:quarkus-core")
-    implementation("io.quarkus:quarkus-undertow")
     implementation("io.quarkus:quarkus-rest")
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-rest-jaxb")
@@ -41,7 +31,7 @@ dependencies {
 
     //Model(s)
     implementation("org.javastro.ivoa.dm:tapschema:0.9.7")
-    implementation("org.opencadc:CAOM:2.5.7-SNAPSHOT:quarkus")
+    implementation("org.opencadc:CAOM:2.5.8-SNAPSHOT:quarkus")
 
     implementation ("uk.ac.starlink:stil:4.3.1")
 
