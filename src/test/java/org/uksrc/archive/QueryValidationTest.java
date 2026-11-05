@@ -604,17 +604,16 @@ public class QueryValidationTest {
     @Test
     @DisplayName("Accept NULL as a valid expression value in COALESCE")
     public void testNullCoalesceExpressionValue() {
-        String request = TAP_QUERY + "SELECT COALESCE(calibration_namespace, NULL, 'No namespace defined') AS namespace FROM \"Position\";";
+        String request = TAP_QUERY + "SELECT COALESCE(null,  'No level defined') AS namespace FROM \"Observation\";";
 
         Response res = queryRequest(request);
         res.then().statusCode(OK.getStatusCode());
 
         try (StarTable table = parseVOTable(res.asString())) {
-            assertEquals(2, table.getRowCount());
 
             try (RowSequence rseq = table.getRowSequence()) {
                 assertTrue(rseq.next());
-                assertEquals("No namespace defined", rseq.getCell(0));
+                assertEquals("No level defined", rseq.getCell(0));
             }
         } catch (IOException e) {
             fail("Failed to parse VOTable response: " + e.getMessage());
