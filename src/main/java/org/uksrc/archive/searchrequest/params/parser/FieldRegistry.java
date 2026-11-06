@@ -5,7 +5,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Map;
 import java.util.Optional;
 
-import  org.uksrc.archive.searchrequest.params.parser.DescriptorFactory.*;
 import org.uksrc.archive.searchrequest.params.transform.Transformer;
 import org.uksrc.archive.searchrequest.params.transform.Transformers;
 

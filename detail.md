@@ -291,8 +291,7 @@ with JSON response also
 
 #### TAP SCHEMA setup
 
-The TAP schema is currently added to the database with the import.sql file which runs automatically on startup and adds the required tables to the database.
-This is followed by a bean (TapSchemaPopulator) that will read the database and add each type (Observation etc.) to the generated TAP schema entries.
+The TAP schema is currently added to the database by means of the org.javastro.ivoa.dm:tapschema dependency which runs automatically on startup and adds the required tables to the database.
 
 TODO: Generate a VO-DML/XSD model definition so that the TAP schema entries can be auto-added in the same way as the CAOM library.
 
@@ -300,7 +299,7 @@ TODO: Generate a VO-DML/XSD model definition so that the TAP schema entries can 
 
 Navigate to the <host>/tap endpoint (http://localhost:8080/tap for example), the host is the root of the archive-service.
 
-This displays the default [Vollt](http://cdsportal.u-strasbg.fr/taptuto/gettingstarted_file.html#firststart) user interface and displays links to the standard utilities:
+//TODO - Once the new TAP service has been added
 
 - async
 - tables 
@@ -312,12 +311,7 @@ This displays the default [Vollt](http://cdsportal.u-strasbg.fr/taptuto/gettings
 along with a textbox to run experimental queries.
 
 #### Deployment Settings
-Update ``resources/templates/tap.properties.template`` as required. Any properties can be 'imported' from application.properties
-if required using ${value}
 
-One setting that may need changing is ``file_root_path`` it should resolve to a local folder (Windows requires full path too)
-
-``file_root_path = /some/linux/path``
 
 #### Testing
 Using [Stilts TapLint utility](https://www.star.bris.ac.uk/mbt/stilts/sun256/taplint.html), any issues can be highlighted.
@@ -325,8 +319,6 @@ Using [Stilts TapLint utility](https://www.star.bris.ac.uk/mbt/stilts/sun256/tap
 java -jar .\stilts.jar taplint interface=tap1.0 tapurl=http://localhost:8080/tap 
 ```
 Can be focused on a subset if required using the ```report``` parameter, see [Usages](https://www.star.bris.ac.uk/mbt/stilts/sun256/taplint-usage.html) 
-
-Caution: Some of the TapLint tests seem to assume TAP 1.1 compliance and Vollt is currently 1.0. So double-check any issues with the specifications:
 
 - [TAP 1.0](https://www.ivoa.net/documents/TAP/20100327/REC-TAP-1.0.html)
 - [TAP 1.1](https://www.ivoa.net/documents/TAP/20190927/REC-TAP-1.1.html)

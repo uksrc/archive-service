@@ -16,6 +16,7 @@ import org.uksrc.archive.utils.tools.Tools;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Integration test class to validate seeding of test data and correct behaviour of
@@ -66,10 +67,14 @@ public class SeedResourceTest {
     public void test() {
         TypedQuery<Observation> query = em.createQuery("SELECT o FROM Observation o", Observation.class);
 
-        Response res = Tools.performQuery(0, numberOfSeededResources, query);
-        assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+        ObservationListWrapper wrapper;
+        try (Response res = Tools.performQuery(0, numberOfSeededResources, query)) {
+            assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
 
-        ObservationListWrapper wrapper = (ObservationListWrapper) res.getEntity();
+            wrapper = (ObservationListWrapper) res.getEntity();
+        }
+
+        assertNotNull(wrapper, "The response entity should not be null.");
         assertEquals(numberOfSeededResources, wrapper.getObservations().size());
     }
 }
