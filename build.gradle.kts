@@ -62,7 +62,7 @@ dependencies {
     implementation("org.javastro.ivoa.core.quarkus:quarkus-tap-lib:0.9.1")
     testImplementation("org.awaitility:awaitility:4.3.0")
 
-    implementation("org.javastro.ivoa.core.quarkus:quarkus-aai:0.9.0-SNAPSHOT")
+    implementation("org.javastro.ivoa.core.quarkus:quarkus-aai:0.1.0")
 }
 
 tasks.withType<Test> {
