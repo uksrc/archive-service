@@ -30,7 +30,7 @@ dependencies {
 
 
     //Model(s)
-    implementation("org.javastro.ivoa.dm:tapschema:0.9.7")
+    implementation("org.javastro.ivoa.dm:tapschema:0.9.14")
     implementation("org.opencadc:CAOM:2.5.8-SNAPSHOT:quarkus")
 
     implementation ("uk.ac.starlink:stil:4.3.1")
@@ -59,7 +59,7 @@ dependencies {
     implementation("org.javastro.ivoa.core:tap:0.9.3")
     implementation("org.javastro.ivoa.core:dal:0.9.2")
     implementation("org.javastro.ivoa.core:pgsphere:0.9.2")
-    implementation("org.javastro.ivoa.core.quarkus:quarkus-tap-lib:0.9.0")
+    implementation("org.javastro.ivoa.core.quarkus:quarkus-tap-lib:0.9.1")
     testImplementation("org.awaitility:awaitility:4.3.0")
 
     implementation("org.javastro.ivoa.core.quarkus:quarkus-aai:0.9.0-SNAPSHOT")

@@ -1,6 +1,7 @@
 package org.uksrc.archive.tap;
 
 import com.fasterxml.jackson.databind.jsontype.NamedType;
+import io.quarkus.hibernate.orm.PersistenceUnit;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
@@ -14,6 +15,7 @@ import org.javastro.ivoa.quarkus.tap.TAPHelper;
 import org.javastro.ivoacore.common.ServiceLocator;
 import org.javastro.ivoacore.tap.TAPJob;
 import org.javastro.ivoacore.tap.TAPJobSpecification;
+import org.javastro.ivoacore.tap.TapExecutionPolicy;
 import org.javastro.ivoacore.tap.schema.SchemaProvider;
 import org.javastro.ivoacore.tap.schema.VODMLSchemaProvider;
 import org.javastro.ivoacore.uws.JobManager;
@@ -62,14 +64,20 @@ public class TapConfiguration {
     String tapSchemaResource;
 
     @Inject
+    TapExecutionPolicy tapExecutionPolicy;
+
+    @Inject
     DataSource ds;
 
     @Inject
-    //@PersistenceUnit("uwsstore")
+    @PersistenceUnit("uwsstore")
     EntityManager em;
 
     @ConfigProperty(name="ivoa.tap.dbCaseSensitive", defaultValue = "false")
     boolean isDbCaseSensitive;
+
+    @ConfigProperty(name="ivoa.tap.useTapTypesInVOSI", defaultValue = "true")
+    boolean useTapTypesInVOSI;
 
     @ConfigProperty(name="ivoa.baseAddress", defaultValue = "http://localhost:8080/")
     URI baseURI;
@@ -90,7 +98,9 @@ public class TapConfiguration {
                 url = new URL(baseURI.toURL(), "VOSI");//IMPL - this needs to be the same as the root in {@see org.javastro.ivoa.tap.VOSIResource }
                 // standard VOSI ones
                 final List<Capability> capabilities = CapabilityBuilder.createVOSICapabilities(url);
-                capabilities.addAll(CapabilityBuilder.createTAPCapabilities(baseURI.toURL(), 600L, 1000L, 6000L, 600L));
+                capabilities.addAll(CapabilityBuilder.createTAPCapabilities(baseURI.toURL(),tapExecutionPolicy.maxRec(), tapExecutionPolicy.getDefaultLifetime(),
+                      tapExecutionPolicy.getMaxLifetime(),
+                      tapExecutionPolicy.getMaxRunTime()));
 
                 return Capabilities.builder().addCapabilities(capabilities).build();
             } catch (MalformedURLException e) {
@@ -102,7 +112,7 @@ public class TapConfiguration {
     @Produces
     @Singleton
     SchemaProvider schema(){
-        return new VODMLSchemaProvider(tapSchemaResource, isDbCaseSensitive, true);
+        return new VODMLSchemaProvider(tapSchemaResource, isDbCaseSensitive, useTapTypesInVOSI);
     }
 
     @Produces
@@ -117,8 +127,7 @@ public class TapConfiguration {
 
         EnvironmentFactory env = new DefaultEnvironmentFactory(tmpdir);
 
-        ArchiveTapExecutionPolicy tapExecutionPolicy = new ArchiveTapExecutionPolicy();
-        TAPJob.JobFactory tapJobFactory = new TAPJob.JobFactory(ds, schemaProvider, env, tapExecutionPolicy);
+        TAPJob.JobFactory tapJobFactory = new TAPJob.JobFactory(ds, schemaProvider, env,tapExecutionPolicy);
 
         JobStore databaseStore = new DatabaseJobStore(em, List.of(new NamedType(TAPJobSpecification.class, TAPJob.JOB_TYPE)));
         JobStore store = new CachedJobStore(new TransactionalJobStore(databaseStore, userTransaction));
